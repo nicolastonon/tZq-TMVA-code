@@ -18,14 +18,19 @@ int main()
     //thechannellist.push_back("uue");
 
 //-------------------
+    //BKG
     thesamplelist.push_back("WZ"); v_color.push_back(11);
-    thesamplelist.push_back("DYjets"); v_color.push_back(kAzure-2);
     thesamplelist.push_back("ZZ"); v_color.push_back(kYellow);
-    thesamplelist.push_back("TT"); v_color.push_back(kRed-1);
     thesamplelist.push_back("ttW"); v_color.push_back(kRed+1);
     thesamplelist.push_back("ttZ"); v_color.push_back(kRed+1);
-    //thesamplelist.push_back("WW");
+
+    //Signal
     thesamplelist.push_back("tZq"); v_color.push_back(kGreen+2);
+
+    //Don't use DY nor tt in BDT
+    //thesamplelist.push_back("DYjets"); v_color.push_back(kAzure-2);
+    //thesamplelist.push_back("TT"); v_color.push_back(kRed-1);
+    //thesamplelist.push_back("WW");
 
     //thesamplelist.push_back(""); //Add Data here
 
@@ -41,7 +46,9 @@ int main()
 
 //-------------------
 //-------------------
-theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color);
+//Function calls
+
+    theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color);
 
     double cut = 0.08; //Determined via function Determine_Control_Cut
 
@@ -52,10 +59,14 @@ theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, the
 
         //MVAtool->Determine_Control_Cut(thechannellist[i]);
 
-        //MVAtool->Create_Control_Histograms(thechannellist[i], cut);
+        //MVAtool->Create_Control_Trees(thechannellist[i], cut);
+
+        //MVAtool->Create_Control_Histograms(thechannellist[i]);
+
+        //MVAtool->Generate_Pseudo_Data_Histograms(thechannellist[i]); //NB : not possible yet (not enough MC statistic)
 
         //MVAtool->Draw_Control_Plots(thechannellist[i], false);
     }
 
-    MVAtool->Draw_Control_Plots("", true);
+    //MVAtool->Draw_Control_Plots("", true);
 }
