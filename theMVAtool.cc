@@ -38,7 +38,7 @@ theMVAtool::theMVAtool()
 
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
-	nbin = 20;
+	nbin = 40;
 }
 
 
@@ -75,7 +75,7 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
-	nbin = 20;
+	nbin = 40;
 }
 
 
@@ -94,13 +94,13 @@ void theMVAtool::Set_MVA_Methods(string method, bool isActivated)
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Train, test and evaluate the BDT with signal and bkg MC
-void theMVAtool::Train_Test_Evaluate(TString channel)
+void theMVAtool::Train_Test_Evaluate(TFile* file_input, TString channel)
 {
 	//---------------------------------------------------------------
-    // This loads the library
+    // This loads the TMVA libraries
     TMVA::Tools::Instance();
 
-	TString output_file_name = "outputs/output_Train";
+	TString output_file_name = "outputs/BDT";
 	if(channel != "") {output_file_name+= "_" + channel;}
 	output_file_name+= ".root";
 	TFile* output_file = TFile::Open( output_file_name, "RECREATE" );
@@ -118,23 +118,15 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
 
 	for(int isample=0; isample<sample_list.size(); isample++)
     {
-		if(sample_list[isample].Contains("Data")) {continue;} //Train only on MC
+		if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("Data")) {cout<<"Train only on MC without fakes -- ignored sample"<<endl; continue;} //Train only on MC
 
         // Read training and test data
-        f = 0;
-		TString inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
-		//TString inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + "_" + channel + "_" + ".root";
-        f = TFile::Open( inputfile );
-
-        if (!f)
-        {
-          std::cout << "ERROR: could not open data file" << std::endl;
-          exit(1);
-        }
-        std::cout << "--- Using input file: " << f->GetName() << std::endl;
-
         // --- Register the training and test trees
-        TTree* tree = (TTree*)f->Get("Default");
+
+		TString tree_name = "Ttree_" + sample_list[isample];
+
+        TTree* tree = (TTree*)file_input->Get(tree_name.Data());
+		//TTree* tree = (TTree*)file_input->Get("Default");
 
         // global event weights per tree (see below for setting event-wise weights)
         Double_t signalWeight     = 1.0;
@@ -145,31 +137,42 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
         else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
     }
 
-    // Apply additional cuts on the signal and background samples (can be different)
-    TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
-    TCut mycutb = ""; // for example: TCut mycutb = "abs(var1)<0.5";
+	// Apply additional cuts on the signal and background samples (can be different)
+	TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
+	TCut mycutb = ""; // for example: TCut mycutb = "abs(var1)<0.5";
+
+	if(channel != "all")
+	{
+		if(channel == "uuu")  			mycuts = "Channel==0";
+		else if(channel == "uue" ) 		mycuts = "Channel==1";
+		else if(channel == "eeu"  ) 	mycuts = "Channel==2";
+		else if(channel == "eee"   ) 	mycuts = "Channel==3";
+		else cout << "WARNING wrong channel name while training " << endl;
+	}
 
     // Tell the factory how to use the training and testing events    //
     // If no numbers of events are given, half of the events in the tree are used for training, and the other half for testing:
     factory->PrepareTrainingAndTestTree( mycuts, mycutb, "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
-cout<<__LINE__<<endl;
+
+	//TString method_title = "BDT_" + channel; //So that the output weights are labelled differently for each channel
+	TString method_title = channel; //So that the output weights are labelled differently for each channel
+
     // Boosted Decision Trees
     if (Use["BDT"])  // Adaptive Boost
-    factory->BookMethod( TMVA::Types::kBDT, "BDT",    "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-	cout<<__LINE__<<endl;
+    //factory->BookMethod( TMVA::Types::kBDT, method_title.Data(),    "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+	factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=15:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
+    //if (Use["BDTG"]) // Gradient Boost
+      //factory->BookMethod( TMVA::Types::kBDT, "BDTG","!H:!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
 
-    if (Use["BDTG"]) // Gradient Boost
-      factory->BookMethod( TMVA::Types::kBDT, "BDTG","!H:!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
 	output_file->cd();
 
     // Train MVAs using the set of training events
     factory->TrainAllMethods();
-cout<<__LINE__<<endl;
     // ---- Evaluate all MVAs using the set of test events
     factory->TestAllMethods();
-cout<<__LINE__<<endl;
     // ----- Evaluate and compare performance of all configured MVAs
     factory->EvaluateAllMethods();
+	//NB : Test & Evaluation recap in the output files
 
     // --------------------------------------------------------------
 
@@ -189,11 +192,13 @@ cout<<__LINE__<<endl;
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Reader function. Uses output from training (weights, ...) and read samples to create distributions of the BDT discriminant
-void theMVAtool::Read(TString channel)
+void theMVAtool::Read(TFile* file_input)
 {
+	std::cout << "--- Using input file: " << file_input->GetName() << std::endl;
+
 	TString output_file_name = "outputs/output_Reader.root";
-	//TString output_file_name = "output_Reader_" + channel + ".root";
-	TFile* output_file = TFile::Open( output_file_name, "RECREATE" );
+	//TStrinhist_BDT_uuug output_file_name = "output_Reader_" + channel + ".root";
+	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
 
 	TH1F *hist_BDT(0), *hist_BDTG(0);
 
@@ -208,18 +213,18 @@ void theMVAtool::Read(TString channel)
 
 	// --- Book the MVA methods
 	TString dir    = "weights/";
-	TString prefix = "BDT"; // use factory title
 
 	// Book each method activated in the map
 	for (std::map<std::string,int>::iterator it = Use.begin(); it != Use.end(); it++)
 	{
-		cout<<"it = "<<&it<<endl;
-	   if (it->second) //If set to "1"
-	   {
-		  TString methodName = TString(it->first) + TString(" method");
-		  TString weightfile = dir + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
-		  //TString weightfile = dir + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
-		  reader->BookMVA( methodName, weightfile );
+		for(int ichan=0; ichan<channel_list.size(); ichan++) //Book the method for each channel (separate BDTs)
+		{
+		   if (it->second) //If set to "1"
+		   {
+			  TString MVA_method_name = TString(it->first) + "_" + channel_list[ichan] + TString(" method");
+			  TString weightfile = dir + TString(it->first)+ TString("_") + channel_list[ichan] + TString(".weights.xml");
+			  reader->BookMVA( MVA_method_name, weightfile );
+		   }
 	   }
 	}
 	//cout<<__LINE__<<endl;
@@ -227,21 +232,23 @@ void theMVAtool::Read(TString channel)
 
 	for(int isample=0; isample<sample_list.size(); isample++)
 	{
-		TString filename = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
-		TFile *f(0);
+		TH1F *hist_BDT_uuu = 0, *hist_BDT_uue = 0, *hist_BDT_eeu = 0, *hist_BDT_eee = 0;
 		TTree* tree(0);
+		TString tree_name = "Ttree_" + sample_list[isample];
+		tree = (TTree*) file_input->Get(tree_name.Data());
 
-		f = TFile::Open( filename );
-		if (!f)
-		{
-		  std::cout << "ERROR: could not open data file" << std::endl;
-		  exit(1);
-		}
-		std::cout << "--- Using input file: " << f->GetName() << std::endl;
+		//TString filename = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
+		//TFile *f(0); f = TFile::Open( filename );
 
 		// Book output histograms
 		hist_BDT = 0; hist_BDTG = 0;
-		if (Use["BDT"]) {hist_BDT     = new TH1F( "MVA_BDT",           "MVA_BDT",           nbin, -0., 0.25 );}
+		if (Use["BDT"])
+		{
+			hist_BDT_uuu     = new TH1F( "MVA_BDT_uuu",           "MVA_BDT_uuu",           nbin, -1, 1 );
+			hist_BDT_uue     = new TH1F( "MVA_BDT_uue",           "MVA_BDT_uue",           nbin, -1, 1 );
+			hist_BDT_eeu     = new TH1F( "MVA_BDT_eeu",           "MVA_BDT_eeu",           nbin, -1, 1 );
+			hist_BDT_eee     = new TH1F( "MVA_BDT_eee",           "MVA_BDT_eee",           nbin, -1, 1 );
+		}
 		//if (Use["BDTG"]) {hist_BDTG    = new TH1F( "MVA_BDTG",          "MVA_BDTG",          nbin, -0., 0.25 );}
 
 		// --- Systematics loop
@@ -251,14 +258,15 @@ void theMVAtool::Read(TString channel)
 
 			// Prepare the event tree
 			std::cout << "--- Select "<<sample_list[isample]<<" sample" << std::endl;
-			if(syst_list[isyst]=="") {tree = (TTree*)f->Get("Default");}
-			else {tree = (TTree*)f->Get(syst_list[isyst].Data());}
+			//if(syst_list[isyst]=="") {tree = (TTree*)f->Get("Default");}
+			//else {tree = (TTree*)f->Get(syst_list[isyst].Data());}
 
 			for(int i=0; i<var_list.size(); i++)
 			{
 				tree->SetBranchAddress(var_list[i].Data(), &vec_variables[i]);
 			}
 			float weight; tree->SetBranchAddress("Weight", &weight);
+			int i_channel; tree->SetBranchAddress("Channel", &i_channel);
 
 
 			std::cout << "--- Processing: " << tree->GetEntries() << " events" << std::endl;
@@ -271,12 +279,20 @@ void theMVAtool::Read(TString channel)
 			for(int ievt=0; ievt<tree->GetEntries(); ievt++)
 			{
 				//if(ievt%10000==0) {cout<<endl<<"Event : "<<ievt<<" / "<<tree->GetEntries()<<endl;}
+				weight = 0; i_channel = 9;
 
 				tree->GetEntry(ievt);
 
 				// --- Return the MVAœ outputs and fill into histograms
-				if (Use["BDT"]) {hist_BDT->Fill( reader->EvaluateMVA( "BDT method"), weight);}
-				if (Use["BDTG"]) {hist_BDTG->Fill( reader->EvaluateMVA( "BDTG method"), weight);}
+				if (Use["BDT"])
+				{
+					if(i_channel == 0) {hist_BDT_uuu->Fill( reader->EvaluateMVA( "BDT_uuu method"), weight);}
+					else if(i_channel == 1) {hist_BDT_uue->Fill( reader->EvaluateMVA( "BDT_uue method"), weight);}
+					else if(i_channel == 2) {hist_BDT_eeu->Fill( reader->EvaluateMVA( "BDT_eeu method"), weight);}
+					else if(i_channel == 3) {hist_BDT_eee->Fill( reader->EvaluateMVA( "BDT_eee method"), weight);}
+					else if(i_channel == 9 || weight == 0) cout<<__LINE__<<" : problem"<<endl;
+
+				}
 			}
 
 			// Get elapsed time
@@ -285,30 +301,37 @@ void theMVAtool::Read(TString channel)
 
 			// --- Write histograms
 
-			output_file->cd();
+			file_output->cd();
 
 			//NB : theta name convention = <observable>__<process>__<uncertainty>[__(plus,minus)]
-			TString output_histo_name = "BDT__" + sample_list[isample];
-			if(channel != "") {output_histo_name+= "_" + channel;}
-			TString syst_name;
-			if(syst_list[isyst]!="")
+			TString output_histo_name = "";
+			TString syst_name = syst_list[isyst];
+			if(syst_list[isyst]=="JERup") syst_name = "JER__plus";
+			else if(syst_list[isyst]=="JERdn") syst_name = "JER__minus";
+
+			if(syst_list[isyst] != "") syst_name = "__" + syst_name;
+
+			if (Use["BDT" ])
 			{
-				if(syst_list[isyst]!="JERup") syst_name = "JER__plus";
-				else if(syst_list[isyst]!="JERdn") syst_name = "JER__minus";
-				output_histo_name+= "__" + syst_name;
+				output_histo_name = "BDT_uuu__" + sample_list[isample] + syst_name;
+				hist_BDT_uuu->Write(output_histo_name.Data());
+				output_histo_name = "BDT_uue__" + sample_list[isample] + syst_name;
+				hist_BDT_uue->Write(output_histo_name.Data());
+				output_histo_name = "BDT_eeu__" + sample_list[isample] + syst_name;
+				hist_BDT_eeu->Write(output_histo_name.Data());
+				output_histo_name = "BDT_eee__" + sample_list[isample] + syst_name;
+				hist_BDT_eee->Write(output_histo_name.Data());
 			}
 
-
-			if (Use["BDT" ])  {hist_BDT->Write(output_histo_name.Data());}
-			if (Use["BDTG" ]) {hist_BDTG->Write(output_histo_name.Data());}
-		}
+			delete hist_BDT_uuu; delete hist_BDT_uue; delete hist_BDT_eeu; delete hist_BDT_eee;
+		} //end sample loop
 
 		cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 	}
 
-	output_file->Close();
+	file_output->Close();
 
-	std::cout << "--- Created root file: \""<<output_file->GetName()<<"\" containing the MVA output histograms" << std::endl;
+	std::cout << "--- Created root file: \""<<file_output->GetName()<<"\" containing the MVA output histograms" << std::endl;
 
 	std::cout << "==> Reader() is done!" << std::endl << std::endl;
 }
@@ -329,39 +352,48 @@ void theMVAtool::Determine_Control_Cut(TString channel)
 
 	for(int isample=0; isample<sample_list.size(); isample++)
 	{
-		if(sample_list[isample].Contains("Data")) {continue;}
+		cout<<"--- Use sample "<<sample_list[isample]<<endl;
 
-		h_tmp = 0;
-		input_histo_name = "BDT__" + sample_list[isample];
-		if(channel != "") {input_histo_name+= "_" + channel;}
+		for(int ichan=0; ichan<channel_list.size(); ichan++)
+		{
+			if(sample_list[isample].Contains("Data")) {continue;}
 
-		h_tmp = (TH1F*) f->Get(input_histo_name.Data());
-		if(sample_list[isample] == "tZq") {h_sig = (TH1F*) h_tmp->Clone();}
-		else if(h_sum_bkg == 0) {h_sum_bkg = (TH1F*) h_tmp->Clone();}
-		else {h_sum_bkg->Add(h_tmp);}
+			h_tmp = 0;
+
+			input_histo_name = "BDT_" + channel_list[ichan] + "__" + sample_list[isample];
+
+			if(!f->GetListOfKeys()->Contains(input_histo_name.Data())) {continue;}
+
+			h_tmp = (TH1F*) f->Get(input_histo_name.Data())->Clone();
+
+			if(sample_list[isample] == "tZq")
+			{
+				if(h_sig == 0) {h_sig = (TH1F*) h_tmp->Clone();}
+				else {h_sig->Add(h_tmp);}
+			}
+			else
+			{
+				if(h_sum_bkg == 0) {h_sum_bkg = (TH1F*) h_tmp->Clone();}
+				else {h_sum_bkg->Add(h_tmp);}
+			}
+		}
 	}
 
 	//Normalization
 	h_sum_bkg->Scale(1/h_sum_bkg->Integral());
 	h_sig->Scale(1/h_sig->Integral());
 
-	double cut = 0;
+	double cut = 1;
 	double sig_over_bkg = 100;
-	int bin_cut = 0;
-	double step = 0.0025;
+	int bin_cut = -1;
+	double step = 0.001;
 
-	for(double cut_tmp = 0; cut_tmp<0.2; cut_tmp+=step) //Try different cuts, see which one minimizes sig/bkg (and keeping enough bkg events)
+	//Try different cuts, see which one minimizes sig/bkg (and keeping enough bkg events)
+	for(double cut_tmp = 1; cut_tmp>-1; cut_tmp-=step) //Signal is on the right, so go "from right to left"
 	{
 		bin_cut = h_sum_bkg->GetXaxis()->FindBin(cut_tmp);
 
-		if(fmod(cut_tmp, 0.01) < pow(10, -10)) //fmod seems to output very small values (10^-17, ...) rather than 0 ! //cout every 10 iterations
-		{
-			//cout<<"--- Cut = "<<cut_tmp<<endl;
-			//cout<<"Signal integral = "<<h_sig->Integral(1, bin_cut)<<" / Background integral "<<h_sum_bkg->Integral(1, bin_cut)<<endl;
-			//cout<<" --> Sig/Bkg = "<<h_sig->Integral(1, bin_cut)/h_sum_bkg->Integral(1, bin_cut)<<endl<<endl;
-		}
-
-		if( (h_sig->Integral(1, bin_cut) / h_sum_bkg->Integral(1, bin_cut)) <= sig_over_bkg && h_sum_bkg->Integral(1, bin_cut) >= 0.4 ) //arbitrary criterions for determining suitable cut value
+		if( (h_sig->Integral(1, bin_cut) / h_sum_bkg->Integral(1, bin_cut)) <= sig_over_bkg && h_sum_bkg->Integral(1, bin_cut) >= 0.5 ) //arbitrary criterions for determining suitable cut value
 		{
 			cut = cut_tmp;
 			sig_over_bkg = h_sig->Integral(1, bin_cut) / h_sum_bkg->Integral(1, bin_cut);
@@ -369,7 +401,7 @@ void theMVAtool::Determine_Control_Cut(TString channel)
 	}
 
 	TCanvas* c = new TCanvas("c", "Signal VS Background");
-	gStyle->SetOptStat(0);
+	//gStyle->SetOptStat(0);
 	h_sum_bkg->GetXaxis()->SetTitle("Discriminant");
 	h_sum_bkg->SetTitle("Signal VS Background");
 	h_sum_bkg->SetLineColor(kBlue);
@@ -410,12 +442,13 @@ void theMVAtool::Determine_Control_Cut(TString channel)
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Similar to Read(). Takes cut value as input parameter, and outputs histograms containing only events verifying BDT<cut (mainly bkg events) --> Create histogram with these events for further control studies
-void theMVAtool::Create_Control_Trees(TString channel, double cut)
+void theMVAtool::Create_Control_Trees(TFile* file_input, TString channel, double cut)
 {
+	std::cout << "--- Using input file: " << file_input->GetName() << std::endl;
+
 	TString output_file_name = "outputs/output_Control_Trees.root";
 	//TString output_file_name = "output_Reader_" + channel + ".root";
 	TFile* output_file = TFile::Open( output_file_name, "RECREATE" );
-	TTree* tree_control = 0;
 
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
@@ -428,34 +461,36 @@ void theMVAtool::Create_Control_Trees(TString channel, double cut)
 
 	// --- Book the MVA methods
 	TString dir    = "weights/";
-	TString prefix = "BDT"; // use factory title
 
 	// Book each method activated in the map
 	for (std::map<std::string,int>::iterator it = Use.begin(); it != Use.end(); it++)
 	{
-		cout<<"it = "<<&it<<endl;
-	   if (it->second) //If set to "1"
-	   {
-		  TString methodName = TString(it->first) + TString(" method"); // "BDT method"
-		  TString weightfile = dir + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
-		  reader->BookMVA( methodName, weightfile );
+		for(int ichan=0; ichan<channel_list.size(); ichan++) //Book the method for each channel (separate BDTs)
+		{
+		   if (it->second) //If set to "1"
+		   {
+			  TString MVA_method_name = TString(it->first) + "_" + channel_list[ichan] + TString(" method");
+			  TString weightfile = dir + TString(it->first)+ TString("_") + channel_list[ichan] + TString(".weights.xml");
+			  reader->BookMVA( MVA_method_name, weightfile );
+		   }
 	   }
 	}
-	//cout<<__LINE__<<endl;
 
+//---Loop on histograms
 	for(int isyst = 0; isyst < syst_list.size(); isyst++)
 	{
 		for(int isample=0; isample<sample_list.size(); isample++)
 		{
 			if(sample_list[isample].Contains("Data") && syst_list[isample] != "") {continue;}
 
-			TString filename = "Ntuples/FCNCNTuple_" + sample_list[isample];
+			//TString filename = "Ntuples/FCNCNTuple_" + sample_list[isample];
 			//filename+= "_" + channel;
-			filename+= ".root";
-			TFile *f(0);
+			//filename+= ".root";
+			//TFile *f(0);
 			TTree* tree(0);
-			tree_control = 0;
+			TTree* tree_control = 0;
 			float weight;
+			int i_channel;
 
 			//Create new tree, that will be filled only with events verifying MVA<cut
 			tree_control = new TTree("tree_control", "Tree filled with events verifying MVA<cut");
@@ -465,29 +500,24 @@ void theMVAtool::Create_Control_Trees(TString channel, double cut)
 				tree_control->Branch(var_list[ivar].Data(), &(vec_variables[ivar]), var_type.Data());
 			}
 			tree_control->Branch("Weight", &weight, "weight/F");
-
-
-			f = TFile::Open( filename );
-			if (!f)
-			{
-			  std::cout << "ERROR: could not open file" << std::endl;
-			  exit(1);
-			}
-			std::cout << "--- Using input file: " << f->GetName() << std::endl;
+			tree_control->Branch("Channel", &i_channel, "i_channel/F");
+			//f = TFile::Open( filename );
 
 			// Prepare the event tree
 			std::cout << "--- Select "<<sample_list[isample]<<" sample" << std::endl;
 
 			TString tree_name;
-			if(syst_list[isyst] == "") {tree_name = "Default";}
-			else {tree_name = syst_list[isyst];}
-			tree = (TTree*)f->Get(tree_name.Data());
+			tree_name = "Ttree_" + sample_list[isample];
+			//if(syst_list[isyst] == "") {tree_name = "Default";}
+			//else {tree_name = syst_list[isyst];}
+			tree = (TTree*) file_input->Get(tree_name.Data());
 
 			for(int i=0; i<var_list.size(); i++)
 			{
 				tree->SetBranchAddress(var_list[i].Data(), &vec_variables[i]);
 			}
 			tree->SetBranchAddress("Weight", &weight);
+			tree->SetBranchAddress("Channel", &i_channel);
 
 			std::cout << "--- Processing: " << tree->GetEntries() << " events" << std::endl;
 			//cout<<__LINE__<<endl;
@@ -499,8 +529,10 @@ void theMVAtool::Create_Control_Trees(TString channel, double cut)
 
 				tree->GetEntry(ievt); //Fills vec_variables
 
-				//cout<<"MVA = "<<reader->EvaluateMVA( "BDT method")<<endl;
-				if (reader->EvaluateMVA( "BDT method") <= cut)  {tree_control->Fill();}
+				if(i_channel == 0 && reader->EvaluateMVA( "BDT_uuu method") <= cut) {tree_control->Fill();}
+				else if(i_channel == 1 && reader->EvaluateMVA( "BDT_uue method") <= cut) {tree_control->Fill();}
+				else if(i_channel == 2 && reader->EvaluateMVA( "BDT_eeu method") <= cut) {tree_control->Fill();}
+				else if(i_channel == 3 && reader->EvaluateMVA( "BDT_eee method") <= cut) {tree_control->Fill();}
 			}
 
 			// --- Write histograms
@@ -531,6 +563,7 @@ void theMVAtool::Create_Control_Trees(TString channel, double cut)
 
 
 //Create histograms from control trees (in same file)
+//NB : no separation by channel is made ! It is possible but it would require to create 4 times histograms at beginning...
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 void theMVAtool::Create_Control_Histograms(TString channel)
@@ -543,21 +576,30 @@ void theMVAtool::Create_Control_Histograms(TString channel)
 
 	for(int ivar=0; ivar<var_list.size(); ivar++)
 	{
+		cout<<"--- Processing variable : "<<var_list[ivar]<<endl;
 		//Info contained in tree leaves. Need to create histograms first
 		for(int isample = 0; isample < sample_list.size(); isample++)
 		{
+
 			for(int isyst=0; isyst<syst_list.size(); isyst++)
 			{
 				h_tmp = 0;
-				if(var_list[ivar] == "mTW") {h_tmp = new TH1F( "","", 60, 10, 130 );}
-				else if(var_list[ivar] == "METpt") {h_tmp = new TH1F( "","", 60, -0., 120 );}
-				else if(var_list[ivar] == "ZCandMass") {h_tmp = new TH1F( "","", 40, 70, 110 );}
+				if(var_list[ivar] == "mTW") 							{h_tmp = new TH1F( "","", 60, 10, 130 );}
+				else if(var_list[ivar] == "METpt")						{h_tmp = new TH1F( "","", 60, -0., 120 );}
+				else if(var_list[ivar] == "ZCandMass") 					{h_tmp = new TH1F( "","", 40, 70, 110 );}
+				else if(var_list[ivar] == "deltaPhilb") 				{h_tmp = new TH1F( "","", 40, -4, 4 );}
+				else if(var_list[ivar] == "Zpt") 						{h_tmp = new TH1F( "","", 40, 0, 120 );}
+				else if(var_list[ivar] == "ZEta")			 			{h_tmp = new TH1F( "","", 40, -4, 4 );}
+				else if(var_list[ivar] == "asym") 						{h_tmp = new TH1F( "","", 40, -3, 3 );}
+				else if(var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", 50, 60, 210 );}
+				else if(var_list[ivar] == "btagDiscri") 				{h_tmp = new TH1F( "","", 40, 0, 1 );}
+				else if(var_list[ivar] == "btagDiscri_subleading")		{h_tmp = new TH1F( "","", 40, 0, 1 );}
+				else if(var_list[ivar] == "etaQ")						{h_tmp = new TH1F( "","", 40, -4, 4 );}
 				else {cout<<"Unknown variable"<<endl;}
 
 				TString tree_name = "Control_" + sample_list[isample];
 				//tree_name+= "_" + channel;
 				if(syst_list[isyst] != "") {tree_name+= "_" + syst_list[isyst];}
-				if(syst_list[isyst] == "") {cout<<"--- Processing "<<tree_name<<endl;}
 				tree = (TTree*) f_input->Get(tree_name.Data());
 				//cout<<__LINE__<<endl;
 
@@ -629,6 +671,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 		vector<TH1F*> v_MC_histo;
 		//Idem for each systematics
 		vector<TH1F*> v_MC_histo_JER_plus; vector<TH1F*> v_MC_histo_JER_minus;
+		//vector<TH1F*> v_MC_histo_test_plus; vector<TH1F*> v_MC_histo_test_minus; //To be replaced by new systematics when available
 
 		TLegend* qw = 0;
 		qw = new TLegend(.80,.60,.95,.90);
@@ -655,7 +698,8 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 					if(syst_list[isyst] != "") {histo_name+= "_" + syst_list[isyst];}
 					//histo_name+= "_" + thechannellist[ichan];
 					//if(syst_list[isyst] == "") {cout<<"--- Processing "<<sample_list[isample]<<endl;}
-					h_tmp = (TH1F*) f->Get(histo_name.Data());
+					h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
+					//cout<<"htmp = "<<h_tmp<<endl;
 					//cout<<__LINE__<<endl;
 
 					h_tmp->SetFillStyle(1001);
@@ -682,11 +726,15 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 					{
 						if(syst_list[isyst] == "JERup") {v_MC_histo_JER_plus.push_back(h_tmp);}
 						else if(syst_list[isyst] == "JERdn") {v_MC_histo_JER_minus.push_back(h_tmp);}
+						//else if(syst_list[isyst] == "testup") {v_MC_histo_test_plus.push_back(h_tmp);}
+						//else if(syst_list[isyst] == "testdn") {v_MC_histo_test_minus.push_back(h_tmp);}
 					}
 					else // syst_list[isyst] != "" && ichan != 0
 					{
 						if(syst_list[isyst] == "JERup") {v_MC_histo_JER_plus[isample]->Add(h_tmp);}
 						else if(syst_list[isyst] == "JERdn") {v_MC_histo_JER_minus[isample]->Add(h_tmp);}
+						//else if(syst_list[isyst] == "testup") {v_MC_histo_test_plus[isample]->Add(h_tmp);}
+						//else if(syst_list[isyst] == "testdn") {v_MC_histo_test_minus[isample]->Add(h_tmp);}
 					}
 				}
 			} //end sample loop
@@ -738,19 +786,28 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 		//Also used to compute the Data/MC ratio
 		TH1F* histo_syst_MC = 0;
 		TH1F* histo_syst_MC_JER_plus = 0;  TH1F* histo_syst_MC_JER_minus = 0;
-		//TH1F* histo_syst_MC_ElectronSF_plus = 0;  TH1F* histo_syst_MC_ElectronSF_minus = 0;
+		//TH1F* histo_syst_MC_test_plus = 0;  TH1F* histo_syst_MC_test_minus = 0;
 
 		for(unsigned int imc=0; imc < v_MC_histo.size(); imc++) //Clone or Add histograms
 		{
 			if(histo_syst_MC == 0) {histo_syst_MC = (TH1F*) v_MC_histo[imc]->Clone();}
 			else {histo_syst_MC->Add(v_MC_histo[imc]);}
-		}
-		for(unsigned int imc=0; imc < v_MC_histo_JER_plus.size(); imc++) //Clone or Add histograms
-		{
-			if(histo_syst_MC_JER_plus == 0) {histo_syst_MC_JER_plus = (TH1F*) v_MC_histo_JER_plus[imc]->Clone();}
-			else {histo_syst_MC_JER_plus->Add(v_MC_histo_JER_plus[imc]);}
-			if(histo_syst_MC_JER_minus == 0) {histo_syst_MC_JER_minus = (TH1F*) v_MC_histo_JER_minus[imc]->Clone();}
-			else {histo_syst_MC_JER_minus->Add(v_MC_histo_JER_minus[imc]);}
+
+			if(v_MC_histo_JER_plus.size() == v_MC_histo.size()) //If the syst. is taken into account, then both vectors should have same size
+			{
+				if(histo_syst_MC_JER_plus == 0) {histo_syst_MC_JER_plus = (TH1F*) v_MC_histo_JER_plus[imc]->Clone();}
+				else {histo_syst_MC_JER_plus->Add(v_MC_histo_JER_plus[imc]);}
+				if(histo_syst_MC_JER_minus == 0) {histo_syst_MC_JER_minus = (TH1F*) v_MC_histo_JER_minus[imc]->Clone();}
+				else {histo_syst_MC_JER_minus->Add(v_MC_histo_JER_minus[imc]);}
+			}
+			/*if(v_MC_histo_test_plus.size() == v_MC_histo.size())
+			{
+				if(histo_syst_MC_test_plus == 0) {histo_syst_MC_test_plus = (TH1F*) v_MC_histo_test_plus[imc]->Clone();}
+				else {histo_syst_MC_test_plus->Add(v_MC_histo_test_plus[imc]);}
+				if(histo_syst_MC_test_minus == 0) {histo_syst_MC_test_minus = (TH1F*) v_MC_histo_test_minus[imc]->Clone();}
+				else {histo_syst_MC_test_minus->Add(v_MC_histo_test_minus[imc]);}
+			}*/
+
 		}
 
 		int nofbin = histo_syst_MC->GetNbinsX();
@@ -767,6 +824,10 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 			//JER
 			err_up += pow(fabs(histo_syst_MC_JER_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin)), 2); // (up - nominal)
 			err_low += pow(fabs(histo_syst_MC->GetBinContent(ibin) - histo_syst_MC_JER_minus->GetBinContent(ibin)), 2); // (nominal - low)
+
+			//test
+			//err_up += pow(fabs(histo_syst_MC_test_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin)), 2);
+			//err_low += pow(fabs(histo_syst_MC->GetBinContent(ibin) - histo_syst_MC_test_minus->GetBinContent(ibin)), 2);
 
 			//Luminosity
 			err_up+= pow(histo_syst_MC->GetBinContent(ibin)*0.02, 2);
@@ -934,12 +995,10 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 //Used to simulate template fit to pseudo-data, to avoid using real data before pre-approval
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
-void theMVAtool::Generate_Pseudo_Data_Histograms(TString channel)
+void theMVAtool::Generate_Pseudo_Data_Histograms(TFile* file_input, TString channel)
 {
-	TString input_file_name = ".root";
-	TString output_file_name = "outputs/output_PseudoData_Histograms.root";
-	TFile* f_input = TFile::Open( input_file_name );
-	TFile* f_output = TFile::Open( output_file_name, "RECREATE" );
+	TString output_file_name = "outputs/output_PseudoData.root";
+	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
 	TH1F *h = 0, *h_tmp = 0;
 
 	for(int ivar=0; ivar<var_list.size(); ivar++)
@@ -952,7 +1011,7 @@ void theMVAtool::Generate_Pseudo_Data_Histograms(TString channel)
 			TString histo_name;
 			//TString histo_name = "Control_" + var_list[ivar] + "_" + sample_list[isample];
 			//histo_name+= "_" + thechannellist[ichan];
-			h_tmp = (TH1F*) f_input->Get(histo_name.Data());
+			h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 			h = (TH1F*) h_tmp->Clone();
 
 			int nofbins = h_tmp->GetNbinsX();
@@ -964,7 +1023,7 @@ void theMVAtool::Generate_Pseudo_Data_Histograms(TString channel)
 				h->SetBinContent(i+1, new_bin_content);
 			}
 
-			f_output->cd();
+			file_output->cd();
 			TString output_histo_name = "PseudoData_"  + var_list[ivar] + "_" + sample_list[isample];
 			//output_histo_name+= "_" + channel;
 			h->Write(output_histo_name);
@@ -973,6 +1032,6 @@ void theMVAtool::Generate_Pseudo_Data_Histograms(TString channel)
 	} //end var loop
 
 
-	f_input->Close();
-	f_output->Close();
+	file_input->Close();
+	file_output->Close();
 }
