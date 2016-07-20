@@ -47,13 +47,16 @@ public :
 	~theMVAtool(){delete reader;};
 
 	void Set_MVA_Methods(std::string, bool); //Could be used to choose the MVA method. Actually, only use BDT
-	void Train_Test_Evaluate(TFile*, TString); //Train, Test, Evaluate BDT with MC samples
-	void Read(TFile*); //Apply BDT on samples --> Distributions of discriminant for each sample
-	void Determine_Control_Cut(TString); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
-	void Create_Control_Trees(TFile*, TString, double); //Use the found cut value to copy events passing the cut (bkg) in new trees
+	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
+	void Read(bool); //Apply BDT on samples --> Distributions of discriminant for each sample
+	void Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
+	void Create_Control_Trees(double); //Use the found cut value to copy events passing the cut (bkg) in new trees
 	void Create_Control_Histograms(TString); //Use the trees created with Create_Control_Trees to create histograms in same file
 	void Draw_Control_Plots(TString, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
-	void Generate_Pseudo_Data_Histograms(TFile*, TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
+	void Generate_Pseudo_Data_Histograms(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
+	void Generate_Pseudo_Data_Histograms_CR(TString); //Idem, for replacing data and be able to plot "data/mc" in CR
+	void Plot_BDT_Templates_allchannels();
+	void Plot_BDT_Templates(TString);
 
 
 //Members
