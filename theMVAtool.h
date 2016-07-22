@@ -25,10 +25,10 @@
 #include <iostream>
 #include <cstdlib>
 #include <iostream>
-#include <sstream>
 #include <map>
 #include <string>
 #include <cmath>
+#include<sstream>
 
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
@@ -47,9 +47,10 @@ public :
 	~theMVAtool(){delete reader;};
 
 	void Set_MVA_Methods(std::string, bool); //Could be used to choose the MVA method. Actually, only use BDT
+	void Set_Variable_Cuts(TString, TString, TString, TString); //Set the cut values on some variables (MET, ...)
 	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
 	void Read(bool); //Apply BDT on samples --> Distributions of discriminant for each sample
-	void Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
+	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(double); //Use the found cut value to copy events passing the cut (bkg) in new trees
 	void Create_Control_Histograms(TString); //Use the trees created with Create_Control_Trees to create histograms in same file
 	void Draw_Control_Plots(TString, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
@@ -73,6 +74,11 @@ public :
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram
+
+	TString cut_MET;
+	TString cut_mTW;
+	TString cut_NJets;
+	TString cut_NBJets;
 };
 
 #endif

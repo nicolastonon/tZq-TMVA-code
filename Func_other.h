@@ -1,6 +1,8 @@
 #ifndef Func_other_h
 #define Func_other_h
 
+#include <sstream>
+
 #include "TStyle.h"
 
 using namespace std;
@@ -77,6 +79,48 @@ void Load_Canvas_Style()
 	gStyle->SetOptLogy(0);
 	gStyle->SetOptLogz(0);
 	gStyle->SetPaperSize(20.,20.);
+}
+
+//Convert a float into a TString
+TString Convert_Number_To_TString(float number)
+{
+	stringstream ss;
+	ss << number;
+	TString ts = ss.str();
+	return ts;
+}
+
+//Convert a TString into a float
+float Convert_TString_To_Number(TString ts)
+{
+	float number = 0;
+	string s = ts.Data();
+	stringstream ss(s);
+	ss >> number;
+	return number;
+}
+
+//Find a number into a TString, and returns it as a float
+float Find_Number_In_TString(TString ts)
+{
+	TString tmp = ""; int number = 0;
+	string s = tmp.Data(); int ts_size = s.size();
+
+	for (int i=0; i < ts_size; i++)
+	{
+		if (isdigit(ts[i]))
+		{
+			do
+			{
+				tmp += ts[i];
+				i++;
+			} while(isdigit(ts[i]));
+
+		  break;
+		}
+	}
+
+	return Convert_TString_To_Number(tmp);
 }
 
 

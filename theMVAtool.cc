@@ -40,6 +40,8 @@ theMVAtool::theMVAtool()
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
 	nbin = 10;
+
+	cut_MET=""; cut_mTW=""; cut_NJets=""; cut_NBJets="";
 }
 
 
@@ -77,12 +79,14 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
 	nbin = 10;
+
+	cut_MET=""; cut_mTW=""; cut_NJets=""; cut_NBJets="";
 }
 
 
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
-//Choose which MVA method to use (useless -- only BDT)
+//Choose which MVA method to use (useless -- we use only BDT)
 void theMVAtool::Set_MVA_Methods(string method, bool isActivated)
 {
 	Use[method] = isActivated;
@@ -90,6 +94,20 @@ void theMVAtool::Set_MVA_Methods(string method, bool isActivated)
 	if(isActivated) cout<<"You activated the method"<<method<<endl;
 	else cout<<"You dis-activated the method"<<method<<endl;
 }
+
+
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+//Choose which MVA method to use (useless -- only BDT)
+void theMVAtool::Set_Variable_Cuts(TString set_MET_cut="", TString set_mTW_cut="", TString set_NJets_cut="", TString set_NBJets_cut="")
+{
+	cut_MET=set_MET_cut;
+	cut_mTW=set_mTW_cut;
+	cut_NJets=set_NJets_cut;
+	cut_NBJets=set_NBJets_cut;
+}
+
 
 
 /////////////////////////////////////////////////////////
@@ -113,7 +131,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
 	TMVA::Factory* factory = new TMVA::Factory( "BDT", output_file, "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
 
     // Define the input variables that shall be used for the MVA training
-	for(int i=0; i<var_list.size(); i++)
+	for(int i=2; i<var_list.size(); i++) //--- Don't use MET & mTW (0 and 1) in BDT, since we already cut on them
 	{
 		factory->AddVariable(var_list[i].Data(), 'F');
 	}
@@ -146,7 +164,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
         //else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
     }
 
-	cout<<"////////WARNING : HAVE IGNORED NEGATIVE WEIGHTS !!!"<<endl;
+	cout<<"////////WARNING : HAVE IGNORED NEGATIVE WEIGHTS////////"<<endl;
 
 	// Apply additional cuts on the signal and background samples (can be different)
 	TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
@@ -161,10 +179,15 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
 		else cout << "WARNING wrong channel name while training " << endl;
 	}
 
+//--------------------------------
+//--- Apply cuts during training
+	TString tmp;
 	//Cuts for signal
-	//mycuts+="METpt>40";
-	//mycuts+="mTW>10";
-	//mycuts+="NJets<=3";
+	if(cut_MET != "") {tmp = "METpt" + cut_MET; mycuts+=tmp;}
+	if(cut_mTW != "") {tmp = "mTW" + cut_mTW; mycuts+=tmp;}
+	if(cut_NJets != "") {tmp = "NJets" + cut_NJets; mycuts+=tmp;}
+	if(cut_NBJets != "") {tmp = "NBJets" + cut_NBJets; mycuts+=tmp;}
+//--------------------------------
 
     // Tell the factory how to use the training and testing events    //
     // If no numbers of events are given, half of the events in the tree are used for training, and the other half for testing:
@@ -245,21 +268,21 @@ void theMVAtool::Read(bool use_fakes = true)
 	TH1F *hist_BDT_uuu = 0, *hist_BDT_uue = 0, *hist_BDT_eeu = 0, *hist_BDT_eee = 0;
 	TH1F *h_sum_fake = 0;
 
-	//Loop on samples, syst., events ---> Fill histogram/channel --> Write()
-	for(int isample=0; isample<sample_list.size(); isample++)
+
+	// --- Systematics loop
+	for(int isyst=0; isyst<syst_list.size(); isyst++)
 	{
-		if(!use_fakes && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW")) ) {continue;} //no fakes
-
-		TString inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
-	    TFile* file_input = TFile::Open( inputfile.Data() );
-
-		std::cout << "--- Select "<<sample_list[isample]<<" sample" << std::endl;
-
-		// --- Systematics loop
-		for(int isyst=0; isyst<syst_list.size(); isyst++)
+		//Loop on samples, syst., events ---> Fill histogram/channel --> Write()
+		for(int isample=0; isample<sample_list.size(); isample++)
 		{
+			if(!use_fakes && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW")) ) {continue;} //no fakes
 			if(sample_list[isample].Contains("Data") && syst_list[isyst]!="") {continue;}
-			else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;}
+			else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;} //bug for Q2 in ttZ for the moment
+
+			TString inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
+			TFile* file_input = TFile::Open( inputfile.Data() );
+
+			std::cout << "--- Select "<<sample_list[isample]<<" sample" << std::endl;
 			//else if(isample >= (sample_list.size() - 3) && syst_list[isyst] != "" ) {continue;} //No syst for fake templates
 
 			if(!use_fakes || (use_fakes && isample <= (sample_list.size() - 3)) ) //If sample is fake, don't reinitialize histos -> sum fakes
@@ -286,6 +309,7 @@ void theMVAtool::Read(bool use_fakes = true)
 
 			// Prepare the event tree
 			for(int i=0; i<var_list.size(); i++)
+			//for(int i=0; i<var_list.size(); i++) //--- Don't use MET & mTW (0 and 1) in BDT, since we already cut on them
 			{
 				tree->SetBranchAddress(var_list[i].Data(), &vec_variables[i]);
 			}
@@ -316,20 +340,56 @@ void theMVAtool::Read(bool use_fakes = true)
 			{
 				weight = 0; i_channel = 9;
 
-
 				tree->GetEntry(ievt);
 
-				//weight*= 5;
-
-				//Apply cuts on Reader here --- VARIABLES ORDER IS IMPORTANT
+//------------------------------------------------------------
+//------------------------------------------------------------
+//---- Apply cuts on Reader here --- VARIABLES ORDER IS IMPORTANT
 				float METpt = vec_variables[0];
-				float NJets = vec_variables[1];
-				float mTW = vec_variables[2];
-				//cout<<"METpt = "<<METpt<<endl;
+				float mTW = vec_variables[1];
+				float NJets = vec_variables[2];
+				float NBJets = vec_variables[3];
 
-				//if(METpt < 40) {continue;}
-				//if(mTW < 10) {continue;}
-				//if(NJets > 3) {continue;}
+				float cut_tmp = 0;
+
+				if(cut_MET != "")
+				{
+					cut_tmp = Find_Number_In_TString(cut_MET);
+					if(cut_MET.Contains(">=") && METpt < cut_tmp) {continue;}
+					else if(cut_MET.Contains("<=") && METpt > cut_tmp) {continue;}
+					else if(cut_MET.Contains(">") && METpt <= cut_tmp) {continue;}
+					else if(cut_MET.Contains("<") && METpt >= cut_tmp) {continue;}
+					//else if(cut_MET.Contains("==") && METpt != cut_tmp) {continue;}
+				}
+				if(cut_mTW != "")
+				{
+					cut_tmp = Find_Number_In_TString(cut_mTW);
+					if(cut_mTW.Contains(">=") && mTW < cut_tmp) {continue;}
+					else if(cut_mTW.Contains("<=") && mTW > cut_tmp) {continue;}
+					else if(cut_mTW.Contains(">") && mTW <= cut_tmp) {continue;}
+					else if(cut_mTW.Contains("<") && mTW >= cut_tmp) {continue;}
+					//else if(cut_mTW.Contains("==") && mTW != cut_tmp) {continue;}
+				}
+				if(cut_NJets != "")
+				{
+					cut_tmp = Find_Number_In_TString(cut_NJets);
+					if(cut_NJets.Contains(">=") && NJets < cut_tmp) {continue;}
+					else if(cut_NJets.Contains("<=") && NJets > cut_tmp) {continue;}
+					else if(cut_NJets.Contains(">") && NJets <= cut_tmp) {continue;}
+					else if(cut_NJets.Contains("<") && NJets >= cut_tmp) {continue;}
+					else if(cut_NJets.Contains("==") && NJets != cut_tmp) {continue;}
+				}
+				if(cut_NBJets != "")
+				{
+					cut_tmp = Find_Number_In_TString(cut_NBJets);
+					if(cut_NBJets.Contains(">=") && NBJets < cut_tmp) {continue;}
+					else if(cut_NBJets.Contains("<=") && NBJets > cut_tmp) {continue;}
+					else if(cut_NBJets.Contains(">") && NBJets <= cut_tmp) {continue;}
+					else if(cut_NBJets.Contains("<") && NBJets >= cut_tmp) {continue;}
+					else if(cut_NBJets.Contains("==") && NBJets != cut_tmp) {continue;}
+				}
+//------------------------------------------------------------
+//------------------------------------------------------------
 
 				// --- Return the MVA outputs and fill into histograms
 				if (Use["BDT"])
@@ -359,13 +419,13 @@ void theMVAtool::Read(bool use_fakes = true)
 			{
 				if (Use["BDT" ])
 				{
-					output_histo_name = "BDT_uuu__FakeMu";
+					output_histo_name = "BDT_uuu__FakeMu" + syst_name;
 					hist_BDT_uuu->Write(output_histo_name.Data());
-					output_histo_name = "BDT_uue__FakeEl";
+					output_histo_name = "BDT_uue__FakeEl" + syst_name;
 					hist_BDT_uue->Write(output_histo_name.Data());
-					output_histo_name = "BDT_eeu__FakeMu";
+					output_histo_name = "BDT_eeu__FakeMu" + syst_name;
 					hist_BDT_eeu->Write(output_histo_name.Data());
-					output_histo_name = "BDT_eee__FakeEl";
+					output_histo_name = "BDT_eee__FakeEl" + syst_name;
 					hist_BDT_eee->Write(output_histo_name.Data());
 				}
 			}
@@ -390,9 +450,10 @@ void theMVAtool::Read(bool use_fakes = true)
 				delete hist_BDT_uuu; delete hist_BDT_uue; delete hist_BDT_eeu; delete hist_BDT_eee;
 			}
 
-		} //end syst loop
-		cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
-	} //end sample loop
+			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
+		} //end sample loop
+		cout<<"Done with "<<syst_list[isyst]<<" syst"<<endl;
+	} //end syst loop
 
 	file_output->Close();
 
@@ -406,7 +467,7 @@ void theMVAtool::Read(bool use_fakes = true)
 /////////////////////////////////////////////////////////
 //Read the histograms output from Read() and determine cut value on discriminant to obtain desired signal efficiency
 // --> Can use this value as input parameter in Read() to create additionnal "control histograms"
-void theMVAtool::Determine_Control_Cut()
+float theMVAtool::Determine_Control_Cut()
 {
 	TString input_file_name = "outputs/output_Reader.root";
 	TFile* f = TFile::Open(input_file_name.Data());
@@ -503,6 +564,8 @@ void theMVAtool::Determine_Control_Cut()
 	//cout<<"signal entries "<<h_sig->GetEntries()<<endl;
 
 	f->Close(); delete c; delete leg; delete l;
+
+	return cut;
 }
 
 
@@ -621,8 +684,9 @@ void theMVAtool::Create_Control_Trees(double cut)
 
 			output_file->Close();
 
-			cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
+			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 		} //end sample loop
+		cout<<"Done with "<<syst_list[isyst]<<" syst"<<endl;
 	} //end syst loop
 
 	std::cout << "--- Created root file containing the MVA output histograms" << std::endl;
@@ -654,6 +718,8 @@ void theMVAtool::Create_Control_Histograms(TString channel)
 
 			for(int isyst=0; isyst<syst_list.size(); isyst++)
 			{
+				if(sample_list[isample].Contains("Data") && syst_list[isyst] != "") {continue;}
+
 				h_tmp = 0;
 				if(var_list[ivar] == "mTW") 							{h_tmp = new TH1F( "","", binning, 10, 130 );}
 				else if(var_list[ivar] == "METpt")						{h_tmp = new TH1F( "","", binning, -0., 120 );}
@@ -663,7 +729,7 @@ void theMVAtool::Create_Control_Histograms(TString channel)
 				else if(var_list[ivar] == "ZEta")			 			{h_tmp = new TH1F( "","", binning, -4, 4 );}
 				else if(var_list[ivar] == "asym") 						{h_tmp = new TH1F( "","", binning, -3, 3 );}
 				else if(var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", binning, 60, 210 );}
-				else if(var_list[ivar] == "btagDiscri") 				{h_tmp = new TH1F( "","", binning, 0, 1 );}
+				else if(var_list[ivar] == "btagDiscri") 				{h_tmp = new TH1F( "","", binning, 0.4, 2.4 );}
 				else if(var_list[ivar] == "btagDiscri_subleading")		{h_tmp = new TH1F( "","", binning, 0, 1 );}
 				else if(var_list[ivar] == "etaQ")						{h_tmp = new TH1F( "","", binning, -4, 4 );}
 				else if(var_list[ivar] == "NBJets")						{h_tmp = new TH1F( "","", 3, 0, 3 );}
@@ -777,7 +843,7 @@ void theMVAtool::Generate_Pseudo_Data_Histograms_CR(TString channel)
 		}
 
 		file->cd();
-		TString output_histo_name = "Control_" + channel + "_" + var_list[ivar] + "__DATA";
+		TString output_histo_name = "Control_" + channel + "_" + var_list[ivar] + "_PseudoData";
 		h_sum->Write(output_histo_name, TObject::kOverwrite);
 	}
 
@@ -855,6 +921,12 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 			{
 				for(int isyst=0; isyst<syst_list.size(); isyst++)
 				{
+					bool isData = sample_list[isample].Contains("Data");
+
+					if(isData && syst_list[isyst] != "") {continue;}
+
+					//cout<<thechannellist[ichan]<<" / "<<sample_list[isample]<<" / "<<syst_list[isyst]<<endl;
+
 					h_tmp = 0;
 
 					TString histo_name = "Control_" + thechannellist[ichan] + "_"+ var_list[ivar] + "_" + sample_list[isample];
@@ -865,28 +937,33 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 					//cout<<"htmp = "<<h_tmp<<endl;
 					//cout<<__LINE__<<endl;
 
+					if(isData)
+					{
+						if(h_data == 0) {h_data = (TH1F*) h_tmp->Clone();}
+						else {h_data->Add(h_tmp);}
+						continue;
+					}
+
+					//SINCE WE USE ONLY ONE SAMPLE_LIST FOR DATA AND MC, IT MAKES A DIFFERENCE WHETHER DATA SAMPLE IS ACTIVATED OR NOT
+					//if indeed we also run on data, then for the following samples (= MC) we need to do iterator-= 1 in order to start the MC-dedicated vector at 0 !
+					if(sample_list[0].Contains("Data")) {isample = isample - 1;} //If the sample_list contains the data
+
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample]);
 					h_tmp->SetLineColor(colorVector[isample]);
 
-					//---- Don't use this yet, as we use pseudodata so a specific name "__DATA"
-					if(sample_list[isample].Contains("Data") || sample_list[isample].Contains("DATA") || sample_list[isample].Contains("data"))
-					{
-						//if(h_data == 0) {h_data = (TH1F*) h_tmp->Clone();}
-						//else {h_data->Add(h_tmp);}
-					}
-
-					else if(syst_list[isyst] == "" && niter_chan==0)
+					if(!isData && syst_list[isyst] == "" && niter_chan==0)
 					{
 						v_MC_histo.push_back(h_tmp);
+
 					}
 
-					else if(syst_list[isyst] == "") //niter_chan != 0
+					else if(!isData && syst_list[isyst] == "") //niter_chan != 0
 					{
 						v_MC_histo[isample]->Add(h_tmp);
 					}
 
-					else if(niter_chan==0) // syst_list[isyst] != ""
+					else if(!isData && niter_chan==0) // syst_list[isyst] != ""
 					{
 						if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus.push_back(h_tmp);}
 						else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus.push_back(h_tmp);}
@@ -898,11 +975,12 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 						else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus.push_back(h_tmp);}
 						else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus.push_back(h_tmp);}
 						else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus.push_back(h_tmp);}
+						else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
 					}
-					else // syst_list[isyst] != "" && niter_chan != 0
+					else if(!isData)// syst_list[isyst] != "" && niter_chan != 0
 					{
-						if(syst_list[isyst] == "JER_plus") {v_MC_histo_JER_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "JER_minus") {v_MC_histo_JER_minus[isample]->Add(h_tmp);}
+						if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus[isample]->Add(h_tmp);}
+						else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus[isample]->Add(h_tmp);}
 						else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus[isample]->Add(h_tmp);}
 						else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus[isample]->Add(h_tmp);}
 						else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus[isample]->Add(h_tmp);}
@@ -911,11 +989,18 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 						else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus[isample]->Add(h_tmp);}
 						else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus[isample]->Add(h_tmp);}
 						else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus[isample]->Add(h_tmp);}
+						else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
+
 					}
-				}
+
+					if(sample_list[0].Contains("Data")) {isample = isample + 1;} //If we have de-incremented isample (cf. above), then we need to re-increment it here so we don't get an infinite loop !!
+
+				} //end syst loop
+
 			} //end sample loop
 
 			niter_chan++;
+
 		} //end channel loop
 
 		//Stack all the MC nominal histograms (contained in v_MC_histo)
@@ -929,19 +1014,6 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 		}
 
 		if(!stack) {cout<<__LINE__<<" : stack is null"<<endl;}
-		for(int ichan=0; ichan<thechannellist.size(); ichan++)
-		{
-			if(!allchannels && channel != thechannellist[ichan]) {continue;}
-			h_tmp = 0;
-
-			TString histo_name = "Control_" + thechannellist[ichan] + "_"+ var_list[ivar] + "__DATA";
-			if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
-
-			h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
-
-			if(h_data == 0) {h_data = (TH1F*) h_tmp->Clone();}
-			else {h_data->Add(h_tmp);}
-		}
 
 		//---------------------------
 		//DRAW HISTOS
@@ -992,7 +1064,9 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 				else {histo_syst_MC_JER_plus->Add(v_MC_histo_JER_plus[imc]);}
 				if(histo_syst_MC_JER_minus == 0) {histo_syst_MC_JER_minus = (TH1F*) v_MC_histo_JER_minus[imc]->Clone();}
 				else {histo_syst_MC_JER_minus->Add(v_MC_histo_JER_minus[imc]);}
+
 			}
+
 			if(v_MC_histo_JES_plus.size() == v_MC_histo.size())
 			{
 				if(histo_syst_MC_JES_plus == 0) {histo_syst_MC_JES_plus = (TH1F*) v_MC_histo_JES_plus[imc]->Clone();}
@@ -1035,8 +1109,6 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 			//--------------------------
 
 			//JER
-			//err_up += pow(fabs(histo_syst_MC_JER_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin)), 2); // (up - nominal)
-			//err_low += pow(fabs(histo_syst_MC->GetBinContent(ibin) - histo_syst_MC_JER_minus->GetBinContent(ibin)), 2); // (nominal - low)
 			if(histo_syst_MC_JER_plus != 0)
 			{
 				tmp = histo_syst_MC_JER_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
@@ -1046,7 +1118,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
 				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
 			}
-
+			//JES
 			if(histo_syst_MC_JES_plus != 0)
 			{
 				tmp = histo_syst_MC_JES_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
@@ -1056,7 +1128,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
 				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
 			}
-
+			//Q2 - Scale
 			if(histo_syst_MC_Q2_plus != 0)
 			{
 				tmp = histo_syst_MC_Q2_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
@@ -1066,7 +1138,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
 				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
 			}
-
+			//Muon Efficiency SF
 			if(histo_syst_MC_MuEff_plus != 0)
 			{
 				tmp = histo_syst_MC_MuEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
@@ -1076,7 +1148,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
 				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
 			}
-
+			//Electron Efficiency SF
 			if(histo_syst_MC_EleEff_plus != 0)
 			{
 				tmp = histo_syst_MC_EleEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
@@ -1087,7 +1159,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
 			}
 
-			//Luminosity
+			//Luminosity (set to 4% of bin content)
 			err_up+= pow(histo_syst_MC->GetBinContent(ibin)*0.04, 2);
 			err_low+= pow(histo_syst_MC->GetBinContent(ibin)*0.04, 2);
 
@@ -1097,12 +1169,14 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 			err_low = pow(err_low, 0.5);
 
 			//Fill error vectors (one per bin)
-			v_eyl.push_back(err_up);
-			v_eyh.push_back(err_low);
+			v_eyh.push_back(err_up);
+			v_eyl.push_back(err_low);
 			v_exl.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
 			v_exh.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
 			v_x.push_back( (histo_syst_MC->GetXaxis()->GetBinLowEdge(nofbin+1) - histo_syst_MC->GetXaxis()->GetBinLowEdge(1) ) * ((ibin - 0.5)/nofbin) + histo_syst_MC->GetXaxis()->GetBinLowEdge(1));
 			v_y.push_back(histo_syst_MC->GetBinContent(ibin)); //see warning above about THStack and negative weights
+
+			//if(ibin > 1) {continue;} //display only first bin
 			//cout<<"x = "<<v_x[ibin-1]<<endl;    cout<<", y = "<<v_y[ibin-1]<<endl;    cout<<", eyl = "<<v_eyl[ibin-1]<<endl;    cout<<", eyh = "<<v_eyh[ibin-1]<<endl; cout<<", exl = "<<v_exl[ibin-1]<<endl;    cout<<", exh = "<<v_exh[ibin-1]<<endl;
 		}
 
@@ -1119,7 +1193,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 		gr = new TGraphAsymmErrors(nofbin,x,y,exl,exh,eyl,eyh);
 		gr->SetFillStyle(3005);
 		gr->SetFillColor(1);
-		//	gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 		//cout << __LINE__ << endl;
 
 
@@ -1214,7 +1288,7 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 			thegraph_ratio->SetFillStyle(3005);
 			thegraph_ratio->SetFillColor(1);
 
-			//thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+			thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 		}
 
 		//Yaxis title
