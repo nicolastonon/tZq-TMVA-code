@@ -104,7 +104,7 @@ float Convert_TString_To_Number(TString ts)
 float Find_Number_In_TString(TString ts)
 {
 	TString tmp = ""; int number = 0;
-	string s = tmp.Data(); int ts_size = s.size();
+	string s = ts.Data(); int ts_size = s.size(); //To get TString size
 
 	for (int i=0; i < ts_size; i++)
 	{

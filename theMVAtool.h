@@ -46,10 +46,11 @@ public :
 	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>);
 	~theMVAtool(){delete reader;};
 
-	void Set_MVA_Methods(std::string, bool); //Could be used to choose the MVA method. Actually, only use BDT
 	void Set_Variable_Cuts(TString, TString, TString, TString); //Set the cut values on some variables (MET, ...)
+	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
-	void Read(bool); //Apply BDT on samples --> Distributions of discriminant for each sample
+	std::pair<double, double> Compute_Fake_Ratio(); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
+	void Read(TString, int); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(double); //Use the found cut value to copy events passing the cut (bkg) in new trees
 	void Create_Control_Histograms(TString); //Use the trees created with Create_Control_Trees to create histograms in same file
@@ -59,11 +60,9 @@ public :
 	void Plot_BDT_Templates_allchannels();
 	void Plot_BDT_Templates(TString);
 
-
 //Members
 	TMVA::Reader *reader;
 
-	std::map<std::string,int> Use; //Map which can be modified to choose the MVA method. Not useful, only use BDT
 	std::vector<TString> sample_list;
 	std::vector<TString> data_list;
 	std::vector<TString> var_list;
@@ -74,6 +73,7 @@ public :
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram
+	double luminosity_rescale;
 
 	TString cut_MET;
 	TString cut_mTW;
