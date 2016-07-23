@@ -61,7 +61,7 @@ int main()
     thevarlist.push_back("NBJets");
 //----------------------------
     thevarlist.push_back("ZCandMass"); //useless
-    /*thevarlist.push_back("deltaPhilb");
+    thevarlist.push_back("deltaPhilb");
     thevarlist.push_back("Zpt");
     thevarlist.push_back("ZEta");
     thevarlist.push_back("asym");
@@ -76,10 +76,10 @@ int main()
     thevarlist.push_back("dRAddLepBFromTop");
     thevarlist.push_back("dRZAddLep");
     thevarlist.push_back("ptQ"); //--not useful
-    thevarlist.push_back("dRjj");*/
+    thevarlist.push_back("dRjj");
     //thevarlist.push_back("mtop"); // mtop not properly reconstructed yet
     //thevarlist.push_back("dRZTop");
-    //thevarlist.push_back("TopPT");
+    //thevarlist.push_back("TopPT");*/
 
 //-------------------
     thesystlist.push_back("");
@@ -141,16 +141,15 @@ int main()
         //MVAtool->Train_Test_Evaluate(thechannellist[i]); //TRAINING
     }
 
-    //MVAtool->Read("BDT", 1); //READING   //0 -> No fakes || 1 -> Fakes from MC || 2 -> Fakes from data//
+    MVAtool->Read("BDT", 1, "output_Reader"); //READING   //0 -> No fakes || 1 -> Fakes from MC || 2 -> Fakes from data//
 
-    float cut_BDT_CR = 0; //Cutting value on the BDT discriminant to determine the BDT-CR.
-    //cut_BDT_CR = MVAtool->Determine_Control_Cut(); //Determine where to cut to create BDT_CR
-    //MVAtool->Create_Control_Trees(cut_BDT_CR); //Fills a control tree with events passing the bkg cut
+    float cut_BDT_CR = MVAtool->Determine_Control_Cut(); //Determine where to cut to create BDT_CR
+    bool cut_on_BDT = false; MVAtool->Create_Control_Trees(cut_on_BDT, cut_BDT_CR); //Fills a tree with events passing the cuts
 
     for(int i=0; i<thechannellist.size(); i++)
     {
-        //MVAtool->Create_Control_Histograms(thechannellist[i]); //Creates histograms from the control tree //Long because creates histos for all vars, all samples, all syst, 4 channels !
-        //MVAtool->Generate_Pseudo_Data_Histograms_CR(thechannellist[i]); //Generate pseudo-data to test control plots in BDT_CT (useless now that real data is available)
+        MVAtool->Create_Control_Histograms(thechannellist[i]); //Creates histograms from the control tree [LONG !]
+        //MVAtool->Generate_Pseudo_Data_Histograms_CR(thechannellist[i]); //Generate pseudo-data to test control plots in BDT_CT
 
         //MVAtool->Generate_Pseudo_Data_Histograms(thechannellist[i]); //Generates pseudo-data to to test template fit of BDT in SR --> stay blind
         //MVAtool->Plot_BDT_Templates(thechannellist[i]); //Plot the BDT distributions of MC & pseudo-data, to check that pseudo data makes sense

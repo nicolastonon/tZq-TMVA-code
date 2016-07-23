@@ -188,22 +188,22 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
 	TCut mycutb = ""; // for example: TCut mycutb = "abs(var1)<0.5";
 
 	if(channel != "all")
-	{
-		if(channel == "uuu")  			mycuts = "Channel==0";
-		else if(channel == "uue" ) 		mycuts = "Channel==1";
-		else if(channel == "eeu"  ) 	mycuts = "Channel==2";
-		else if(channel == "eee"   ) 	mycuts = "Channel==3";
-		else cout << "WARNING wrong channel name while training " << endl;
-	}
+    {
+        if(channel == "uuu")         		{mycuts = "Channel==0"; mycutb = "Channel==0";}
+        else if(channel == "uue" )     		{mycuts = "Channel==1"; mycutb = "Channel==1";}
+        else if(channel == "eeu"  )     	{mycuts = "Channel==2"; mycutb = "Channel==2";}
+        else if(channel == "eee"   )     	{mycuts = "Channel==3"; mycutb = "Channel==3";}
+        else 								{cout << "WARNING : wrong channel name while training " << endl;}
+    }
 
 //--------------------------------
 //--- Apply cuts during training
-	TString tmp;
-	//Cuts for signal -- automatically adds to previous cut : (cut1) && (cut2)
-	if(cut_MET != "") {tmp = "METpt" + cut_MET; mycuts+=tmp;}
-	if(cut_mTW != "") {tmp = "mTW" + cut_mTW; mycuts+=tmp;}
-	if(cut_NJets != "") {tmp = "NJets" + cut_NJets; mycuts+=tmp;}
-	if(cut_NBJets != "") {tmp = "NBJets" + cut_NBJets; mycuts+=tmp;}
+    TString tmp;
+    //Cuts for signal -- automatically adds to previous cut : (cut1) && (cut2)
+    if(cut_MET != "") {tmp = "METpt"     + cut_MET;    mycuts+=tmp; mycutb+=tmp;}
+    if(cut_mTW != "") {tmp = "mTW"       + cut_mTW;    mycuts+=tmp; mycutb+=tmp;}
+    if(cut_NJets != "") {tmp = "NJets"   + cut_NJets;  mycuts+=tmp; mycutb+=tmp;}
+    if(cut_NBJets != "") {tmp = "NBJets" + cut_NBJets; mycuts+=tmp; mycutb+=tmp;}
 //--------------------------------
 
     // Tell the factory how to use the training and testing events    //
@@ -273,7 +273,7 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 		TFile* file_fake = TFile::Open( inputfile.Data() );
 
 		TTree* tree = (TTree*) file_fake->Get("Default");
-		double weight = 0; double i_channel = 9;
+		float weight = 0; float i_channel = 9;
 
 		tree->SetBranchAddress("Weight", &weight);
 		tree->SetBranchAddress("Channel", &i_channel);
@@ -352,7 +352,7 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 
 //Reader function. Uses output from training (weights, ...) and read samples to create distributions of the BDT discriminant *OR* mTW
 //fakes_mode : 0 -> No fakes || 1 -> Fakes from MC || 2 -> Fakes from data//
-void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1)
+void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1, TString output_name = "output_Reader")
 {
 	cout<<endl<<"#####################"<<endl;
 	if(template_name == "BDT") {cout<<"--- Producing BDT templates ---"<<endl;}
@@ -363,9 +363,6 @@ void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1)
 	else if(fakes_mode == 2) {cout<<"--- Using fakes from data ---"<<endl;}
 	else {cout<<"ERROR : invalid fakes_method value !"<<endl;}
 	cout<<"#####################"<<endl<<endl;
-
-	TString output_file_name = "outputs/output_Reader.root";
-	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
 
 	TH1F *hist_BDT(0), *hist_BDTG(0);
 
@@ -547,7 +544,9 @@ void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1)
 			}
 
 			//If fakes from data, re-scale histos to expected MC fake yields via function Compute_Fake_Ratio
-			std::pair<double, double> fake_ratios = Compute_Fake_Ratio();
+			std::pair<double, double> fake_ratios;
+			if(fakes_mode == 2) {fake_ratios = Compute_Fake_Ratio();} //Only if use data-driven fakes
+
 			if(template_name == "mTW" && fakes_mode == 2 && sample_list[isample].Contains("Fakes") )
 			{
 				hist_uuu->Scale(fake_ratios.first); hist_eeu->Scale(fake_ratios.first);
@@ -555,6 +554,9 @@ void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1)
 			}
 
 			// --- Write histograms
+			TString output_file_name = "outputs/" + output_name + ".root";
+			TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
+
 			file_output->cd();
 
 			//NB : theta name convention = <observable>__<process>[__<uncertainty>__(plus,minus)]
@@ -765,8 +767,11 @@ float theMVAtool::Determine_Control_Cut()
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Similar to Read(). Takes cut value as input parameter, and outputs histograms containing only events verifying BDT<cut (mainly bkg events) --> Create histogram with these events for further control studies
-void theMVAtool::Create_Control_Trees(double cut)
+void theMVAtool::Create_Control_Trees(bool cut_on_BDT, double cut = 0)
 {
+	if(cut_on_BDT) {cout<<endl<<"--- Creating control tree WITH cut on BDT value ---"<<endl<<" Cut value = "<<cut<<endl<<endl;}
+	else if(!cut_on_BDT) {cout<<endl<<"--- Creating control tree WITHOUT cut on BDT value ---"<<endl<<endl;}
+
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
 	// Name & adress of local variables which carry the updated input values during the event loop
@@ -807,7 +812,7 @@ void theMVAtool::Create_Control_Trees(double cut)
 
 			//Create new tree, that will be filled only with events verifying MVA<cut
 			TTree *tree(0), *tree_control(0);
-			tree_control = new TTree("tree_control", "Tree filled with events verifying MVA<cut");
+			tree_control = new TTree("tree_control", "Control Tree");
 
 			float weight; float i_channel;
 			for(int ivar=0; ivar<var_list.size(); ivar++)
@@ -900,10 +905,13 @@ void theMVAtool::Create_Control_Trees(double cut)
 //------------------------------------------------------------
 //------------------------------------------------------------
 
-				if(i_channel == 0 && reader->EvaluateMVA( "BDT_uuu method") > cut) 		{continue;}
-				else if(i_channel == 1 && reader->EvaluateMVA( "BDT_uue method") > cut) {continue;}
-				else if(i_channel == 2 && reader->EvaluateMVA( "BDT_eeu method") > cut) {continue;}
-				else if(i_channel == 3 && reader->EvaluateMVA( "BDT_eee method") > cut) {continue;}
+				if(cut_on_BDT)
+				{
+					if(i_channel == 0 && reader->EvaluateMVA( "BDT_uuu method") > cut) 		{continue;}
+					else if(i_channel == 1 && reader->EvaluateMVA( "BDT_uue method") > cut) {continue;}
+					else if(i_channel == 2 && reader->EvaluateMVA( "BDT_eeu method") > cut) {continue;}
+					else if(i_channel == 3 && reader->EvaluateMVA( "BDT_eee method") > cut) {continue;}
+				}
 
 				weight*= luminosity_rescale; //Re-scale to desired luminosity
 
@@ -1579,7 +1587,12 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool allchannels)
 		latex2->SetNDC();
 		latex2->SetTextSize(0.04);
 		latex2->SetTextAlign(31);
-		latex2->DrawLatex(0.87, 0.95, "2.26 fb^{-1} at #sqrt{s} = 13 TeV"); //CHANGE LUMINOSITY HERE
+		//------------------
+		int lumi = 2.26 * luminosity_rescale;
+		TString lumi_ts = Convert_Number_To_TString(lumi);
+		lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
+		latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
+		//------------------
 
 		TString info_data;
 		if (channel=="eee")    info_data = "eee channel";

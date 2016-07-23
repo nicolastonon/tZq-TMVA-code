@@ -50,7 +50,7 @@ public :
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
 	std::pair<double, double> Compute_Fake_Ratio(); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
-	void Read(TString, int); //Produce templates of BDT, mTW (or else ?)
+	void Read(TString, int, TString); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(double); //Use the found cut value to copy events passing the cut (bkg) in new trees
 	void Create_Control_Histograms(TString); //Use the trees created with Create_Control_Trees to create histograms in same file
