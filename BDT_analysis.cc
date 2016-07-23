@@ -57,7 +57,7 @@ int main()
 //----------------------------
     thevarlist.push_back("METpt");
     thevarlist.push_back("mTW");
-    thevarlist.push_back("NJets");
+    /*thevarlist.push_back("NJets");
     thevarlist.push_back("NBJets");
 //----------------------------
     thevarlist.push_back("ZCandMass"); //useless
@@ -76,7 +76,7 @@ int main()
     thevarlist.push_back("dRAddLepBFromTop");
     thevarlist.push_back("dRZAddLep");
     thevarlist.push_back("ptQ"); //--not useful
-    thevarlist.push_back("dRjj");
+    thevarlist.push_back("dRjj");*/
     //thevarlist.push_back("mtop"); // mtop not properly reconstructed yet
     //thevarlist.push_back("dRZTop");
     //thevarlist.push_back("TopPT");*/
@@ -116,14 +116,14 @@ int main()
 //-----------------------
     string set_MET_cut = ">30";
     string set_mTW_cut = "";
-    string set_NJets_cut = "";
-    string set_NBJets_cut = "";
+    string set_NJets_cut = ""; //ONLY STRICT SIGN (> / < / =)
+    string set_NBJets_cut = ""; //ONLY STRICT SIGN (> / < / =)
 
 //-------------------
 //Create instance of the class, and initialize it
 
     theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color);
-    MVAtool->Set_Variable_Cuts(set_MET_cut, set_mTW_cut, set_NJets_cut, set_NBJets_cut); //Set cuts on variables
+    MVAtool->Set_Variable_Cuts(set_MET_cut, set_mTW_cut, set_NJets_cut, set_NBJets_cut); if(MVAtool->stop_program) {return 1;}
     MVAtool->Set_Luminosity(set_luminosity);
 
 //-----------------------------------------------------------------------------------------
@@ -141,22 +141,22 @@ int main()
         //MVAtool->Train_Test_Evaluate(thechannellist[i]); //TRAINING
     }
 
-    MVAtool->Read("BDT", 1, "output_Reader"); //READING   //0 -> No fakes || 1 -> Fakes from MC || 2 -> Fakes from data//
+    //MVAtool->Read("BDT", 1); //READING   //0 -> No fakes || 1 -> Fakes from MC || 2 -> Fakes from data//
 
-    float cut_BDT_CR = MVAtool->Determine_Control_Cut(); //Determine where to cut to create BDT_CR
-    bool cut_on_BDT = false; MVAtool->Create_Control_Trees(cut_on_BDT, cut_BDT_CR); //Fills a tree with events passing the cuts
+    //float cut_BDT_CR = MVAtool->Determine_Control_Cut(); //Determine where to cut to create BDT_CR
+    //bool cut_on_BDT = true; MVAtool->Create_Control_Trees(cut_on_BDT, cut_BDT_CR); //Fills a tree with events passing the cuts
 
     for(int i=0; i<thechannellist.size(); i++)
     {
-        MVAtool->Create_Control_Histograms(thechannellist[i]); //Creates histograms from the control tree [LONG !]
-        //MVAtool->Generate_Pseudo_Data_Histograms_CR(thechannellist[i]); //Generate pseudo-data to test control plots in BDT_CT
+        //MVAtool->Create_Control_Histograms(thechannellist[i]); //Creates histograms from the control tree [LONG !]
+        //MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(thechannellist[i]); //Generate pseudo-data to simulate control plots
 
-        //MVAtool->Generate_Pseudo_Data_Histograms(thechannellist[i]); //Generates pseudo-data to to test template fit of BDT in SR --> stay blind
+        //MVAtool->Generate_PseudoData_Histograms_For_Templates(thechannellist[i]); //Generates pseudo-data to to test template fit of BDT in SR --> stay blind
         //MVAtool->Plot_BDT_Templates(thechannellist[i]); //Plot the BDT distributions of MC & pseudo-data, to check that pseudo data makes sense
 
-        MVAtool->Draw_Control_Plots(thechannellist[i], false); //Draw plots for the BDT CR (uses the control histograms)
+        //MVAtool->Draw_Control_Plots(thechannellist[i], false); //Draw plots for the BDT CR (uses the control histograms)
     }
 
     //MVAtool->Plot_BDT_Templates_allchannels(); //Sum of 4 channels
-    MVAtool->Draw_Control_Plots("", true); //Sum of 4 channels
+    //MVAtool->Draw_Control_Plots("", true); //Sum of 4 channels
 }

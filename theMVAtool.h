@@ -50,13 +50,13 @@ public :
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
 	std::pair<double, double> Compute_Fake_Ratio(); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
-	void Read(TString, int, TString); //Produce templates of BDT, mTW (or else ?)
+	void Read(TString, int); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
-	void Create_Control_Trees(double); //Use the found cut value to copy events passing the cut (bkg) in new trees
+	void Create_Control_Trees(bool, double); //Use the found cut value to copy events passing the cut (bkg) in new trees
 	void Create_Control_Histograms(TString); //Use the trees created with Create_Control_Trees to create histograms in same file
 	void Draw_Control_Plots(TString, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
-	void Generate_Pseudo_Data_Histograms(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
-	void Generate_Pseudo_Data_Histograms_CR(TString); //Idem, for replacing data and be able to plot "data/mc" in CR
+	void Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
+	void Generate_PseudoData_Histograms_For_Control_Plots(TString); //Idem, for replacing data and be able to plot control plots
 	void Plot_BDT_Templates_allchannels();
 	void Plot_BDT_Templates(TString);
 
@@ -79,6 +79,10 @@ public :
 	TString cut_mTW;
 	TString cut_NJets;
 	TString cut_NBJets;
+
+	TString filename_suffix;
+
+	bool stop_program;
 };
 
 #endif

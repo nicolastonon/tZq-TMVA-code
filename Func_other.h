@@ -123,6 +123,17 @@ float Find_Number_In_TString(TString ts)
 	return Convert_TString_To_Number(tmp);
 }
 
+//Translates signs into words
+TString Convert_Sign_To_Word(TString ts_in)
+{
+	TString sign;
+
+	if(ts_in.Contains(">")) {sign = "Min";}
+	else if(ts_in.Contains("<")) {sign = "Max";}
+	else if(ts_in.Contains("==")) {sign = "Eq";}
+
+	return sign;
+}
 
 
 #endif
