@@ -43,20 +43,21 @@ public :
 
 //Methods
 	theMVAtool();
-	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>);
+	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>);
 	~theMVAtool(){delete reader;};
 
 	void Set_Variable_Cuts(TString, TString, TString, TString); //Set the cut values on some variables (MET, ...)
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
 	std::pair<double, double> Compute_Fake_Ratio(); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
-	void Read(TString, int); //Produce templates of BDT, mTW (or else ?)
+	void Read(TString, bool, bool); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
-	void Create_Control_Trees(bool, double); //Use the found cut value to copy events passing the cut (bkg) in new trees
-	void Create_Control_Histograms(TString); //Use the trees created with Create_Control_Trees to create histograms in same file
-	void Draw_Control_Plots(TString, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
+	void Create_Control_Trees(bool, bool, double); //Create new trees with events passing the cuts
+	void Create_Control_Histograms(TString, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
+	void Generate_PseudoData_Histograms_For_Control_Plots(TString, bool); //Idem, for replacing data and be able to plot control plots
+	void Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
+
 	void Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
-	void Generate_PseudoData_Histograms_For_Control_Plots(TString); //Idem, for replacing data and be able to plot control plots
 	void Plot_BDT_Templates_allchannels();
 	void Plot_BDT_Templates(TString);
 
@@ -66,14 +67,18 @@ public :
 	std::vector<TString> sample_list;
 	std::vector<TString> data_list;
 	std::vector<TString> var_list;
+	std::vector<TString> cut_var_list;
 	std::vector<TString> syst_list;
 	std::vector<TString> channel_list;
 
 	std::vector<float> vec_variables; //Contains as many floats as there are variables in var_list
+	std::vector<float> vec_cut_variables; //Contains as many floats as there are variables in cut_var_list
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram
 	double luminosity_rescale;
+
+	float METpt; float mTW; float NJets; float NBJets;
 
 	TString cut_MET;
 	TString cut_mTW;
