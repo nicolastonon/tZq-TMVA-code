@@ -150,7 +150,7 @@ void theMVAtool::Set_Variable_Cuts(TString set_MET_cut, TString set_mTW_cut, TSt
 	}
 	if(cut_NBJets != "")
 	{
-		tmp = "_NBJets" + Convert_Sign_To_Word(cut_NJets) + Convert_Number_To_TString(Find_Number_In_TString(cut_NBJets));
+		tmp = "_NBJets" + Convert_Sign_To_Word(cut_NBJets) + Convert_Number_To_TString(Find_Number_In_TString(cut_NBJets));
 		filename_suffix+= tmp;
 	}
 }
@@ -251,7 +251,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
     if(cut_mTW != "") {tmp = "mTW"       + cut_mTW;    mycuts+=tmp; mycutb+=tmp;}
 	//Can't use a constant variable in BDT (creates fatal error)
     if(cut_NJets != "" && !cut_NJets.Contains("==")) {tmp = "NJets"   + cut_NJets;  mycuts+=tmp; mycutb+=tmp;}
-    if(cut_NBJets != "" && !cut_NBJets.Contains("==")) {tmp = "NBJets" + cut_NBJets; mycuts+=tmp; mycutb+=tmp;}
+	if(cut_NBJets != "" && !cut_NBJets.Contains("==")) {tmp = "NBJets" + cut_NBJets; mycuts+=tmp; mycutb+=tmp;}
 //--------------------------------
 
     // Tell the factory how to use the training and testing events    //
@@ -531,6 +531,8 @@ void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1)
 				float NJets = vec_variables[2];
 				float NBJets = vec_variables[3];
 
+				cout<<"NB = "<<NBJets<<endl;
+
 				float cut_tmp = 0;
 
 				if(cut_MET != "")
@@ -698,8 +700,8 @@ void theMVAtool::Read(TString template_name = "BDT", int fakes_mode = 1)
 
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
-//Read the histograms output from Read() and determine cut value on discriminant to obtain desired signal efficiency
-// --> Can use this value as input parameter in Read() to create additionnal "control histograms"
+//Reads the output from Read() and determines a cut value on BDT to create a BDT CR
+// --> Can use this cut value as input parameter in Create_Control_Trees()
 float theMVAtool::Determine_Control_Cut()
 {
 	TString input_file_name = "outputs/Reader" + filename_suffix + ".root";
@@ -747,31 +749,23 @@ float theMVAtool::Determine_Control_Cut()
 	//h_sum_bkg->Scale(1/h_sum_bkg->Integral());
 	//h_sig->Scale(1/h_sig->Integral());
 
-	double cut = 1; //initialize cut scan at maximum value = +1
-	double sig_over_total = 100; //initialize ratio at unreasonable value
+	double sig_over_total = 100; //initialize to unreasonable value
 	int bin_cut = -1; //initialize to false value
-	double step = 2./nbin; //scanning step - defined as bin width
+	int nofbins = h_total->GetNbinsX();
 
-	//Try different cuts, see which one minimizes sig/bkg (and keeping enough bkg events)
-	for(double cut_tmp = ( (step*(nbin)/2) - step/10); cut_tmp>-1; cut_tmp-=step) //Signal is on the right, so go "from right to left"
-	//NB : weird initialization value because FindBin seem to behave strangely when you give it a value that corresponds to the edge of a bin ; this way (w/ '-step/10') it HAS to choose b/w 2 bins !
-	//So we first substract ' - step /10' to make sure it chooses the correct bin, and then after the scan loop we re-add '+ step/10' to obtain the valid cut value at the bin *EDGE*
+	for(int ibin=nofbins; ibin>0; ibin--)
 	{
-		int bin_tmp = h_sum_bkg->GetXaxis()->FindBin(cut_tmp); //Bin corresponding to the tested cut
-		//cout<<"cut tmp = "<<cut_tmp<<", bin is "<<bin_tmp<<endl;
-
-		//Minimize S/S+B while making sure that we retain enough bkg events to make plots (here : 'at least 60% of the initial bkg events')
-		if( (h_sig->Integral(1, bin_tmp) / h_total->Integral(1, bin_tmp)) <= sig_over_total && (h_sum_bkg->Integral(1, bin_tmp) / h_sum_bkg->Integral()) >= 0.6 )
+		//Search the bin w/ lowest sig/total, while keeping enough bkg events (criterion needs to be optimized/tuned)
+		if( (h_sig->Integral(1, ibin) / h_total->Integral(1, ibin)) < sig_over_total && (h_sum_bkg->Integral(1, ibin) / h_sum_bkg->Integral()) >= 0.6 )
 		{
-			cut = cut_tmp;
-			bin_cut = bin_tmp;
-			sig_over_total = h_sig->Integral(1, bin_cut) / h_total->Integral(1, bin_cut);
+			bin_cut = ibin;
+			sig_over_total = h_sig->Integral(1, bin_cut) / h_total->Integral(1,bin_cut);
 		}
 	}
 
-	cut+= step/10; //Re-correct the cut value (cf. explanation above)
-	if(fabs(cut) < pow(10, -10)) {cut = 0;} //Avoid that 'cut' takes non-null very tiny values, like 10^-17, that don't make sense
+	double cut = h_total->GetBinLowEdge(bin_cut+1); //Get the BDT cut value to apply to create a BDT CR control tree
 
+	//Create plot to represent the cut on BDT
 	TCanvas* c = new TCanvas("c", "Signal VS Background");
 	gStyle->SetOptStat(0);
 	h_sum_bkg->GetXaxis()->SetTitle("Discriminant");
@@ -780,33 +774,28 @@ float theMVAtool::Determine_Control_Cut()
 	h_sig->SetLineColor(kGreen);
 	h_sum_bkg->Draw("HIST");
 	h_sig->Draw("HIST SAME");
-
 	TLegend* leg = new TLegend(0.7,0.75,0.88,0.85);
     leg->SetHeader("");
     leg->AddEntry(h_sig,"Signal","L");
     leg->AddEntry("h_sum_bkg","Background","L");
     leg->Draw();
-
 	//Draw vertical line at cut value
 	TLine* l = new TLine(cut, 0, cut, h_sum_bkg->GetMaximum());
 	l->SetLineWidth(3);
 	l->Draw("");
-
 	c->SaveAs("outputs/Signal_Background_BDT"+filename_suffix+".png");
 
+	//Cout some results
 	cout<<"---------------------------------------"<<endl;
 	cout<<"* Cut Value = "<<cut<<endl;
-	cout<<"-> BDT_CR defined w/ all events inside bins [1 ; "<<bin_cut<<"] of the BDT distribution!"<<endl;
-	//Since histograms are binned, need to apply the MVA cut at a *bin edge* in order to correctly estimate efficiency via Integral(bin_low, bin_up) !
-	//cout<<"---> Cut at upper edge of associated bin = "<<h_sum_bkg->GetBinLowEdge(bin_cut+1)<<" !"<<endl;
-	cout<<"* Signal integral = "<<h_sig->Integral(1, bin_cut)<<" / Total integral "<<h_total->Integral(1, bin_cut);
-	cout<<" --> Sig/Bkg = "<<sig_over_total<<endl;
+	cout<<"-> BDT_CR defined w/ all events inside bins [1 ; "<<bin_cut<<"] of the BDT distribution!"<<endl<<endl;
+	cout<<"* Signal integral = "<<h_sig->Integral(1, bin_cut)<<" / Total integral "<<h_total->Integral(1, bin_cut)<<endl;
+	cout<<"Signal contamination in CR --> Sig/Total = "<<sig_over_total<<endl;
+	cout<<"Bkg(CR) / Bkg(Total) = "<<h_sum_bkg->Integral(1,bin_cut) / h_sum_bkg->Integral()<<endl;
 	cout<<"---------------------------------------"<<endl<<endl;
 
-	//for(int i=0; i<h_sig->GetNbinsX(); i++) {cout<<"bin content "<<i+1<<" = "<<h_sig->GetBinContent(i+1)<<endl;} //If want to verify that the computed signal is computed correctly
-
+	//for(int i=0; i<h_sig->GetNbinsX(); i++) {cout<<"bin content "<<i+1<<" = "<<h_sig->GetBinContent(i+1)<<endl;} //If want to verify that the signal is computed correctly
 	f->Close(); delete c; delete leg; delete l;
-
 	return cut;
 }
 
@@ -1112,13 +1101,13 @@ void theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(TString channe
 {
 	TRandom3 therand(0);
 
-	TString pseudodata_input_name = "outputs/Control_Histograms" + filename_suffix + ".root";
-    TFile* file = TFile::Open( pseudodata_input_name.Data(), "UPDATE");
+	TString input_name = "outputs/Control_Histograms" + filename_suffix + ".root";
+    TFile* file = TFile::Open( input_name.Data(), "UPDATE");
 	cout<<endl<<"--- GENERATION OF PSEUDODATA IN "<<file->GetName()<<" ! ---"<<endl<<endl;
 
 	TH1F *h_sum = 0, *h_tmp = 0;
 
-	//file_input->ls(); //output the content of the file
+	//file->ls(); //output the content of the file
 
 	for(int ivar=0; ivar<var_list.size(); ivar++)
 	{
@@ -1128,8 +1117,7 @@ void theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(TString channe
 
 		for(int isample = 0; isample < sample_list.size(); isample++)
 		{
-			//if(sample_list[isample] != "WZ" && sample_list[isample] != "ttZ" && sample_list[isample] != "ZZ" && sample_list[isample] != "tZq") {continue;}
-			if(sample_list[isample].Contains("Data")) {continue;}
+			if(sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) {continue;}
 
 			h_tmp = 0;
 			TString histo_name = "Control_" + channel + "_" + var_list[ivar] + "_" + sample_list[isample];
@@ -1155,7 +1143,7 @@ void theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(TString channe
 
 	file->Close();
 
-	cout<<"--- Done wth generation of pseudo-data for CR"<<endl;
+	cout<<"--- Done with generation of pseudo-data for CR"<<endl;
 }
 
 
@@ -1179,7 +1167,7 @@ void theMVAtool::Generate_PseudoData_Histograms_For_Templates(TString channel)
 	for(int isample = 0; isample < sample_list.size(); isample++)
 	{
 		//if(sample_list[isample] != "WZ" && sample_list[isample] != "ttZ" && sample_list[isample] != "ZZ" && sample_list[isample] != "tZq") {continue;}
-		if(sample_list[isample].Contains("Data")) {continue;}
+		if(sample_list[isample].Contains("Data") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("Fakes")) {continue;} //Fakes are stored under special names, see below
 
 		h_tmp = 0;
 		TString histo_name = "BDT_" + channel + "__" + sample_list[isample];
@@ -1740,7 +1728,7 @@ void theMVAtool::Plot_BDT_Templates(TString channel)
 
 	for(int isample = 0; isample < sample_list.size(); isample++)
 	{
-		if(sample_list[isample].Contains("Data")) {continue;}
+		if(sample_list[isample].Contains("Data") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("Fakes")) {continue;}
 
 		h_tmp = 0;
 		TString histo_name = "BDT_" + channel + "__" + sample_list[isample];
@@ -1750,8 +1738,21 @@ void theMVAtool::Plot_BDT_Templates(TString channel)
 		else {h_sum_MC->Add(h_tmp);}
 	}
 
+	//If find "fake template"
+	TString template_fake_name = "";
+	if(channel == "uuu" || channel == "eeu") {template_fake_name = "FakeMu";}
+	else {template_fake_name = "FakeEl";}
 	h_tmp = 0;
-	TString histo_name = "BDT_" + channel + "__DATA";
+	TString histo_name = "BDT_" + channel + "__" + template_fake_name;
+	if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found (probably bc fakes are not used)"<<endl;}
+	else
+	{
+		h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+		h_sum_MC->Add(h_tmp);
+	}
+
+	h_tmp = 0;
+	histo_name = "BDT_" + channel + "__DATA";
 	h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 	if(h_sum_data == 0) {h_sum_data = (TH1F*) h_tmp->Clone();}
 	else {h_sum_data->Add(h_tmp);}
@@ -1765,7 +1766,7 @@ void theMVAtool::Plot_BDT_Templates(TString channel)
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
 	h_sum_MC->Draw("hist");
 	h_sum_data->Draw("epsame");
-	TString output_plot_name = "plots/BDT_template"+ filename_suffix + channel + ".png";
+	TString output_plot_name = "plots/BDT_template_" + channel+ filename_suffix + ".png";
 	c1->SaveAs(output_plot_name.Data());
 
 	delete c1;
@@ -1776,10 +1777,8 @@ void theMVAtool::Plot_BDT_Templates(TString channel)
 /////////////////////////////////////////////////////////
 void theMVAtool::Plot_BDT_Templates_allchannels()
 {
-	TString MC_input_name = "outputs/output_Reader.root";
-	TFile* file_input_MC = TFile::Open( MC_input_name.Data() );
-	TString pseudodata_input_name = "outputs/output_PseudoData.root";
-	TFile* file_input_pseudodata = TFile::Open( pseudodata_input_name.Data() );
+	TString input_name = "outputs/Reader" + filename_suffix + ".root";
+	TFile* file_input = TFile::Open( input_name.Data() );
 
 	TH1F *h_sum_MC = 0, *h_tmp = 0, *h_sum_data = 0;
 
@@ -1787,20 +1786,33 @@ void theMVAtool::Plot_BDT_Templates_allchannels()
 	{
 		for(int isample = 0; isample < sample_list.size(); isample++)
 		{
-			//if(sample_list[isample] != "WZ" && sample_list[isample] != "ttZ" && sample_list[isample] != "ZZ" && sample_list[isample] != "tZq") {continue;}
+			if(sample_list[isample].Contains("Data") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("Fakes")) {continue;}
 
 			h_tmp = 0;
 			TString histo_name = "BDT_" + channel_list[ichan] + "__" + sample_list[isample];
-			if(!file_input_MC->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
-			h_tmp = (TH1F*) file_input_MC->Get(histo_name.Data())->Clone();
+			if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
+			h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 			if(h_sum_MC == 0) {h_sum_MC = (TH1F*) h_tmp->Clone();}
 			else {h_sum_MC->Add(h_tmp);}
 		}
 
+		//If find "fake template"
+		TString template_fake_name = "";
+		if(channel_list[ichan] == "uuu" || channel_list[ichan] == "eeu") {template_fake_name = "FakeMu";}
+		else {template_fake_name = "FakeEl";}
 		h_tmp = 0;
-		TString histo_name = "BDT_" + channel_list[ichan] + "__DATA";
-		if(!file_input_pseudodata->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
-		h_tmp = (TH1F*) file_input_pseudodata->Get(histo_name.Data())->Clone();
+		TString histo_name = "BDT_" + channel_list[ichan] + "__" + template_fake_name;
+		if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found (probably bc fakes are not used)"<<endl;}
+		else
+		{
+			h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+			h_sum_MC->Add(h_tmp);
+		}
+
+		h_tmp = 0;
+		histo_name = "BDT_" + channel_list[ichan] + "__DATA";
+		if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
+		h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 		if(h_sum_data == 0) {h_sum_data = (TH1F*) h_tmp->Clone();}
 		else {h_sum_data->Add(h_tmp);}
 	}
@@ -1813,7 +1825,8 @@ void theMVAtool::Plot_BDT_Templates_allchannels()
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
 	h_sum_MC->Draw("hist");
 	h_sum_data->Draw("epsame");
-	c1->SaveAs("plots/plot_bdt_template.png");
+	TString output_plot_name = "plots/BDT_template_all" + filename_suffix + ".png";
+	c1->SaveAs(output_plot_name.Data());
 
 	delete c1;
 }

@@ -16,7 +16,8 @@ int main()
 //
 //-----------------------------------------------------------------------------------------
     std::vector<TString> thesamplelist;
-	std::vector<TString > thevarlist;
+    std::vector<TString > thevarlist; //Variables used in BDT
+    //std::vector<TString > thecutvarlist; //Variables not used in BDT - only to cut
 	std::vector<TString > thesystlist;
 	std::vector<TString > thechannellist;
     std::vector<int> v_color; //sample <-> color
@@ -57,7 +58,7 @@ int main()
 //----------------------------
     thevarlist.push_back("METpt");
     thevarlist.push_back("mTW");
-    /*thevarlist.push_back("NJets");
+    thevarlist.push_back("NJets");
     thevarlist.push_back("NBJets");
 //----------------------------
     thevarlist.push_back("ZCandMass"); //useless
@@ -76,10 +77,10 @@ int main()
     thevarlist.push_back("dRAddLepBFromTop");
     thevarlist.push_back("dRZAddLep");
     thevarlist.push_back("ptQ"); //--not useful
-    thevarlist.push_back("dRjj");*/
+    thevarlist.push_back("dRjj");
     //thevarlist.push_back("mtop"); // mtop not properly reconstructed yet
     //thevarlist.push_back("dRZTop");
-    //thevarlist.push_back("TopPT");*/
+    //thevarlist.push_back("TopPT");
 
 //-------------------
     thesystlist.push_back("");
@@ -116,8 +117,8 @@ int main()
 //-----------------------
     string set_MET_cut = ">30";
     string set_mTW_cut = "";
-    string set_NJets_cut = ""; //ONLY STRICT SIGN (> / < / =)
-    string set_NBJets_cut = ""; //ONLY STRICT SIGN (> / < / =)
+    string set_NJets_cut = ""; //ONLY STRICT SIGN (> / < / ==)
+    string set_NBJets_cut = "=1"; //ONLY STRICT SIGN (> / < / ==)
 
 //-------------------
 //Create instance of the class, and initialize it
