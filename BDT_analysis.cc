@@ -116,7 +116,7 @@ int main()
     thesystlist.push_back("");
 
     //Affect the variable distributions
-    thesystlist.push_back("JER__plus");
+    /*thesystlist.push_back("JER__plus");
     thesystlist.push_back("JER__minus");
     thesystlist.push_back("JES__plus");
     thesystlist.push_back("JES__minus");
@@ -129,7 +129,7 @@ int main()
     thesystlist.push_back("MuEff__plus");
     thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus");
-    thesystlist.push_back("EleEff__minus");
+    thesystlist.push_back("EleEff__minus");*/
 //-------------------
 
 //-----------------------------------------------------------------------------------------
@@ -142,35 +142,50 @@ int main()
 //-----------------------------------------------------------------------------------------
     //(NB : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the same variable list)
 
-    //Create instance of the class, and initialize it
+    //#############################################
+    //  CREATE INSTANCE OF CLASS & INITIALIZE
+    //#############################################
     theMVAtool* MVAtool = new theMVAtool(thevarlist, thecutvarlist, thesamplelist, thesystlist, thechannellist, v_color);
     MVAtool->Set_Variable_Cuts(set_MET_cut, set_mTW_cut, set_NJets_cut, set_NBJets_cut); if(MVAtool->stop_program) {return 1;}
     MVAtool->Set_Luminosity(set_luminosity);
 
+    //#############################################
+    // TRAINING
+    //#############################################
     for(int i=0; i<thechannellist.size(); i++)
     {
-        //MVAtool->Train_Test_Evaluate(thechannellist[i]); //TRAINING
+        //MVAtool->Train_Test_Evaluate(thechannellist[i]);
     }
 
-    //READING - Create Templates
-    //MVAtool->Read("BDT", fakes_from_data, real_data_templates);
+    //#############################################
+    //  READING --- TEMPLATES CREATION
+    //#############################################
+    TString template_name = "mTW"; //Either 'BDT' or 'mTW'
+    //MVAtool->Read(template_name, fakes_from_data, real_data_templates);
+    //if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
-    //Determine where to cut to create BDT_CR
-    //float cut_BDT_CR = MVAtool->Determine_Control_Cut();
-    //Fill new trees with events passing the cuts
-    //bool cut_on_BDT = true; MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR);
+    //#############################################
+    //  CONTROL TREES & HISTOGRAMS
+    //#############################################
+    float cut_BDT_CR = MVAtool->Determine_Control_Cut();
+    //bool cut_on_BDT = false; MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR);
+    //MVAtool->Create_Control_Histograms(fakes_from_data);
+    //MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);
 
+    //#############################################
+    //  DRAW PLOTS
+    //#############################################
     for(int i=0; i<thechannellist.size(); i++)
     {
-        //MVAtool->Create_Control_Histograms(thechannellist[i], fakes_from_data); //Creates histograms from the control tree [LONG !]
-        //MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(thechannellist[i], fakes_from_data); //Generate pseudo-data for CR plots
-
-        //if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(thechannellist[i]);}
-        MVAtool->Plot_BDT_Templates(thechannellist[i]); //Plot the BDT distributions of MC & pseudo-data templates
-
-        //MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
+        MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
+        //MVAtool->Plot_BDT_Templates(thechannellist[i], template_name); //Plot the BDT distributions of MC & pseudo-data templates
     }
 
-    MVAtool->Plot_BDT_Templates_allchannels(); //Sum of 4 channels
-    //MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
+    MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
+    //MVAtool->Plot_BDT_Templates_allchannels(template_name); //Sum of 4 channels
+
+
+    //#############################################
+    //  THE END
+    //#############################################
 }

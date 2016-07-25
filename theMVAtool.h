@@ -53,13 +53,13 @@ public :
 	void Read(TString, bool, bool); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double); //Create new trees with events passing the cuts
-	void Create_Control_Histograms(TString, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
-	void Generate_PseudoData_Histograms_For_Control_Plots(TString, bool); //Idem, for replacing data and be able to plot control plots
+	void Create_Control_Histograms(bool); //Use the trees created with Create_Control_Trees to create histograms in same file
+	void Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
 	void Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 
 	void Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
-	void Plot_BDT_Templates_allchannels();
-	void Plot_BDT_Templates(TString);
+	void Plot_BDT_Templates_allchannels(TString);
+	void Plot_BDT_Templates(TString, TString);
 
 //Members
 	TMVA::Reader *reader;
