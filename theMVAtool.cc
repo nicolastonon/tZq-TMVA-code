@@ -1373,8 +1373,8 @@ void theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool 
 		vector<TH1F*> v_MC_histo_EleEff_plus; vector<TH1F*> v_MC_histo_EleEff_minus;
 		//vector<TH1F*> v_MC_histo_test_plus; vector<TH1F*> v_MC_histo_test_minus;
 
-		TLegend* qw = 0;
-		qw = new TLegend(.80,.60,.95,.90);
+		//TLegend* qw = new TLegend(.80,.60,.95,.90);
+		TLegend* qw = new TLegend(.85,.7,0.965,.915);
 		qw->SetShadowColor(0);
 		qw->SetFillColor(0);
 		qw->SetLineColor(0);
@@ -1890,7 +1890,7 @@ void theMVAtool::Plot_BDT_Templates(TString channel, TString template_name)
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
 
 	//Legend
-	TLegend* leg = new TLegend(0.7,0.75,0.88,0.85);
+	TLegend* leg = new TLegend(.85,.7,0.965,.915);
     leg->SetHeader("");
     leg->AddEntry(h_sum_MC,"MC","L");
 	if(h_sum_data != 0) {leg->AddEntry(h_sum_data, "Data" , "lep");}
@@ -1973,8 +1973,7 @@ void theMVAtool::Plot_BDT_Templates_allchannels(TString template_name)
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
 
 	//Legend
-	//TLegend* leg = new TLegend(0.7,0.75,0.88,0.85);
-	TLegend* leg = new TLegend(0.7,0.75,0.88,0.85);
+	TLegend* leg = new TLegend(.85,.7,0.965,.915);
     leg->SetHeader("");
     leg->AddEntry(h_sum_MC,"MC","L");
 	if(h_sum_data != 0) {leg->AddEntry(h_sum_data, "Data" , "lep");}
