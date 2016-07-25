@@ -843,7 +843,6 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	}
 	reader->AddSpectator( "METpt", &METpt);
 	reader->AddSpectator( "mTW", &mTW);
-
 	// Special case : NJets & NBJets can either be used in training or not
 	if(cut_NJets.Contains("=")) {reader->AddSpectator("NJets", &NJets);}
 	else {reader->AddVariable("NJets", &NJets);}
@@ -890,14 +889,10 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 				tree_control->Branch(var_list[ivar].Data(), &(vec_variables[ivar]), var_type.Data());
 			}
 			//For the 'cut var list', use specific class members to avoid mistakes.
-			for(int i=0; i<cut_var_list.size(); i++)
-			{
-				TString var_type = cut_var_list[i] + "/F";
-				if(cut_var_list[i] == "METpt")	{tree_control->Branch(cut_var_list[i].Data(), &METpt, var_type.Data());}
-				if(cut_var_list[i] == "mTW") 	{tree_control->Branch(cut_var_list[i].Data(), &mTW, var_type.Data());}
-				if(cut_var_list[i] == "NJets") 	{tree_control->Branch(cut_var_list[i].Data(), &NJets, var_type.Data());}
-				if(cut_var_list[i] == "NBJets") {tree_control->Branch(cut_var_list[i].Data(), &NBJets, var_type.Data());}
-			}
+			tree_control->Branch("METpt", &METpt, "METpt/F");
+			tree_control->Branch("mTW", &mTW, "mTW/F");
+			tree_control->Branch("NJets", &NJets, "NJets/F");
+			tree_control->Branch("NBJets", &NBJets, "NBJets/F");
 			float weight; float i_channel;
 			tree_control->Branch("Weight", &weight, "weight/F"); //Give it the same name regardless of the systematic, since we create a separate tree for each syst anyway
 			tree_control->Branch("Channel", &i_channel, "i_channel/F");
@@ -912,15 +907,12 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 				tree->SetBranchAddress(var_list[i].Data(), &vec_variables[i]);
 			}
 			//For the 'cut var list', use specific class members to avoid mistakes.
-			for(int i=0; i<cut_var_list.size(); i++)
-			{
-				if(cut_var_list[i] == "METpt") 	{tree->SetBranchAddress(cut_var_list[i].Data(), &METpt);}
-				if(cut_var_list[i] == "mTW") 	{tree->SetBranchAddress(cut_var_list[i].Data(), &mTW);}
-				if(cut_var_list[i] == "NJets") 	{tree->SetBranchAddress(cut_var_list[i].Data(), &NJets);}
-				if(cut_var_list[i] == "NBJets") {tree->SetBranchAddress(cut_var_list[i].Data(), &NBJets);}
-			}
+			tree->SetBranchAddress("METpt", &METpt);
+			tree->SetBranchAddress("mTW", &mTW);
+			tree->SetBranchAddress("NJets", &NJets);
+			tree->SetBranchAddress("NBJets", &NBJets);
 
-			 tree->SetBranchAddress("Channel", &i_channel);
+			tree->SetBranchAddress("Channel", &i_channel);
 
 			//For some systematics, only the weight changes
 			if(syst_list[isyst] == "PU__plus") tree->SetBranchAddress("PU__plus", &weight);

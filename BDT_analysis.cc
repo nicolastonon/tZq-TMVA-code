@@ -41,18 +41,21 @@ int main()
 //
 //-----------------------------------------------------------------------------------------
 
+//-------------------
     std::vector<TString> thesamplelist;
     std::vector<TString > thevarlist; //Variables used in BDT
     std::vector<TString > thecutvarlist; //Variables not used in BDT - only to cut
 	std::vector<TString > thesystlist;
 	std::vector<TString > thechannellist;
     std::vector<int> v_color; //sample <-> color
+//-------------------
 
 //-------------------
     thechannellist.push_back("uuu");
     thechannellist.push_back("uue");
     thechannellist.push_back("eeu");
     thechannellist.push_back("eee");
+//-------------------
 
 //-------------------
 //Sample order is important in function Read (so it knows which are the fake samples it must sum) and in Draw_Control_Plots (see explanation in code)
@@ -76,17 +79,16 @@ int main()
     thesamplelist.push_back("DYjets");             v_color.push_back(kAzure-2);
     thesamplelist.push_back("TT");                 v_color.push_back(kRed-1);
     thesamplelist.push_back("WW");                 v_color.push_back(kYellow);
-
+//-------------------
 
 //-------------------
-//NB : treat leaves/variables "Weight" and "Channel" separately
-//----------------------------
     //Can cut on these variables --> Need to treat them separately in code
+    //NB : the handling of these 4 variables is hard-coded (contrary to the others). If add another "cut var", need to propagate it properly in the code
     thecutvarlist.push_back("METpt");
     thecutvarlist.push_back("mTW");
     thecutvarlist.push_back("NJets");
     thecutvarlist.push_back("NBJets");
-//----------------------------
+//-------------------
     thevarlist.push_back("ZCandMass"); //useless
     thevarlist.push_back("deltaPhilb");
     thevarlist.push_back("Zpt");
@@ -107,6 +109,8 @@ int main()
     //thevarlist.push_back("mtop"); // mtop not properly reconstructed yet
     //thevarlist.push_back("dRZTop");
     //thevarlist.push_back("TopPT");
+    //NB : treat leaves/variables "Weight" and "Channel" separately
+//-------------------
 
 //-------------------
     thesystlist.push_back("");
@@ -126,7 +130,7 @@ int main()
     thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus");
     thesystlist.push_back("EleEff__minus");
-
+//-------------------
 
 //-----------------------------------------------------------------------------------------
 //     __                          _     _                                    _   _
@@ -152,21 +156,21 @@ int main()
     //MVAtool->Read("BDT", fakes_from_data, real_data_templates);
 
     //Determine where to cut to create BDT_CR
-    float cut_BDT_CR = MVAtool->Determine_Control_Cut();
+    //float cut_BDT_CR = MVAtool->Determine_Control_Cut();
     //Fill new trees with events passing the cuts
-    bool cut_on_BDT = true; MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR);
+    //bool cut_on_BDT = true; MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR);
 
     for(int i=0; i<thechannellist.size(); i++)
     {
-        MVAtool->Create_Control_Histograms(thechannellist[i], fakes_from_data); //Creates histograms from the control tree [LONG !]
+        //MVAtool->Create_Control_Histograms(thechannellist[i], fakes_from_data); //Creates histograms from the control tree [LONG !]
         //MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(thechannellist[i], fakes_from_data); //Generate pseudo-data for CR plots
 
-        if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(thechannellist[i]);}
-        //MVAtool->Plot_BDT_Templates(thechannellist[i]); //Plot the BDT distributions of MC & pseudo-data templates
+        //if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(thechannellist[i]);}
+        MVAtool->Plot_BDT_Templates(thechannellist[i]); //Plot the BDT distributions of MC & pseudo-data templates
 
         //MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
     }
 
-    //MVAtool->Plot_BDT_Templates_allchannels(); //Sum of 4 channels
+    MVAtool->Plot_BDT_Templates_allchannels(); //Sum of 4 channels
     //MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
 }
