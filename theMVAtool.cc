@@ -252,10 +252,13 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
 //--- Apply cuts during training
     TString tmp = "";
     //Adds additionnal cuts. Works with simple TStrings
-    if(cut_MET != "")	 		{tmp = "METpt"     + cut_MET;}
-	if(cut_mTW != "") 			{tmp+= " && mTW"   + cut_mTW;}
-	if(cut_NJets != "") 		{tmp+= " && NJets" + cut_NJets;}
-	if(cut_NBJets != "")		{tmp+= " && NBJets"+ cut_NBJets;}
+    if(cut_MET != "")	 		{tmp = "METpt" + cut_MET;}
+	if(cut_MET != "" && cut_mTW != "") {tmp += " && ";}
+	if(cut_mTW != "") 			{tmp+= "mTW"   + cut_mTW;}
+	if((cut_MET != "" || cut_mTW != "") && cut_NJets != "") {tmp += " && ";}
+	if(cut_NJets != "") 		{tmp+= "NJets" + cut_NJets;}
+	if((cut_MET != "" || cut_mTW != "" || cut_NBJets != "") && cut_NBJets != "") {tmp += " && ";}
+	if(cut_NBJets != "")		{tmp+= "NBJets"+ cut_NBJets;}
 
 	if(tmp != "") {mycuts+= tmp; mycutb+= tmp;}
 
@@ -606,7 +609,7 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 //------------------------------------------------------------
 //------------------------------------------------------------
 
-				weight*= luminosity_rescale; //Re-scale to desired luminosity
+				if(!sample_list[isample].Contains("Data")) {weight*= luminosity_rescale;} //Re-scale to desired luminosity, unless it's data
 
 				// --- Return the MVA outputs and fill into histograms
 				if (template_name == "BDT")
@@ -626,23 +629,30 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 					else if(i_channel == 3) {hist_eee->Fill( mTW, weight);}
 					else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<" : problem"<<endl;}
 				}
-
-				hist_uuu->Sumw2();
 			}
 
-			if(sample_list[isample] == "Fakes") {cout<<"Bin 5 error = "<<hist_uuu->GetBinError(5)<<endl;}
+			//if(sample_list[isample] == "Fakes") {cout<<"Bin 5 error = "<<hist_uuu->GetBinError(5)<<endl;} //For error verification
 
 			//If fakes from data, re-scale histos to expected MC fake yields via function Compute_Fake_Ratio
 			std::pair<double, double> fake_ratios;
 			if(fakes_from_data && sample_list[isample] == "Fakes" ) //Regardless of the template name / region
 			{
 				fake_ratios = Compute_Fake_Ratio();
+				//cout<<"ratio mu = "<<fake_ratios.first<<endl;
 
 				hist_uuu->Scale(fake_ratios.first); hist_eeu->Scale(fake_ratios.first);
 				hist_uue->Scale(fake_ratios.second); hist_eee->Scale(fake_ratios.second);
-				cout<<"ratio mu = "<<fake_ratios.first<<endl;
+
+				//Errors are scaled by 'ratio' rather than 'sqrt(ratio)' ! Need to correct that !
+				for(int ibin=1; ibin<hist_uuu->GetNbinsX()+1; ibin++)
+				{
+					hist_uuu->SetBinError(ibin, hist_uuu->GetBinError(ibin) /sqrt(fake_ratios.first));
+					hist_uue->SetBinError(ibin, hist_uue->GetBinError(ibin) /sqrt(fake_ratios.second));
+					hist_eeu->SetBinError(ibin, hist_eeu->GetBinError(ibin) /sqrt(fake_ratios.first));
+					hist_eee->SetBinError(ibin, hist_eee->GetBinError(ibin) /sqrt(fake_ratios.second));
+				}
 			}
-			if(sample_list[isample] == "Fakes") {cout<<" After : Bin 5 error = "<<hist_uuu->GetBinError(5)<<endl;}
+			//if(sample_list[isample] == "Fakes") {cout<<" After : Bin 5 error = "<<hist_uuu->GetBinError(5)<<endl;} //Verify that post-ratio error is correct
 
 			// --- Write histograms
 			file_output->cd();
@@ -1015,7 +1025,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 					else if(i_channel == 3 && reader->EvaluateMVA( "BDT_eee"+filename_suffix+" method") > cut) 	{continue;}
 				}
 
-				weight*= luminosity_rescale; //Re-scale to desired luminosity
+				if(!sample_list[isample].Contains("Data")) {weight*= luminosity_rescale;} //Re-scale to desired luminosity
 
 				tree_control->Fill();
 

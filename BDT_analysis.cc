@@ -17,10 +17,10 @@ int main()
     //Can use the functions to set these cuts to the CR & SR defined values
     //Ex : string set_MET_cut = ">30"; To dis-activate cut, just set it to "";
 //-----------------------
-    TString set_MET_cut = ">30";
+    TString set_MET_cut = "";
     TString set_mTW_cut = "";
     TString set_NJets_cut = ">1"; //ONLY STRICT SIGN (> / < / ==)
-    TString set_NBJets_cut = ">0"; //ONLY STRICT SIGN (> / < / ==)
+    TString set_NBJets_cut = "==1"; //ONLY STRICT SIGN (> / < / ==)
 
 //-------------------
     //Used to re-scale every weights in the code by a lumi factor. (NB : default value is 2015 / 7.6.x lumi = 2.26 !)
@@ -154,15 +154,15 @@ int main()
     //#############################################
     for(int i=0; i<thechannellist.size(); i++)
     {
-        //MVAtool->Train_Test_Evaluate(thechannellist[i]);
+        MVAtool->Train_Test_Evaluate(thechannellist[i]);
     }
 
     //#############################################
     //  READING --- TEMPLATES CREATION
     //#############################################
     TString template_name = "BDT"; //Either 'BDT' or 'mTW'
-    //MVAtool->Read(template_name, fakes_from_data, real_data_templates);
-    //if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
+    MVAtool->Read(template_name, fakes_from_data, real_data_templates);
+    if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
     //#############################################
     //  CONTROL TREES & HISTOGRAMS
