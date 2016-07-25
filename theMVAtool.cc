@@ -314,28 +314,41 @@ void theMVAtool::Train_Test_Evaluate(TString channel)
 std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 {
 	vector<TString> MC_fake_samples_list;
-	MC_fake_samples_list.push_back("DY");
-	MC_fake_samples_list.push_back("TT");
-	MC_fake_samples_list.push_back("WW");
+	int sample_list_size = sample_list.size();
+	//The MC fake samples are supposed to be the last 3 of the sample_list !
+	for(int isample = sample_list.size() - 3 ; isample < sample_list.size(); isample++)
+	{
+		if(!sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW")) {cout<<__LINE__<<" : wrong MC fake sample !"<<endl;}
+		else {MC_fake_samples_list.push_back(sample_list[isample].Data());}
+	}
 
 	//FAKES FROM MC
 	double integral_MC_fake_mu = 0;
 	double integral_MC_fake_el = 0;
+	float weight = 0; float i_channel = 9;
+
 	for(int i=0; i<MC_fake_samples_list.size(); i++)
 	{
 		TString inputfile = "Ntuples/FCNCNTuple_" + MC_fake_samples_list[i] + ".root";
 		TFile* file_fake = TFile::Open( inputfile.Data() );
 
 		TTree* tree = (TTree*) file_fake->Get("Default");
-		float weight = 0; float i_channel = 9;
+		weight = 0; i_channel = 9;
 
 		tree->SetBranchAddress("Weight", &weight);
 		tree->SetBranchAddress("Channel", &i_channel);
+
+		//Used for region selection -- stays always the same
+		tree->SetBranchAddress("NJets", &NJets);
+		tree->SetBranchAddress("NBJets", &NBJets);
 
 		for(int ientry=0; ientry<tree->GetEntries(); ientry++)
 		{
 			weight = 0; i_channel = 9;
 			tree->GetEntry(ientry);
+
+			//Change to : >= 1 jets / 0 b-tag when possible !
+			if(NJets < 2 || NBJets > 0) {continue;}
 
 			//Fake muon
 			if(i_channel == 0 || i_channel == 2)
@@ -357,16 +370,20 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 	TFile* file_fake = TFile::Open( inputfile.Data() );
 
 	TTree* tree = (TTree*) file_fake->Get("Default");
-	double weight = 0; double i_channel = 9;
-
 	tree->SetBranchAddress("Weight", &weight);
 	tree->SetBranchAddress("Channel", &i_channel);
+
+	//Used for region selection -- stays always the same
+	tree->SetBranchAddress("NJets", &NJets);
+	tree->SetBranchAddress("NBJets", &NBJets);
 
 	for(int ientry=0; ientry<tree->GetEntries(); ientry++)
 	{
 		weight = 0; i_channel = 9;
-
 		tree->GetEntry(ientry);
+
+		//Change to : >= 1 jets / 0 b-tag when possible !
+		if(NJets < 2 || NBJets > 0) {continue;}
 
 		//Fake muon
 		if(i_channel == 0 || i_channel == 2)
@@ -422,6 +439,7 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 	TString output_file_name = "outputs/Reader"+ filename_suffix + ".root";
 	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
 
+	TH1::SetDefaultSumw2();
 	TH1F *hist_BDT(0), *hist_BDTG(0);
 
 	reader = new TMVA::Reader( "!Color:!Silent" );
@@ -440,7 +458,6 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 	else {reader->AddVariable("NJets", &NJets);}
 	if(cut_NBJets.Contains("=")) {reader->AddSpectator( "NBJets", &NBJets);}
 	else {reader->AddVariable("NBJets", &NBJets);}
-
 
 
 	// --- Book the MVA methods
@@ -480,7 +497,7 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 
 			std::cout << "--- Select "<<sample_list[isample]<<" sample" << std::endl;
 
-			if(!fakes_from_data && isample <= (sample_list.size() - 3) ) //Don't reinitialize histos -> sum MC fakes !
+			if(fakes_from_data || (!fakes_from_data && isample <= (sample_list.size() - 3)) ) //Don't reinitialize histos -> sum MC fakes !
 			{
 				// Book output histograms
 				if (template_name == "BDT") //create histogram for each channel (-1 = bkg, +1 = signal)
@@ -497,10 +514,7 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 					hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0, 100 );
 					hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0, 100 );
 				}
-
-				hist_uuu->Sumw2(); hist_uue->Sumw2(); hist_eeu->Sumw2(); hist_eee->Sumw2();
 			}
-
 
 			TTree* tree(0);
 			TString tree_name = "";
@@ -597,7 +611,8 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 				// --- Return the MVA outputs and fill into histograms
 				if (template_name == "BDT")
 				{
-					if(i_channel == 0) {hist_uuu->Fill( reader->EvaluateMVA( "BDT_uuu"+filename_suffix+ " method"), weight);}					else if(i_channel == 1) {hist_uue->Fill( reader->EvaluateMVA( "BDT_uue"+filename_suffix+" method"), weight);}
+					if(i_channel == 0) {hist_uuu->Fill( reader->EvaluateMVA( "BDT_uuu"+filename_suffix+ " method"), weight);}
+					else if(i_channel == 1) {hist_uue->Fill( reader->EvaluateMVA( "BDT_uue"+filename_suffix+" method"), weight);}
 					else if(i_channel == 2) {hist_eeu->Fill( reader->EvaluateMVA( "BDT_eeu"+filename_suffix+" method"), weight);}
 					else if(i_channel == 3) {hist_eee->Fill( reader->EvaluateMVA( "BDT_eee"+filename_suffix+" method"), weight);}
 					else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<" : problem"<<endl;}
@@ -611,17 +626,23 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 					else if(i_channel == 3) {hist_eee->Fill( mTW, weight);}
 					else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<" : problem"<<endl;}
 				}
+
+				hist_uuu->Sumw2();
 			}
+
+			if(sample_list[isample] == "Fakes") {cout<<"Bin 5 error = "<<hist_uuu->GetBinError(5)<<endl;}
 
 			//If fakes from data, re-scale histos to expected MC fake yields via function Compute_Fake_Ratio
 			std::pair<double, double> fake_ratios;
-			if(fakes_from_data) {fake_ratios = Compute_Fake_Ratio();}
-
-			if(template_name == "mTW" && fakes_from_data && sample_list[isample].Contains("Fakes") )
+			if(fakes_from_data && sample_list[isample] == "Fakes" ) //Regardless of the template name / region
 			{
+				fake_ratios = Compute_Fake_Ratio();
+
 				hist_uuu->Scale(fake_ratios.first); hist_eeu->Scale(fake_ratios.first);
 				hist_uue->Scale(fake_ratios.second); hist_eee->Scale(fake_ratios.second);
+				cout<<"ratio mu = "<<fake_ratios.first<<endl;
 			}
+			if(sample_list[isample] == "Fakes") {cout<<" After : Bin 5 error = "<<hist_uuu->GetBinError(5)<<endl;}
 
 			// --- Write histograms
 			file_output->cd();
@@ -629,16 +650,16 @@ void theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_dat
 			//NB : theta name convention = <observable>__<process>[__<uncertainty>__(plus,minus)]
 			TString output_histo_name = "";
 			TString syst_name = "";
-			if(syst_list[isyst] != "") syst_name = "__" + syst_list[isyst];
+			if(syst_list[isyst] != "") {syst_name = "__" + syst_list[isyst];}
 
 			TString sample_name = sample_list[isample];
-			if(real_data) {sample_name = "DATA";} //THETA CONVENTION
+			if(real_data && sample_list[isample] == "Data") {sample_name = "DATA";} //THETA CONVENTION
 
 			if(!fakes_from_data && (isample == (sample_list.size() - 3) || isample == (sample_list.size() - 2)) ) //If sample is MC fake, don't reinitialize histos -> sum 3 MC fake samples
 			{
 				continue;
 			}
-			else if((!fakes_from_data && isample == (sample_list.size() - 1)) || fakes_from_data) //Last fake MC sample or data-driven fakes -> write fake histo w/ special name (for THETA)
+			else if( (!fakes_from_data && isample == (sample_list.size() - 1)) || (fakes_from_data && sample_list[isample] == "Fakes") ) //Last fake MC sample or data-driven fakes -> write fake histo w/ special name (for THETA)
 			{
 				if (template_name == "BDT")
 				{
@@ -1221,6 +1242,7 @@ void theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_fro
 				int bin_content = h_sum->GetBinContent(i+1); //cout<<"Initial content = "<<bin_content<<endl;
 				int new_bin_content = therand.Poisson(bin_content); //cout<<"New content = "<<new_bin_content<<endl;
 				h_sum->SetBinContent(i+1, new_bin_content);
+				h_sum->SetBinError(i+1, sqrt(new_bin_content));
 			}
 
 			file->cd();
@@ -1289,6 +1311,7 @@ void theMVAtool::Generate_PseudoData_Histograms_For_Templates(TString template_n
 			int bin_content = h_sum->GetBinContent(i+1); //cout<<"bin "<<i+1<<endl; cout<<"initial content = "<<bin_content<<endl;
 			int new_bin_content = therand.Poisson(bin_content); //cout<<"new content = "<<new_bin_content<<endl;
 			h_sum->SetBinContent(i+1, new_bin_content);
+			h_sum->SetBinError(i+1, sqrt(new_bin_content));
 		}
 
 		file->cd();
