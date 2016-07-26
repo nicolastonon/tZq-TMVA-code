@@ -43,7 +43,7 @@ public :
 
 //Methods
 	theMVAtool();
-	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>);
+	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, int);
 	~theMVAtool(){delete reader;};
 
 	void Set_Variable_Cuts(TString, TString, TString, TString); //Set the cut values on some variables (MET, ...)
@@ -52,14 +52,13 @@ public :
 	std::pair<double, double> Compute_Fake_Ratio(); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
 	void Read(TString, bool, bool); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
-	void Create_Control_Trees(bool, bool, double); //Create new trees with events passing the cuts
+	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool); //Use the trees created with Create_Control_Trees to create histograms in same file
 	void Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
 	void Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 
 	void Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
-	void Plot_BDT_Templates_allchannels(TString);
-	void Plot_BDT_Templates(TString, TString);
+	void Plot_Templates(TString, TString, bool);
 
 //Members
 	TMVA::Reader *reader;

@@ -2,8 +2,8 @@
 
 # $< = name of first dependancy
 # $@ = name of target ("main")
-# -c indique au compileur de ne pas linker
-# -o spÃ©cifie la cible
+# -c ask the compiler not to link
+# -o specify target
 #
 
 #Define variables
