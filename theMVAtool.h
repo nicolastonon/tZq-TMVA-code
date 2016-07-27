@@ -3,6 +3,25 @@
 #ifndef theMVAtool_h
 #define theMVAtool_h
 
+/* BASH COLORS */
+#define RST  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+#define FRED(x) KRED x RST
+#define FGRN(x) KGRN x RST
+#define FYEL(x) KYEL x RST
+#define FBLU(x) KBLU x RST
+#define FMAG(x) KMAG x RST
+#define FCYN(x) KCYN x RST
+#define FWHT(x) KWHT x RST
+#define BOLD(x) "\x1B[1m" x RST
+#define UNDL(x) "\x1B[4m" x RST
+
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
@@ -43,46 +62,35 @@ public :
 
 //Methods
 	theMVAtool();
-	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, int);
+	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, std::vector<TString>, std::vector<TString>, int);
 	~theMVAtool(){delete reader;};
 
-	void Set_Variable_Cuts(TString, TString, TString, TString); //Set the cut values on some variables (MET, ...)
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
-	void Train_Test_Evaluate(TString); //Train, Test, Evaluate BDT with MC samples
+	void Train_Test_Evaluate(TString, TString); //Train, Test, Evaluate BDT with MC samples
 	std::pair<double, double> Compute_Fake_Ratio(); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
-	void Read(TString, bool, bool); //Produce templates of BDT, mTW (or else ?)
+	int Read(TString, bool, bool); //Produce templates of BDT, mTW (or else ?)
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool); //Use the trees created with Create_Control_Trees to create histograms in same file
-	void Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
-	void Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
+	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
+	int Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 
-	void Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
-	void Plot_Templates(TString, TString, bool);
+	int Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
+	int Plot_Templates(TString, TString, bool);
 
 //Members
 	TMVA::Reader *reader;
 
 	std::vector<TString> sample_list;
 	std::vector<TString> data_list;
-	std::vector<TString> var_list;
-	std::vector<TString> cut_var_list;
+	std::vector<TString> var_list; std::vector<float> vec_variables; //Contains as many floats as there are variables in var_list
 	std::vector<TString> syst_list;
 	std::vector<TString> channel_list;
-
-	std::vector<float> vec_variables; //Contains as many floats as there are variables in var_list
-	std::vector<float> vec_cut_variables; //Contains as many floats as there are variables in cut_var_list
+	std::vector<TString> v_cut_name; std::vector<TString> v_cut_def; std::vector<float> v_cut_float;
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram
 	double luminosity_rescale;
-
-	float METpt; float mTW; float NJets; float NBJets;
-
-	TString cut_MET;
-	TString cut_mTW;
-	TString cut_NJets;
-	TString cut_NBJets;
 
 	TString filename_suffix;
 

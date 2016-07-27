@@ -4,6 +4,16 @@ using namespace std;
 
 int main()
 {
+    //-------------------
+        std::vector<TString> thesamplelist;
+        std::vector<TString > thevarlist; //Variables used in BDT
+    	std::vector<TString > thesystlist;
+        std::vector<TString > thechannellist;
+        std::vector<TString > set_v_cut_name;
+        std::vector<TString > set_v_cut_def;
+        std::vector<int> v_color; //sample <-> color
+    //-------------------
+
 //-----------------------------------------------------------------------------------------
 //                 _                       _     _
 //    ___    ___  | |_      ___    _ __   | |_  (_)   ___    _ __    ___
@@ -13,20 +23,20 @@ int main()
 //                                |_|
 //-----------------------------------------------------------------------------------------
 
-    //Specify here the cuts that you wish to apply (propagated to training, reading, ...)
-    //Can use the functions to set these cuts to the CR & SR defined values
-    //Ex : string set_MET_cut = ">30"; To dis-activate cut, just set it to "";
-//-----------------------
-    TString set_MET_cut = "";
-    TString set_mTW_cut = "";
-    TString set_NJets_cut = ""; //ONLY STRICT SIGN (> / < / ==)
-    TString set_NBJets_cut = ""; //ONLY STRICT SIGN (> / < / ==)
-
+//Specify here the cuts that you wish to apply (propagated to training, reading, ...)
+//To dis-activate cut, just set it to "";
+//NB : * WZ CR --> >0j & ==0bj // * ttZ CR --> >1j & >1bj // * SR ---> >0j & ==1bj // ...
 //-------------------
+    set_v_cut_name.push_back("METpt");  set_v_cut_def.push_back("");
+    set_v_cut_name.push_back("mTW");    set_v_cut_def.push_back("");
+    set_v_cut_name.push_back("NJets");  set_v_cut_def.push_back(">0");
+    set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0");
+//-------------------
+
     //Used to re-scale every weights in the code by a lumi factor. (NB : default value is 2015 / 7.6.x lumi = 2.26 !)
     double set_luminosity = 2.26; //in fb-1
 
-    //Binning to be used for template production
+    //Binning to be used for *template* production
     int nofbin_templates = 5;
 
     //Use MC fakes or data-driven fakes)
@@ -34,6 +44,9 @@ int main()
 
     //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
     bool real_data_templates = false;
+
+    //If true, creates templates for different regions & sets of cuts --> Optimization studies. Cuts can be tuned below, in the "Optimization" part.
+    bool do_optimization_scan = false; //Not properly implemented in the main() yet !
 
 //-----------------------------------------------------------------------------------------
 //    _   _         _
@@ -43,15 +56,6 @@ int main()
 //   |_| |_| |___/  \__| |___/
 //
 //-----------------------------------------------------------------------------------------
-
-//-------------------
-    std::vector<TString> thesamplelist;
-    std::vector<TString > thevarlist; //Variables used in BDT
-    std::vector<TString > thecutvarlist; //Variables not used in BDT - only to cut
-	std::vector<TString > thesystlist;
-	std::vector<TString > thechannellist;
-    std::vector<int> v_color; //sample <-> color
-//-------------------
 
 //-------------------
     thechannellist.push_back("uuu");
@@ -85,20 +89,13 @@ int main()
 //-------------------
 
 //-------------------
-    //Can cut on these variables --> Need to treat them separately in code
-    //NB : the handling of these 4 variables is hard-coded (contrary to the others). If add another "cut var", need to propagate it properly in the code
-    thecutvarlist.push_back("METpt");
-    thecutvarlist.push_back("mTW");
-    thecutvarlist.push_back("NJets");
-    thecutvarlist.push_back("NBJets");
-//-------------------
-    //thevarlist.push_back("m3l"); //MUST BE IN FIRST POSITION -- NB : not implemented in ttZ yet
+    thevarlist.push_back("m3l");
     thevarlist.push_back("ZCandMass");
+    thevarlist.push_back("btagDiscri"); //NB : for now, if NBJets == 0 --> btagDiscri is constant --> Need to desactivate it !
     thevarlist.push_back("deltaPhilb");
     thevarlist.push_back("Zpt");
     thevarlist.push_back("ZEta");
     thevarlist.push_back("asym");
-    thevarlist.push_back("btagDiscri");
     thevarlist.push_back("etaQ");
     thevarlist.push_back("AddLepPT");
     thevarlist.push_back("AddLepETA");
@@ -106,11 +103,11 @@ int main()
     thevarlist.push_back("LeadJetEta");
     thevarlist.push_back("dPhiZMET");
     thevarlist.push_back("dPhiZAddLep");
-    thevarlist.push_back("dRAddLepBFromTop");
     thevarlist.push_back("dRZAddLep");
     thevarlist.push_back("ptQ");
     thevarlist.push_back("dRjj");
     //thevarlist.push_back("mtop"); // mtop not properly reconstructed yet
+    //thevarlist.push_back("dRAddLepBFromTop");
     //thevarlist.push_back("dRZTop");
     //thevarlist.push_back("TopPT");
     //NB : treat leaves/variables "Weight" and "Channel" separately
@@ -120,7 +117,7 @@ int main()
     thesystlist.push_back(""); //Always keep it activated
 
     //Affect the variable distributions
-    thesystlist.push_back("JER__plus");
+    /*thesystlist.push_back("JER__plus");
     thesystlist.push_back("JER__minus");
     thesystlist.push_back("JES__plus");
     thesystlist.push_back("JES__minus");
@@ -133,7 +130,7 @@ int main()
     thesystlist.push_back("MuEff__plus");
     thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus");
-    thesystlist.push_back("EleEff__minus");
+    thesystlist.push_back("EleEff__minus");*/
 //-------------------
 
 //-----------------------------------------------------------------------------------------
@@ -144,13 +141,12 @@ int main()
 //   |_|    \__,_| |_| |_|  \___|  \__| |_|  \___/  |_| |_|    \___|  \__,_| |_| |_| |___/
 //
 //-----------------------------------------------------------------------------------------
-    //(NB : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the same variable list)
+    //(NB : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the full variable list)
 
     //#############################################
     //  CREATE INSTANCE OF CLASS & INITIALIZE
     //#############################################
-    theMVAtool* MVAtool = new theMVAtool(thevarlist, thecutvarlist, thesamplelist, thesystlist, thechannellist, v_color, nofbin_templates);
-    MVAtool->Set_Variable_Cuts(set_MET_cut, set_mTW_cut, set_NJets_cut, set_NBJets_cut); if(MVAtool->stop_program) {return 1;}
+    theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, nofbin_templates); if(MVAtool->stop_program) {return 1;}
     MVAtool->Set_Luminosity(set_luminosity);
 
     //#############################################
@@ -158,14 +154,15 @@ int main()
     //#############################################
     for(int i=0; i<thechannellist.size(); i++)
     {
-        //MVAtool->Train_Test_Evaluate(thechannellist[i]);
+        TString bdt_type = "BDT"; //'BDT' or 'BDTttZ'
+        //MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
     }
 
     //#############################################
     //  READING --- TEMPLATES CREATION
     //#############################################
-    TString template_name = "BDT"; //Either 'BDT' or 'mTW' or 'm3l'
-    //MVAtool->Read(template_name, fakes_from_data, real_data_templates);
+    TString template_name = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
+    MVAtool->Read(template_name, fakes_from_data, real_data_templates);
 
     if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
@@ -176,7 +173,7 @@ int main()
     bool cut_on_BDT = false; bool use_pseudodata_CR_plots = false;
 
     //MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR, use_pseudodata_CR_plots);
-    //MVAtool->Create_Control_Histograms(fakes_from_data);
+    //MVAtool->Create_Control_Histograms(fakes_from_data); //NB : very long ! You should only activate necessary syst./var. !
     if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
     //#############################################
@@ -185,10 +182,107 @@ int main()
     for(int i=0; i<thechannellist.size(); i++)
     {
         //MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
-        //MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the BDT distributions of MC & pseudo-data templates
+        MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the BDT distributions of MC & pseudo-data templates
     }
     //MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
-    //MVAtool->Plot_Templates("", template_name, true); //Sum of 4 channels
+    MVAtool->Plot_Templates("", template_name, true); //Sum of 4 channels
+
+
+//-------------------------------------------
+//     ___            _     _               _                 _     _
+//    / _ \   _ __   | |_  (_)  _ __ ___   (_)  ____   __ _  | |_  (_)   ___    _ __
+//   | | | | | '_ \  | __| | | | '_ ` _ \  | | |_  /  / _` | | __| | |  / _ \  | '_ \
+//   | |_| | | |_) | | |_  | | | | | | | | | |  / /  | (_| | | |_  | | | (_) | | | | |
+//    \___/  | .__/   \__| |_| |_| |_| |_| |_| /___|  \__,_|  \__| |_|  \___/  |_| |_|
+//           |_|
+//-------------------------------------------
+/*
+    //Use different cut vectors
+    scan_v_cut_name.push_back("METpt");  scan_v_cut_def.push_back("");
+    scan_v_cut_name.push_back("mTW");    scan_v_cut_def.push_back("");
+    scan_v_cut_name.push_back("NJets");  scan_v_cut_def.push_back("");
+    scan_v_cut_name.push_back("NBJets"); scan_v_cut_def.push_back("");
+
+    int i_NJets = -1; int i_NBJets = -1;
+    //Find the index of each cut variable needed for the scan
+    for(int i=0; i<v_cut_name.size(); i++)
+    {
+        if(v_cut_name[i] == "NJets") {i_NJets = i; break;}
+        else if(v_cut_name[i] == "NJets") {i_NBJets = i; break;}
+    }
+*/
+    if(do_optimization_scan)
+    {
+
+        for(int iscan = 0; iscan < 1; iscan++)
+        {
+            //#############################################
+            //               WZ CR Templates
+            //#############################################
+            theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, nofbin_templates); if(MVAtool_WZ->stop_program) {return 1;}
+            MVAtool_WZ->Set_Luminosity(set_luminosity);
+
+            TString template_name_WZ = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
+            MVAtool_WZ->Read(template_name_WZ, fakes_from_data, real_data_templates);
+            if(!real_data_templates) {MVAtool_WZ->Generate_PseudoData_Histograms_For_Templates(template_name_WZ);}
+
+            for(int i=0; i<thechannellist.size(); i++)
+            {
+                MVAtool_WZ->Plot_Templates(thechannellist[i], template_name_WZ, false); //Plot the BDT distributions of MC & pseudo-data templates
+            }
+            MVAtool_WZ->Plot_Templates("", template_name_WZ, true); //Sum of 4 channels
+
+            MVAtool_WZ->~theMVAtool();
+
+            //#############################################
+            //               ttZ CR Templates
+            //#############################################
+            theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, nofbin_templates); if(MVAtool_ttZ->stop_program) {return 1;}
+            MVAtool_ttZ->Set_Luminosity(set_luminosity);
+
+            for(int i=0; i<thechannellist.size(); i++)
+            {
+                TString bdt_type_ttZ = "BDTttZ"; //'BDT' or 'BDTttZ'
+                MVAtool_ttZ->Train_Test_Evaluate(thechannellist[i], bdt_type_ttZ);
+            }
+
+            TString template_name_ttZ = "BDTttZ"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
+            MVAtool_ttZ->Read(template_name_ttZ, fakes_from_data, real_data_templates);
+            if(!real_data_templates) {MVAtool_ttZ->Generate_PseudoData_Histograms_For_Templates(template_name_ttZ);}
+
+            for(int i=0; i<thechannellist.size(); i++)
+            {
+                MVAtool_ttZ->Plot_Templates(thechannellist[i], template_name_ttZ, false); //Plot the BDT distributions of MC & pseudo-data templates
+            }
+            MVAtool_ttZ->Plot_Templates("", template_name_ttZ, true); //Sum of 4 channels
+
+            MVAtool_ttZ->~theMVAtool();
+
+            //#############################################
+            //               tZq SR Templates
+            //#############################################
+            theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, nofbin_templates); if(MVAtool_tZq->stop_program) {return 1;}
+            MVAtool_tZq->Set_Luminosity(set_luminosity);
+
+            for(int i=0; i<thechannellist.size(); i++)
+            {
+                TString bdt_type_tZq = "BDT"; //'BDT' or 'BDTttZ'
+                MVAtool_tZq->Train_Test_Evaluate(thechannellist[i], bdt_type_tZq);
+            }
+
+            TString template_name_tZq = "BDT"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
+            MVAtool_tZq->Read(template_name_tZq, fakes_from_data, real_data_templates);
+            if(!real_data_templates) {MVAtool_tZq->Generate_PseudoData_Histograms_For_Templates(template_name_tZq);}
+
+            for(int i=0; i<thechannellist.size(); i++)
+            {
+                MVAtool_tZq->Plot_Templates(thechannellist[i], template_name_tZq, false); //Plot the BDT distributions of MC & pseudo-data templates
+            }
+            MVAtool_tZq->Plot_Templates("", template_name_tZq, true); //Sum of 4 channels
+
+            MVAtool_tZq->~theMVAtool();
+        }
+    }
 
 
 //-------------------------------------------
@@ -199,4 +293,5 @@ int main()
 //   |_____| |_| \_| |____/
 //
 //-------------------------------------------
+    return 0;
 }

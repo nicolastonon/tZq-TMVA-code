@@ -128,7 +128,9 @@ TString Convert_Sign_To_Word(TString ts_in)
 {
 	TString sign;
 
-	if(ts_in.Contains(">")) {sign = "Min";}
+	if(ts_in.Contains("<=")) {sign = "MaxEq";}
+	else if(ts_in.Contains(">=")) {sign = "MinEq";}
+	else if(ts_in.Contains(">")) {sign = "Min";}
 	else if(ts_in.Contains("<")) {sign = "Max";}
 	else if(ts_in.Contains("==")) {sign = "Eq";}
 
