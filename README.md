@@ -34,8 +34,8 @@ _____________________________________________________________________________
 /!\ Only make sure to change the "LFLAGS" line in Makefile, so that it looks for the MVA libraries in *your* folder !
 
 /!\ : The code is mostly automatized ---> The most important thing before you execute the code is to make sure you configured the main() correctly to do what you want !
-    - The options' purposes should be pretty straightforward, but make sure you are consistant within your choices !
-    Ex : if you're interested in BDT templates in the ttZ CR --> Apply cuts corresponding to the SR, set "bdt_type = BDT_ttZ" for training and "template_name = "BDT_ttZ" for Reading, etc. !
+- The options' purposes should be pretty straightforward, but make sure you are consistant within your choices !
+Ex : if you're interested in BDT templates in the ttZ CR --> Apply cuts corresponding to the SR, set "bdt_type = BDT_ttZ" for training and "template_name = "BDT_ttZ" for Reading, etc. !
 _____________________________________________________________________________
 ### BDT_analysis.cc : Configuration, int main(), function calls ###
 
@@ -67,6 +67,8 @@ _____________________________________________________________________________
 * Read() : performs the Reading. Apply the cuts. Creates the templates (in "outputs/Reader_TEMPLATENAME_CUTNAMES.root").
     - NB : possible to choose b/w "BDT", "BDTttZ", "mTW" or "m3l" templates for now.
     - NB : if fakes_from_data is true, calls Compute_Fake_Ratio() to re-scale the data-driven fakes to the MC fakes yield --> for theta convergence mainly.
+    - NB : if fakes_summed_channels is true, sums channels uuu/eeu & eee/uue for DD-fakes sample => ~ double the stat. ! (Making the hypothesis that the template behavior is almost entirely depending on the flavour of the 3rd lepton).
+    - NB : if real_data_templates is false, doesn't run on the Data sample, and calls pseudodata function.
 * Generate_PseudoData_Histograms_For_Templates() : sums all MC templates in the output file of Read(), generates pseudo-data histograms from them, and writes them in the same file under name "DATA" (theta convention).
 
 //--- Control Trees & Histograms

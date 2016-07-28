@@ -1,6 +1,8 @@
 #include "theMVAtool.h"
 #include "Func_other.h"
 
+#include <cassert> 	//Can be used to terminate program if argument is not true. Ex : assert(test > 0 && "Error message");
+
 #include "TLegend.h"
 #include "TLine.h"
 #include "THStack.h"
@@ -502,10 +504,9 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			TTree* tree(0);
 			TString tree_name = "";
 
-			//For some systematics, need a different tree (many variables change)
-			if(syst_list[isyst]== "JER__plus" || syst_list[isyst] == "JER__minus" || syst_list[isyst]== "JES__plus" || syst_list[isyst] == "JES__minus") {tree = (TTree*) file_input->Get(syst_list[isyst].Data());}
+			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
+			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") ) {tree = (TTree*) file_input->Get(syst_list[isyst].Data());}
 			else {tree = (TTree*) file_input->Get("Default");}
-			//cout<<__LINE__<<endl;
 
 			// Prepare the event tree
 			for(int i=0; i<var_list.size(); i++)
@@ -519,17 +520,9 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			float i_channel; tree->SetBranchAddress("Channel", &i_channel);
 			float weight;
-			//For some systematics, only the weight changes
+			//For all other systematics, only the events weights change
 			if(syst_list[isyst] == "" || syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES"))	{tree->SetBranchAddress("Weight", &weight);}
-			else if(syst_list[isyst] == "PU__plus") 		tree->SetBranchAddress("PU__plus", &weight);
-			else if(syst_list[isyst] == "PU__minus")		tree->SetBranchAddress("PU__minus", &weight);
-			else if(syst_list[isyst] == "Q2__plus") 		tree->SetBranchAddress("Q2__plus", &weight);
-			else if(syst_list[isyst] == "Q2__minus") 		tree->SetBranchAddress("Q2__minus", &weight);
-			else if(syst_list[isyst] == "MuEff__plus") 		tree->SetBranchAddress("MuEff__plus", &weight);
-			else if(syst_list[isyst] == "MuEff__minus") 	tree->SetBranchAddress("MuEff__minus", &weight);
-			else if(syst_list[isyst] == "EleEff__plus") 	tree->SetBranchAddress("EleEff__plus", &weight);
-			else if(syst_list[isyst] == "EleEff__minus")	tree->SetBranchAddress("EleEff__minus", &weight);
-			else {cout<<BOLD(FRED("ERROR : Wrong systematic name"))<<endl;}
+			else {tree->SetBranchAddress(syst_list[isyst].Data(), &weight);}
 
 			std::cout << "--- Processing: " << tree->GetEntries() << " events" << std::endl;
 
@@ -918,11 +911,13 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			tree_control->Branch("Weight", &weight, "weight/F"); //Give it the same name regardless of the systematic, since we create a separate tree for each syst anyway
 			tree_control->Branch("Channel", &i_channel, "i_channel/F");
 
-			//For some systematics, need a different tree (many variables change)
-			if(syst_list[isyst]== "JER__plus" || syst_list[isyst] == "JER__minus" || syst_list[isyst]== "JES__plus" || syst_list[isyst] == "JES__minus") {tree = (TTree*) file_input->Get(syst_list[isyst].Data());}
+
+
+			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
+			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") ) {tree = (TTree*) file_input->Get(syst_list[isyst].Data());}
 			else {tree = (TTree*) file_input->Get("Default");}
 
-			// Prepare the event tree
+			// SetBranchAddress
 			for(int i=0; i<var_list.size(); i++)
 			{
 				tree->SetBranchAddress(var_list[i].Data(), &vec_variables[i]);
@@ -931,19 +926,11 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			{
 				tree->SetBranchAddress(v_cut_name[i].Data(), &v_cut_float[i]);
 			}
-
 			tree->SetBranchAddress("Channel", &i_channel);
+			//For all other systematics, only the events weights change
+			if(syst_list[isyst] == "" || syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES"))	{tree->SetBranchAddress("Weight", &weight);}
+			else {tree->SetBranchAddress(syst_list[isyst].Data(), &weight);}
 
-			//For some systematics, only the weight changes
-			if(syst_list[isyst] == "PU__plus") tree->SetBranchAddress("PU__plus", &weight);
-			else if(syst_list[isyst] == "PU__minus") tree->SetBranchAddress("PU__minus", &weight);
-			else if(syst_list[isyst] == "Q2__plus") tree->SetBranchAddress("Q2__plus", &weight);
-			else if(syst_list[isyst] == "Q2__minus") tree->SetBranchAddress("Q2__minus", &weight);
-			else if(syst_list[isyst] == "MuEff__plus") tree->SetBranchAddress("MuEff__plus", &weight);
-			else if(syst_list[isyst] == "MuEff__minus") tree->SetBranchAddress("MuEff__minus", &weight);
-			else if(syst_list[isyst] == "EleEff__plus") tree->SetBranchAddress("EleEff__plus", &weight);
-			else if(syst_list[isyst] == "EleEff__minus") tree->SetBranchAddress("EleEff__minus", &weight);
-			else tree->SetBranchAddress("Weight", &weight);
 
 			// --- Event loop
 			for(int ievt=0; ievt<tree->GetEntries(); ievt++)
@@ -1951,3 +1938,548 @@ int theMVAtool::Plot_Templates(TString channel, TString template_name, bool allc
 
 	delete c1; delete leg; return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//    _____   _____   ____    _____   ___   _   _    ____
+//   |_   _| | ____| / ___|  |_   _| |_ _| | \ | |  / ___|
+//     | |   |  _|   \___ \    | |    | |  |  \| | | |  _
+//     | |   | |___   ___) |   | |    | |  | |\  | | |_| |
+//     |_|   |_____| |____/    |_|   |___| |_| \_|  \____|
+//
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+/*
+//Draw control plots with histograms created with Create_Control_Histograms
+//Inspired from code PlotStack.C (cf. NtupleAnalysis/src/...)
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool allchannels)
+{
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	cout<<FYEL("--- Draw Contol Plots ---")<<endl;
+	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
+
+	TString input_file_name = "outputs/Control_Histograms" + filename_suffix + ".root";
+	TFile* f = 0;
+	f = TFile::Open( input_file_name );
+	if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+
+	TH1F *h_tmp = 0, *h_data = 0;
+	THStack *stack = 0;
+
+	//Variable names to be displayed on plots
+	TString title_MET = "Missing E_{T} [GeV]";
+
+	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
+	thechannellist.push_back("uuu");
+	thechannellist.push_back("uue");
+	thechannellist.push_back("eeu");
+	thechannellist.push_back("eee");
+	//thechannellist.push_back("");
+
+	//Canvas definition
+	Load_Canvas_Style();
+
+	//Want to plot ALL variables (inside the 2 different variable vectors !)
+	vector<TString> total_var_list;
+	for(int i=0; i<v_cut_name.size(); i++)
+	{
+		total_var_list.push_back(v_cut_name[i].Data());
+	}
+	for(int i=0; i<var_list.size(); i++)
+	{
+		total_var_list.push_back(var_list[i].Data());
+	}
+
+//---------------------
+//Loop on var > chan > sample > syst
+//Retrieve histograms, stack, compare, plot
+	for(int ivar=0; ivar<total_var_list.size(); ivar++)
+	{
+		TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+		c1->SetBottomMargin(0.3);
+
+		h_data = 0; stack = 0;
+		vector<TH1F*> v_MC_histo;
+
+		//Idem for each systematics
+		//NB : the inclusion of systematics in plots is completely hard-coded !! If want to add a syst., make sure to follow the exact same pattern as for the other in the code !
+		vector<TH1F*> v_MC_histo_JER_plus; vector<TH1F*> v_MC_histo_JER_minus;
+		vector<TH1F*> v_MC_histo_JES_plus; vector<TH1F*> v_MC_histo_JES_minus;
+		vector<TH1F*> v_MC_histo_PU_plus; vector<TH1F*> v_MC_histo_PU_minus;
+		vector<TH1F*> v_MC_histo_Q2_plus; vector<TH1F*> v_MC_histo_Q2_minus;
+		vector<TH1F*> v_MC_histo_MuEff_plus; vector<TH1F*> v_MC_histo_MuEff_minus;
+		vector<TH1F*> v_MC_histo_EleEff_plus; vector<TH1F*> v_MC_histo_EleEff_minus;
+		//vector<TH1F*> v_MC_histo_test_plus; vector<TH1F*> v_MC_histo_test_minus;
+
+		vector<TH1F*> v_MC_histo_syst_plus; vector<TH1F*> v_MC_histo_syst_minus;
+
+		//TLegend* qw = new TLegend(.80,.60,.95,.90);
+		TLegend* qw = new TLegend(.85,.7,0.965,.915);
+		qw->SetShadowColor(0);
+		qw->SetFillColor(0);
+		qw->SetLineColor(0);
+
+		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors
+
+		//---------------------------
+		//CREATE STACK (MC) AND DATA HISTO
+		//---------------------------
+
+		int niter_chan = 0; //is needed to know if histo must be cloned or added
+
+		for(int ichan=0; ichan<thechannellist.size(); ichan++)
+		{
+			if(!allchannels && channel != thechannellist[ichan]) {continue;}
+
+			for(int isample = 0; isample < sample_list.size(); isample++)
+			{
+				for(int isyst=0; isyst<syst_list.size(); isyst++)
+				{
+					bool isData = sample_list[isample].Contains("Data");
+
+					if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
+					else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
+
+					if((isData || sample_list[isample].Contains("Fakes")) && syst_list[isyst] != "") {continue;}
+					if(sample_list[isample].Contains("ttZ") && syst_list[isyst] == "Q2") {continue;} //bug
+
+					//cout<<thechannellist[ichan]<<" / "<<sample_list[isample]<<" / "<<syst_list[isyst]<<endl;
+
+					h_tmp = 0;
+
+					TString histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
+					if(syst_list[isyst] != "") {histo_name+= "_" + syst_list[isyst];}
+					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
+
+					h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
+					//cout<<"htmp = "<<h_tmp<<endl;
+					//cout<<__LINE__<<endl;
+
+					if(isData)
+					{
+						if(h_data == 0) {h_data = (TH1F*) h_tmp->Clone();}
+						else {h_data->Add(h_tmp);}
+						continue;
+					}
+
+					//SINCE WE USE ONLY ONE SAMPLE_LIST FOR DATA AND MC, IT MAKES A DIFFERENCE WHETHER DATA SAMPLE IS ACTIVATED OR NOT
+					//if indeed we also run on data, then for the following samples (= MC) we need to do iterator-= 1 in order to start the MC-dedicated vector at 0 !
+					if(sample_list[0].Contains("Data")) {isample = isample - 1;} //If the sample_list contains the data
+
+					h_tmp->SetFillStyle(1001);
+					h_tmp->SetFillColor(colorVector[isample]);
+					h_tmp->SetLineColor(colorVector[isample]);
+
+					if(!isData && syst_list[isyst] == "")
+					{
+						if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
+						else {v_MC_histo[isample]->Add(h_tmp);}
+
+					}
+					else if(!isData) // syst_list[isyst] != ""
+					{
+						if(niter_chan == 0)
+						{
+							if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "PU__plus") {v_MC_histo_PU_plus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "PU__minus") {v_MC_histo_PU_minus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "Q2__minus") {v_MC_histo_Q2_minus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "MuEff__plus") {v_MC_histo_MuEff_plus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus.push_back(h_tmp);}
+							else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus.push_back(h_tmp);}
+							else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
+						}
+						else
+						{
+							if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "PU__plus") {v_MC_histo_PU_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "PU__minus") {v_MC_histo_PU_minus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "Q2__minus") {v_MC_histo_Q2_minus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "MuEff__plus") {v_MC_histo_MuEff_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
+						}
+					}
+
+					if(sample_list[0].Contains("Data")) {isample = isample + 1;} //If we have de-incremented isample (cf. above), then we need to re-increment it here so we don't get an infinite loop !!
+
+				} //end syst loop
+
+			} //end sample loop
+
+			niter_chan++;
+
+		} //end channel loop
+
+		//Stack all the MC nominal histograms (contained in v_MC_histo)
+		for(int i=0; i<v_MC_histo.size(); i++)
+		{
+			if(stack == 0) {stack = new THStack; stack->Add(v_MC_histo[i]);}
+			else {stack->Add(v_MC_histo[i]);}
+
+			//NB : use (i+1) because sample_list also contains the data sample in first position
+			if(sample_list[i+1] != "WW" && sample_list[i+1] != "ZZ") {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");} //Need to keep ordered so that sample_list[i] <-> vector_MC[i]
+			//else if(sample_list[i] == "ttZ") {qw->AddEntry(v_MC_histo[i+1], "ttV" , "f");}
+			else if(sample_list[i+1] == "ZZ") {qw->AddEntry(v_MC_histo[i], "VV" , "f");}
+		}
+
+		if(h_data != 0) {qw->AddEntry(h_data, "Data" , "ep");}
+
+		if(!stack) {cout<<__LINE__<<" : stack is null"<<endl;}
+
+		//---------------------------
+		//DRAW HISTOS
+		//---------------------------
+
+		c1->cd();
+
+		//Set Yaxis maximum & min
+		if(h_data != 0 && stack != 0)
+		{
+			if(h_data->GetMaximum() > stack->GetMaximum() ) {stack->SetMaximum(h_data->GetMaximum()+0.3*h_data->GetMaximum());}
+			else stack->SetMaximum(stack->GetMaximum()+0.3*stack->GetMaximum());
+		}
+		stack->SetMinimum(0);
+
+		//Draw stack
+		if(stack != 0) {stack->Draw("HIST"); stack->GetXaxis()->SetLabelSize(0.0);}
+
+		//Draw data
+		if(h_data != 0)
+		{
+		  h_data->SetMarkerStyle(20);
+		  h_data->SetMarkerSize(1.2);
+		  h_data->SetLineColor(1);
+		  h_data->Draw("e0psame");
+		}
+		else {cout<<__LINE__<<" : h_data is null"<<endl;}
+
+		//--------------------------
+		//MC SYSTEMATICS PLOT
+		//--------------------------
+		//Create a temporary TH1F* in order to put all the systematics into it via SetBinError, then create a TGraphError from this TH1F*
+		//Also used to compute the Data/MC ratio
+		TH1F* histo_syst_MC = 0;
+		TH1F* histo_syst_MC_JER_plus = 0;  TH1F* histo_syst_MC_JER_minus = 0;
+		TH1F* histo_syst_MC_JES_plus = 0;  TH1F* histo_syst_MC_JES_minus = 0;
+		TH1F* histo_syst_MC_PU_plus = 0;  TH1F* histo_syst_MC_PU_minus = 0;
+		TH1F* histo_syst_MC_Q2_plus = 0;  TH1F* histo_syst_MC_Q2_minus = 0;
+		TH1F* histo_syst_MC_MuEff_plus = 0;  TH1F* histo_syst_MC_MuEff_minus = 0;
+		TH1F* histo_syst_MC_EleEff_plus = 0;  TH1F* histo_syst_MC_EleEff_minus = 0;
+		//TH1F* histo_syst_MC_test_plus = 0;  TH1F* histo_syst_MC_test_minus = 0;
+		for(unsigned int imc=0; imc < v_MC_histo.size(); imc++) //Clone or Add histograms
+		{
+			if(histo_syst_MC == 0) {histo_syst_MC = (TH1F*) v_MC_histo[imc]->Clone();}
+			else {histo_syst_MC->Add(v_MC_histo[imc]);}
+
+			//cout<<"v_MC_histo[imc]->GetBinContent(1) = "<<v_MC_histo[imc]->GetBinContent(1)<<endl;
+			//cout<<"histo_syst_MC->GetBinContent(1) = "<<histo_syst_MC->GetBinContent(1)<<endl;
+
+			if(v_MC_histo_JER_plus.size() == v_MC_histo.size()) //If the syst. is taken into account, then both vectors should have same size
+			{
+				if(histo_syst_MC_JER_plus == 0) {histo_syst_MC_JER_plus = (TH1F*) v_MC_histo_JER_plus[imc]->Clone();}
+				else {histo_syst_MC_JER_plus->Add(v_MC_histo_JER_plus[imc]);}
+				if(histo_syst_MC_JER_minus == 0) {histo_syst_MC_JER_minus = (TH1F*) v_MC_histo_JER_minus[imc]->Clone();}
+				else {histo_syst_MC_JER_minus->Add(v_MC_histo_JER_minus[imc]);}
+			}
+
+			if(v_MC_histo_JES_plus.size() == v_MC_histo.size())
+			{
+				if(histo_syst_MC_JES_plus == 0) {histo_syst_MC_JES_plus = (TH1F*) v_MC_histo_JES_plus[imc]->Clone();}
+				else {histo_syst_MC_JES_plus->Add(v_MC_histo_JES_plus[imc]);}
+				if(histo_syst_MC_JES_minus == 0) {histo_syst_MC_JES_minus = (TH1F*) v_MC_histo_JES_minus[imc]->Clone();}
+				else {histo_syst_MC_JES_minus->Add(v_MC_histo_JES_minus[imc]);}
+			}
+			if(v_MC_histo_PU_plus.size() == v_MC_histo.size())
+			{
+				if(histo_syst_MC_PU_plus == 0) {histo_syst_MC_PU_plus = (TH1F*) v_MC_histo_PU_plus[imc]->Clone();}
+				else {histo_syst_MC_PU_plus->Add(v_MC_histo_PU_plus[imc]);}
+				if(histo_syst_MC_PU_minus == 0) {histo_syst_MC_PU_minus = (TH1F*) v_MC_histo_PU_minus[imc]->Clone();}
+				else {histo_syst_MC_PU_minus->Add(v_MC_histo_PU_minus[imc]);}
+			}
+			if(v_MC_histo_Q2_plus.size() == v_MC_histo.size())
+			{
+				if(histo_syst_MC_Q2_plus == 0) {histo_syst_MC_Q2_plus = (TH1F*) v_MC_histo_Q2_plus[imc]->Clone();}
+				else {histo_syst_MC_Q2_plus->Add(v_MC_histo_Q2_plus[imc]);}
+				if(histo_syst_MC_Q2_minus == 0) {histo_syst_MC_Q2_minus = (TH1F*) v_MC_histo_Q2_minus[imc]->Clone();}
+				else {histo_syst_MC_Q2_minus->Add(v_MC_histo_Q2_minus[imc]);}
+			}
+			if(v_MC_histo_MuEff_plus.size() == v_MC_histo.size())
+			{
+				if(histo_syst_MC_MuEff_plus == 0) {histo_syst_MC_MuEff_plus = (TH1F*) v_MC_histo_MuEff_plus[imc]->Clone();}
+				else {histo_syst_MC_MuEff_plus->Add(v_MC_histo_MuEff_plus[imc]);}
+				if(histo_syst_MC_MuEff_minus == 0) {histo_syst_MC_MuEff_minus = (TH1F*) v_MC_histo_MuEff_minus[imc]->Clone();}
+				else {histo_syst_MC_MuEff_minus->Add(v_MC_histo_MuEff_minus[imc]);}
+			}
+			if(v_MC_histo_EleEff_plus.size() == v_MC_histo.size())
+			{
+				if(histo_syst_MC_EleEff_plus == 0) {histo_syst_MC_EleEff_plus = (TH1F*) v_MC_histo_EleEff_plus[imc]->Clone();}
+				else {histo_syst_MC_EleEff_plus->Add(v_MC_histo_EleEff_plus[imc]);}
+				if(histo_syst_MC_EleEff_minus == 0) {histo_syst_MC_EleEff_minus = (TH1F*) v_MC_histo_EleEff_minus[imc]->Clone();}
+				else {histo_syst_MC_EleEff_minus->Add(v_MC_histo_EleEff_minus[imc]);}
+			}
+		}
+		int nofbin = histo_syst_MC->GetNbinsX();
+
+		//Add up here the different errors (quadratically), for each bin separately
+		for(int ibin=1; ibin<nofbin+1; ibin++) //Start at bin 1
+		{
+			double err_up = 0;
+			double err_low = 0;
+			double tmp = 0;
+
+			//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding error
+			//--------------------------
+
+			//JER
+			if(histo_syst_MC_JER_plus != 0)
+			{
+				tmp = histo_syst_MC_JER_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+				tmp = histo_syst_MC_JER_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+			}
+			//JES
+			if(histo_syst_MC_JES_plus != 0)
+			{
+				tmp = histo_syst_MC_JES_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+				tmp = histo_syst_MC_JES_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+			}
+			//PU
+			if(histo_syst_MC_PU_plus != 0)
+			{
+				tmp = histo_syst_MC_PU_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+				tmp = histo_syst_MC_PU_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+			}
+			//Q2 - Scale
+			if(histo_syst_MC_Q2_plus != 0)
+			{
+				tmp = histo_syst_MC_Q2_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+				tmp = histo_syst_MC_Q2_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+			}
+			//Muon Efficiency SF
+			if(histo_syst_MC_MuEff_plus != 0)
+			{
+				tmp = histo_syst_MC_MuEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+				tmp = histo_syst_MC_MuEff_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+			}
+			//Electron Efficiency SF
+			if(histo_syst_MC_EleEff_plus != 0)
+			{
+				tmp = histo_syst_MC_EleEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+				tmp = histo_syst_MC_EleEff_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
+				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
+				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
+			}
+			//Luminosity //UPDATE TO 6.2% FOR 2016 ??
+			err_up+= pow(histo_syst_MC->GetBinContent(ibin)*0.025, 2);
+			err_low+= pow(histo_syst_MC->GetBinContent(ibin)*0.025, 2);
+			//MC Statistical uncertainty
+			err_up+= 	pow(histo_syst_MC->GetBinError(ibin), 2);
+			err_low+= 	pow(histo_syst_MC->GetBinError(ibin), 2);
+
+			//cout<<"histo_syst_MC->GetBinError(ibin) = "<<histo_syst_MC->GetBinError(ibin)<<endl;
+
+			//--------------------------
+			//Take sqrt
+			err_up = pow(err_up, 0.5); //cout<<"err_up = "<<err_up<<endl;
+			err_low = pow(err_low, 0.5); //cout<<"err_low = "<<err_low<<endl;
+
+			//Fill error vectors (one per bin)
+			v_eyh.push_back(err_up);
+			v_eyl.push_back(err_low);
+			v_exl.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
+			v_exh.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
+			v_x.push_back( (histo_syst_MC->GetXaxis()->GetBinLowEdge(nofbin+1) - histo_syst_MC->GetXaxis()->GetBinLowEdge(1) ) * ((ibin - 0.5)/nofbin) + histo_syst_MC->GetXaxis()->GetBinLowEdge(1));
+			v_y.push_back(histo_syst_MC->GetBinContent(ibin)); //see warning above about THStack and negative weights
+
+			//if(ibin > 1) {continue;} //display only first bin
+			//cout<<"x = "<<v_x[ibin-1]<<endl;    cout<<", y = "<<v_y[ibin-1]<<endl;    cout<<", eyl = "<<v_eyl[ibin-1]<<endl;    cout<<", eyh = "<<v_eyh[ibin-1]<<endl; cout<<", exl = "<<v_exl[ibin-1]<<endl;    cout<<", exh = "<<v_exh[ibin-1]<<endl;
+		}
+
+		//Pointers to vectors : need to give the adress of first element (all other elements then can be accessed iteratively)
+		double* eyl = &v_eyl[0];
+		double* eyh = &v_eyh[0];
+		double* exl = &v_exl[0];
+		double* exh = &v_exh[0];
+		double* x = &v_x[0];
+		double* y = &v_y[0];
+
+		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates
+		TGraphAsymmErrors* gr = 0;
+		gr = new TGraphAsymmErrors(nofbin,x,y,exl,exh,eyl,eyh);
+		gr->SetFillStyle(3005);
+		gr->SetFillColor(1);
+		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+		//cout << __LINE__ << endl;
+
+
+		//-------------------
+		//CAPTIONS
+		//-------------------
+
+		TLatex* latex = new TLatex();
+		latex->SetNDC();
+		latex->SetTextSize(0.04);
+		latex->SetTextAlign(31);
+		latex->DrawLatex(0.45, 0.95, "CMS Preliminary");
+
+		 // cout << __LINE__ << endl;
+
+		TLatex* latex2 = new TLatex();
+		latex2->SetNDC();
+		latex2->SetTextSize(0.04);
+		latex2->SetTextAlign(31);
+		//------------------
+		float lumi = 2.26 * luminosity_rescale;
+		TString lumi_ts = Convert_Number_To_TString(lumi);
+		lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
+		latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
+		//------------------
+
+		TString info_data;
+		if (channel=="eee")    info_data = "eee channel";
+		else if (channel=="eeu")  info_data = "ee#mu channel";
+		else if (channel=="uue")  info_data = "#mu#mu e channel";
+		else if (channel=="uuu") info_data = "#mu#mu #mu channel";
+		else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
+
+		TLatex* text2 = new TLatex(0.45,0.98, info_data);
+		text2->SetNDC();
+		text2->SetTextAlign(13);
+		text2->SetX(0.18);
+		text2->SetY(0.92);
+		text2->SetTextFont(42);
+		text2->SetTextSize(0.0610687);
+		//text2->SetTextSizePixels(24);// dflt=28
+		text2->Draw();
+
+		qw->Draw();
+
+
+		//--------------------------
+		//DATA OVER BACKGROUND RATIO
+		//--------------------------
+		//Create Data/MC ratio plot (bottom of canvas)
+		if(h_data != 0 && v_MC_histo.size() != 0) //Need both data and MC
+		{
+			TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
+			canvas_2->SetTopMargin(0.7);
+			canvas_2->SetFillColor(0);
+			canvas_2->SetFillStyle(0);
+			canvas_2->SetGridy(1);
+			canvas_2->Draw();
+			canvas_2->cd(0);
+
+			TH1F * histo_ratio_data = (TH1F*) h_data->Clone();
+
+			histo_ratio_data->Divide(histo_syst_MC);
+
+			//if(total_var_list[ivar] == "METpt")   histo_ratio_data->GetXaxis()->SetTitle(title_MET.Data());
+			histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
+
+			histo_ratio_data->SetMinimum(0.0);
+			histo_ratio_data->SetMaximum(2.0);
+			histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
+			histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
+			histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
+			histo_ratio_data->GetYaxis()->SetNdivisions(6);
+			histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
+			histo_ratio_data->Draw("E1X0");
+
+			//Copy previous TGraphAsymmErrors
+			TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+
+			double *theErrorX_h = thegraph_tmp->GetEXhigh();
+			double *theErrorY_h = thegraph_tmp->GetEYhigh();
+			double *theErrorX_l = thegraph_tmp->GetEXlow();
+			double *theErrorY_l = thegraph_tmp->GetEYlow();
+			double *theY        = thegraph_tmp->GetY() ;
+			double *theX        = thegraph_tmp->GetX() ;
+
+			//Divide error --> ratio
+			for(int i=0; i<thegraph_tmp->GetN(); i++)
+			{
+			  theErrorY_l[i] = theErrorY_l[i]/theY[i];
+			  theErrorY_h[i] = theErrorY_h[i]/theY[i];
+			  theY[i]=1; //To center the filled area around "1"
+			}
+
+			//--> Create new TGraphAsymmErrors
+			TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+			thegraph_ratio->SetFillStyle(3005);
+			thegraph_ratio->SetFillColor(1);
+
+			thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+		}
+
+		//Yaxis title
+		if(stack!= 0) {stack->GetYaxis()->SetTitleSize(0.04); stack->GetYaxis()->SetTitle("Events");}
+
+		//-------------------
+		//OUTPUT
+		//-------------------
+
+		//Image name (.png)
+		TString outputname = "plots/"+total_var_list[ivar]+"_"+channel+".png";
+		if(channel == "" || allchannels) {outputname = "plots/"+total_var_list[ivar]+"_all.png";}
+
+		//cout << __LINE__ << endl;
+		if(c1!= 0) {c1->SaveAs(outputname.Data() );}
+		//cout << __LINE__ << endl;
+
+		delete c1; //Must free dinamically-allocated memory
+	} //end var loop
+	return 0;
+}*/
