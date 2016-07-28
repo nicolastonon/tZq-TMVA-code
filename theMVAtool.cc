@@ -178,7 +178,12 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
 
         // Read training and test data
         // --- Register the training and test trees
-		TString inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
+		TString inputfile;
+		inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
+
+		//if(sample_list[isample] == "ttZ") {inputfile = "Ntuples/FCNCNTuple_ttZ_madgraph.root";} //This sample has more stat. but doesn't contain the Q2 systematic -> TRAIN on this sample, but all the other functions will use the smaller "ttZ" (amcatnlo) sample !
+		//else {inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";}
+		
 	    TFile* file_input = TFile::Open( inputfile.Data() );
 
 		TTree* tree = (TTree*)file_input->Get("Default");
@@ -281,7 +286,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
-std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
+float theMVAtool::Compute_Fake_Ratio(TString channel, bool fakes_summed_channels)
 {
 	vector<TString> MC_fake_samples_list;
 	int sample_list_size = sample_list.size();
@@ -294,11 +299,11 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 	if(MC_fake_samples_list.size() != 3) {cout<<__LINE__<<BOLD(FRED(" Warning : There are "<<MC_fake_samples_list.size()<<" MC fake samples ! Normal ?"))<<endl;}
 
 	//FAKES FROM MC
-	double integral_MC_fake_mu = 0;
-	double integral_MC_fake_el = 0;
+	double integral_MC_fake = 0;
 	float weight = 0; float i_channel = 9;
+
 	//Look in the variable vectors, and find the positions of the 2 floats associated with these variables
-	//Used for region selection -- stay always the same
+	//Used for region selection
 	int i_NJets = -1, i_NBJets = -1;
 	for(int i=0; i<v_cut_name.size(); i++)
 	{
@@ -324,31 +329,28 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 			weight = 0; i_channel = 9;
 			tree->GetEntry(ientry);
 
-			//WZ CR
+			//Always compute the ratio in the WZ CR !
+			//NB : Make the hypothesis that the ratio [MC fakes]/[Data fakes enriched region] is the same in WZ CR and SR
 			if(v_cut_float[i_NJets] == 0 || v_cut_float[i_NBJets] != 0) {continue;}
 
-			//Fake muon
-			if(i_channel == 0 || i_channel == 2)
-			{
-				integral_MC_fake_mu+= weight;
-			}
-			else if(i_channel == 1 || i_channel == 3)
-			{
-				integral_MC_fake_el+= weight;
-			}
-			else {cout<<__LINE__<<BOLD(FRED(" --- ERROR : wrong channel value ! ---"))<<endl;}
+			if(channel == "uuu" && i_channel != 0) {continue;}
+			else if(channel == "uue" && i_channel != 1) {continue;}
+			else if(channel == "eeu" && i_channel != 2) {continue;}
+			else if(channel == "eee" && i_channel != 3) {continue;}
+
+			integral_MC_fake+= weight;
 		}
 	}
 
 	//FAKES FROM DATA
-	double integral_data_fake_mu = 0;
-	double integral_data_fake_el = 0;
+	double integral_data_fake = 0;
 	TString inputfile = "Ntuples/FCNCNTuple_Fakes.root";
 	TFile* file_fake = TFile::Open( inputfile.Data() );
 
 	TTree* tree = (TTree*) file_fake->Get("Default");
 	tree->SetBranchAddress("Weight", &weight);
 	tree->SetBranchAddress("Channel", &i_channel);
+	//i_NJets & i_NBJets are the same
 	tree->SetBranchAddress("NJets", &v_cut_float[i_NJets]);
 	tree->SetBranchAddress("NBJets", &v_cut_float[i_NBJets]);
 
@@ -357,26 +359,37 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 		weight = 0; i_channel = 9;
 		tree->GetEntry(ientry);
 
-		//WZ CR
+		//Always compute the ratio in the WZ CR !
+		//NB : Make the hypothesis that the ratio [MC fakes]/[Data fakes enriched region] is the same in WZ CR and SR
 		if(v_cut_float[i_NJets] == 0 || v_cut_float[i_NBJets] != 0) {continue;}
 
-		//Fake muon
-		if(i_channel == 0 || i_channel == 2)
+		if(fakes_summed_channels)
 		{
-			integral_data_fake_mu+= weight;
+			//Fake muon
+			if( (channel=="uuu" || channel=="eeu") && (i_channel == 0 || i_channel == 2) )
+			{
+				integral_data_fake+= weight;
+			}
+			//Fake electron
+			else if( (channel=="eee" || channel=="uue") && (i_channel == 1 || i_channel == 3) )
+			{
+				integral_data_fake+= weight;
+			}
 		}
-		else if(i_channel == 1 || i_channel == 3)
+		else
 		{
-			integral_data_fake_el+= weight;
+			if(channel == "uuu" && i_channel != 0) {continue;}
+			else if(channel == "uue" && i_channel != 1) {continue;}
+			else if(channel == "eeu" && i_channel != 2) {continue;}
+			else if(channel == "eee" && i_channel != 3) {continue;}
+
+			integral_data_fake+= weight;
 		}
-		else {cout<<__LINE__<<BOLD(FRED(" --- ERROR : wrong channel value ! ---"))<<endl;}
 	}
 
-	std::pair<double, double> the_return;
-	the_return.first = integral_MC_fake_mu / integral_data_fake_mu;
-	the_return.second = integral_MC_fake_el / integral_data_fake_el;
+	float ratio = integral_MC_fake / integral_data_fake; cout<<"ratio = "<<ratio<<endl;
 
-	return the_return;
+	return ratio;
 }
 
 
@@ -640,13 +653,13 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			//--- RE-SCALING (NB : bin content & error !)
 			//If fakes from data, re-scale histos to expected MC fake yields via function Compute_Fake_Ratio
-			std::pair<double, double> fake_ratios;
-			if(fakes_from_data && sample_list[isample] == "Fakes" ) //Regardless of the template name / region
+			float fake_ratio = 0;
+			if(fakes_from_data && sample_list[isample] == "Fakes" )
 			{
-				fake_ratios = Compute_Fake_Ratio();
-
-				hist_uuu->Scale(fake_ratios.first); hist_eeu->Scale(fake_ratios.first);
-				hist_uue->Scale(fake_ratios.second); hist_eee->Scale(fake_ratios.second);
+				fake_ratio = Compute_Fake_Ratio("uuu", fakes_summed_channels); hist_uuu->Scale(fake_ratio);
+				fake_ratio = Compute_Fake_Ratio("uue", fakes_summed_channels); hist_uue->Scale(fake_ratio);
+				fake_ratio = Compute_Fake_Ratio("eeu", fakes_summed_channels); hist_eeu->Scale(fake_ratio);
+				fake_ratio = Compute_Fake_Ratio("eee", fakes_summed_channels); hist_eee->Scale(fake_ratio);
 			}
 			//Re-scale to desired luminosity, unless it's data
 			if(sample_list[isample] != "Data")
@@ -711,6 +724,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	file_output->Close();
 	std::cout << "--- Created root file: \""<<file_output->GetName()<<"\" containing the output histograms" << std::endl;
 	std::cout << "==> Reader() is done!" << std::endl << std::endl;
+	return 0;
 }
 
 
@@ -1110,16 +1124,14 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 						h_tmp->Fill(tmp, weight); //Fill histogram -- weight already re-scaled to desired lumi in Create_Control_Trees !
 					}
 
-
 					//--- RE-SCALING (NB : bin content & error !)
 					//If fakes from data, re-scale histos to expected MC fake yields via function Compute_Fake_Ratio
-					std::pair<double, double> fake_ratios;
+					float fake_ratio = 0;
 					if(fakes_from_data && sample_list[isample] == "Fakes" )
 					{
-						fake_ratios = Compute_Fake_Ratio();
-						if(channel_list[ichan] == "uuu" || channel_list[ichan] == "eeu") {h_tmp->Scale(fake_ratios.first);}
-						else if(channel_list[ichan] == "eee" || channel_list[ichan] == "uue") {h_tmp->Scale(fake_ratios.second);}
+						fake_ratio = Compute_Fake_Ratio(channel_list[ichan], false); h_tmp->Scale(fake_ratio);
 					}
+
 					//Re-scale to desired luminosity, unless it's data
 					if(sample_list[isample] != "Data")
 					{
@@ -1967,11 +1979,8 @@ int theMVAtool::Plot_Templates(TString channel, TString template_name, bool allc
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
+
 /*
-//Draw control plots with histograms created with Create_Control_Histograms
-//Inspired from code PlotStack.C (cf. NtupleAnalysis/src/...)
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
 int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool allchannels)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
@@ -2021,16 +2030,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		h_data = 0; stack = 0;
 		vector<TH1F*> v_MC_histo;
 
-		//Idem for each systematics
-		//NB : the inclusion of systematics in plots is completely hard-coded !! If want to add a syst., make sure to follow the exact same pattern as for the other in the code !
-		vector<TH1F*> v_MC_histo_JER_plus; vector<TH1F*> v_MC_histo_JER_minus;
-		vector<TH1F*> v_MC_histo_JES_plus; vector<TH1F*> v_MC_histo_JES_minus;
-		vector<TH1F*> v_MC_histo_PU_plus; vector<TH1F*> v_MC_histo_PU_minus;
-		vector<TH1F*> v_MC_histo_Q2_plus; vector<TH1F*> v_MC_histo_Q2_minus;
-		vector<TH1F*> v_MC_histo_MuEff_plus; vector<TH1F*> v_MC_histo_MuEff_minus;
-		vector<TH1F*> v_MC_histo_EleEff_plus; vector<TH1F*> v_MC_histo_EleEff_minus;
-		//vector<TH1F*> v_MC_histo_test_plus; vector<TH1F*> v_MC_histo_test_minus;
-
 		vector<TH1F*> v_MC_histo_syst_plus; vector<TH1F*> v_MC_histo_syst_minus;
 
 		//TLegend* qw = new TLegend(.80,.60,.95,.90);
@@ -2045,20 +2044,21 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//CREATE STACK (MC) AND DATA HISTO
 		//---------------------------
 
-		int niter_chan = 0; //is needed to know if histo must be cloned or added
 
-		for(int ichan=0; ichan<thechannellist.size(); ichan++)
+
+		for(int isyst=0; isyst<syst_list.size(); isyst++)
 		{
-			if(!allchannels && channel != thechannellist[ichan]) {continue;}
-
 			for(int isample = 0; isample < sample_list.size(); isample++)
 			{
-				for(int isyst=0; isyst<syst_list.size(); isyst++)
-				{
-					bool isData = sample_list[isample].Contains("Data");
+				if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
+				else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
 
-					if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
-					else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
+				bool isData = sample_list[isample].Contains("Data");
+				int niter_chan = 0; //is needed to know if histo must be cloned or added
+
+				for(int ichan=0; ichan<thechannellist.size(); ichan++)
+				{
+					if(!allchannels && channel != thechannellist[ichan]) {continue;}
 
 					if((isData || sample_list[isample].Contains("Fakes")) && syst_list[isyst] != "") {continue;}
 					if(sample_list[isample].Contains("ttZ") && syst_list[isyst] == "Q2") {continue;} //bug
@@ -2069,10 +2069,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					TString histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
 					if(syst_list[isyst] != "") {histo_name+= "_" + syst_list[isyst];}
-					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
+					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
 
 					h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
-					//cout<<"htmp = "<<h_tmp<<endl;
+					//cout<<"h_tmp = "<<h_tmp<<endl;
 					//cout<<__LINE__<<endl;
 
 					if(isData)
@@ -2100,47 +2100,26 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					{
 						if(niter_chan == 0)
 						{
-							if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "PU__plus") {v_MC_histo_PU_plus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "PU__minus") {v_MC_histo_PU_minus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "Q2__minus") {v_MC_histo_Q2_minus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "MuEff__plus") {v_MC_histo_MuEff_plus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus.push_back(h_tmp);}
-							else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus.push_back(h_tmp);}
-							else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
+							if(syst_list[isyst].Contains("plus") {v_MC_histo_syst_plus.push_back(h_tmp);}
+							else if(syst_list[isyst].Contains("minus") {v_MC_histo_syst_minus.push_back(h_tmp);}
+							else {cout<<__LINE__<<BOLD(FRED("Systematic name problem !"))<<endl;}
 						}
 						else
 						{
-							if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "PU__plus") {v_MC_histo_PU_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "PU__minus") {v_MC_histo_PU_minus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "Q2__minus") {v_MC_histo_Q2_minus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "MuEff__plus") {v_MC_histo_MuEff_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
+							if(syst_list[isyst].Contains("plus") {v_MC_histo_syst_plus[isample]->Add(h_tmp);}
+							else if(syst_list[isyst].Contains("minus") {v_MC_histo_syst_minus[isample]->Add(h_tmp);}
+							else {cout<<__LINE__<<BOLD(FRED("Systematic name problem !"))<<endl;}
 						}
 					}
 
 					if(sample_list[0].Contains("Data")) {isample = isample + 1;} //If we have de-incremented isample (cf. above), then we need to re-increment it here so we don't get an infinite loop !!
 
-				} //end syst loop
+					niter_chan++;
+				} //end channel loop
 
 			} //end sample loop
 
-			niter_chan++;
-
-		} //end channel loop
+		} //end syst loop
 
 		//Stack all the MC nominal histograms (contained in v_MC_histo)
 		for(int i=0; i<v_MC_histo.size(); i++)

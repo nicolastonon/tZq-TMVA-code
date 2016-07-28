@@ -29,8 +29,8 @@ int main()
 //-------------------
     set_v_cut_name.push_back("METpt");  set_v_cut_def.push_back("");
     set_v_cut_name.push_back("mTW");    set_v_cut_def.push_back("");
-    set_v_cut_name.push_back("NJets");  set_v_cut_def.push_back("");
-    set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back("");
+    set_v_cut_name.push_back("NJets");  set_v_cut_def.push_back(">0");
+    set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back("==0");
 //-------------------
 
     //Used to re-scale every weights in the code by a lumi factor. (NB : default value is 2015 / 7.6.x lumi = 2.26 !)
@@ -191,7 +191,7 @@ int main()
         //  READING --- TEMPLATES CREATION
         //#############################################
         TString template_name = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
-        bool fakes_summed_channels = false; //Sum uuu/eeu & eee/uue --> Double the fake stat. !
+        bool fakes_summed_channels = true; //Sum uuu/eeu & eee/uue --> Double the fake stat.! Only possible for Templates (not for CR plots)
         //MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
 
         if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
