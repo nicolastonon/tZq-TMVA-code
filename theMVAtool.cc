@@ -286,9 +286,10 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 	//The MC fake samples are supposed to be the last 3 of the sample_list !
 	for(int isample = sample_list.size() - 3 ; isample < sample_list.size(); isample++)
 	{
-		if(!sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW")) {cout<<__LINE__<<" : wrong MC fake sample !"<<endl;}
+		if(!sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW")) {cout<<__LINE__<<BOLD(FRED(" Warning : wrong MC fake sample !"))<<endl;}
 		else {MC_fake_samples_list.push_back(sample_list[isample].Data());}
 	}
+	if(MC_fake_samples_list.size() != 3) {cout<<__LINE__<<BOLD(FRED(" Warning : There are "<<MC_fake_samples_list.size()<<" MC fake samples ! Normal ?"))<<endl;}
 
 	//FAKES FROM MC
 	double integral_MC_fake_mu = 0;
@@ -394,7 +395,7 @@ std::pair<double, double> theMVAtool::Compute_Fake_Ratio()
 //FIXME : need to replace "Fakes" with name of Ntuple containing fakes from data !
 
 //Reader function. Uses output from training (weights, ...) and read samples to create distributions of the BDT discriminant *OR* mTW
-int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data)
+int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data, bool fakes_summed_channels)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW" || template_name == "m3l") {cout<<FYEL("--- Producing "<<template_name<<" Templates ---")<<endl;}
@@ -404,6 +405,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	else {cout<<FYEL("--- Using fakes from data ---")<<endl;}
 	if(!real_data) {cout<<FYEL("--- Not using real data ---")<<endl<<endl;}
 	else {cout<<FYEL("--- Using REAL data ---")<<endl<<endl;}
+	if(fakes_summed_channels) {cout<<FYEL("--- Fakes : summing channels 2 by 2 (artificial stat. increase) ---")<<endl<<endl;}
 
 	TString output_file_name = "outputs/Reader_" + template_name + filename_suffix + ".root";
 	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
@@ -426,7 +428,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	}
 
 	//Look in the variable vectors, and find the positions of the 2 floats associated with these variables
-	//In case we want to create templates for 1 of these variables !
+	//Needed in case we want to create templates for 1 of these variables !
 	int i_mTW = -1, i_m3l = -1;
 	for(int i=0; i<var_list.size(); i++)
 	{
@@ -564,29 +566,83 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				// --- Return the MVA outputs and fill into histograms
 				if (template_name == "BDT" || template_name == "BDTttZ")
 				{
-					if(i_channel == 0) {hist_uuu->Fill( reader->EvaluateMVA( template_name+"_uuu"+filename_suffix+ " method"), weight);}
-					else if(i_channel == 1) {hist_uue->Fill( reader->EvaluateMVA( template_name+"_uue"+filename_suffix+" method"), weight);}
-					else if(i_channel == 2) {hist_eeu->Fill( reader->EvaluateMVA( template_name+"_eeu"+filename_suffix+" method"), weight);}
-					else if(i_channel == 3) {hist_eee->Fill( reader->EvaluateMVA( template_name+"_eee"+filename_suffix+" method"), weight);}
-					else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					//For fakes, can choose to sum channels 2 by 2 to increase statistics
+					if(fakes_summed_channels && sample_list[isample].Contains("Fakes"))
+					{
+						if(i_channel == 0 || i_channel == 2)
+						{
+							hist_uuu->Fill( reader->EvaluateMVA( template_name+"_uuu"+filename_suffix+ " method"), weight);
+							hist_eeu->Fill( reader->EvaluateMVA( template_name+"_eeu"+filename_suffix+ " method"), weight);
+						}
+						else if(i_channel == 1 || i_channel == 3)
+						{
+							hist_uue->Fill( reader->EvaluateMVA( template_name+"_uue"+filename_suffix+" method"), weight);
+							hist_eee->Fill( reader->EvaluateMVA( template_name+"_eee"+filename_suffix+" method"), weight);
+						}
+						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					}
+					//If sample is not fake or fakes_summed_channels = false
+					else
+					{
+						if(i_channel == 0) 		{hist_uuu->Fill( reader->EvaluateMVA( template_name+"_uuu"+filename_suffix+ " method"), weight);}
+						else if(i_channel == 1) {hist_uue->Fill( reader->EvaluateMVA( template_name+"_uue"+filename_suffix+" method"), weight);}
+						else if(i_channel == 2) {hist_eeu->Fill( reader->EvaluateMVA( template_name+"_eeu"+filename_suffix+" method"), weight);}
+						else if(i_channel == 3) {hist_eee->Fill( reader->EvaluateMVA( template_name+"_eee"+filename_suffix+" method"), weight);}
+						else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					}
 				}
 				// --- Return the MVA outputs and fill into histograms
 				else if (template_name == "mTW")
 				{
-					if(i_channel == 0) 		{hist_uuu->Fill( v_cut_float[i_mTW], weight);}
-					else if(i_channel == 1) {hist_uue->Fill( v_cut_float[i_mTW], weight);}
-					else if(i_channel == 2) {hist_eeu->Fill( v_cut_float[i_mTW], weight);}
-					else if(i_channel == 3) {hist_eee->Fill( v_cut_float[i_mTW], weight);}
-					else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					//For fakes, can choose to sum channels 2 by 2 to increase statistics
+					if(fakes_summed_channels && sample_list[isample].Contains("Fakes"))
+					{
+						if(i_channel == 0 || i_channel == 2)
+						{
+							hist_uuu->Fill( v_cut_float[i_mTW], weight); hist_eeu->Fill( v_cut_float[i_mTW], weight);
+						}
+						else if(i_channel == 1 || i_channel == 3)
+						{
+							hist_uue->Fill( v_cut_float[i_mTW], weight); hist_eee->Fill( v_cut_float[i_mTW], weight);
+						}
+						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					}
+					//If sample is not fake or fakes_summed_channels = false
+					else
+					{
+						if(i_channel == 0) 		{hist_uuu->Fill( v_cut_float[i_mTW], weight);}
+						else if(i_channel == 1) {hist_uue->Fill( v_cut_float[i_mTW], weight);}
+						else if(i_channel == 2) {hist_eeu->Fill( v_cut_float[i_mTW], weight);}
+						else if(i_channel == 3) {hist_eee->Fill( v_cut_float[i_mTW], weight);}
+						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					}
 				}
 				else if (template_name == "m3l") //NB : order is important ! m3l must be 1rst in vector
 				{
-					if(i_channel == 0) 		{hist_uuu->Fill( vec_variables[i_m3l], weight);}
-					else if(i_channel == 1) {hist_uue->Fill( vec_variables[i_m3l], weight);}
-					else if(i_channel == 2) {hist_eeu->Fill( vec_variables[i_m3l], weight);}
-					else if(i_channel == 3) {hist_eee->Fill( vec_variables[i_m3l], weight);}
-					else if(i_channel == 9 || weight == 0) {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					//For fakes, can choose to sum channels 2 by 2 to increase statistics
+					if(fakes_summed_channels && sample_list[isample].Contains("Fakes"))
+					{
+						if(i_channel == 0 || i_channel == 2)
+						{
+							hist_uuu->Fill( v_cut_float[i_m3l], weight); hist_eeu->Fill( v_cut_float[i_m3l], weight);
+						}
+						else if(i_channel == 1 || i_channel == 3)
+						{
+							hist_uue->Fill( v_cut_float[i_m3l], weight); hist_eee->Fill( v_cut_float[i_m3l], weight);
+						}
+						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					}
+					//If sample is not fake or fakes_summed_channels = false
+					else
+					{
+						if(i_channel == 0) 		{hist_uuu->Fill( v_cut_float[i_m3l], weight);}
+						else if(i_channel == 1) {hist_uue->Fill( v_cut_float[i_m3l], weight);}
+						else if(i_channel == 2) {hist_eeu->Fill( v_cut_float[i_m3l], weight);}
+						else if(i_channel == 3) {hist_eee->Fill( v_cut_float[i_m3l], weight);}
+						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
+					}
 				}
+
 			} //end entries loop
 
 			//--- RE-SCALING (NB : bin content & error !)
@@ -839,6 +895,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			if((sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) && syst_list[isyst]!="") {continue;}
 			else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;} //bug
 
+			//NB : call the output file here in UPDATE mode because otherwise I got memory errors
 			TString output_file_name = "outputs/Control_Trees" + filename_suffix + ".root";
 			TFile* output_file = TFile::Open( output_file_name, "UPDATE" );
 
@@ -955,7 +1012,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 //NB : no separation by channel is made ! It is possible but it would require to create 4 times histograms at beginning...
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
-void theMVAtool::Create_Control_Histograms(bool fakes_from_data)
+void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudodata_CR_plots)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("--- Create Control Histograms ---")<<endl;
@@ -997,7 +1054,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data)
 			//Info contained in tree leaves. Need to create histograms first
 			for(int isample = 0; isample < sample_list.size(); isample++)
 			{
-				//cout<<"--- Processing "<<sample_list[isample]<<endl<<endl;
+				if(use_pseudodata_CR_plots && sample_list[isample] == "Data") {continue;}
 
 				for(int isyst=0; isyst<syst_list.size(); isyst++)
 				{
@@ -1039,7 +1096,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data)
 
 					TString tree_name = "Control_" + sample_list[isample];
 					if(syst_list[isyst] != "") {tree_name+= "_" + syst_list[isyst];}
-					if(!f_input->GetListOfKeys()->Contains(tree_name.Data())) {cout<<tree_name<<" : problem"<<endl; continue;}
+					if(!f_input->GetListOfKeys()->Contains(tree_name.Data()) && sample_list[isample] != "Data" ) {cout<<tree_name<<" : not found !"<<endl; continue;}
 					tree = (TTree*) f_input->Get(tree_name.Data());
 					//cout<<__LINE__<<endl;
 
@@ -1126,7 +1183,7 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_from
 	TString input_name = "outputs/Control_Histograms" + filename_suffix + ".root";
     TFile* file = 0;
 	file = TFile::Open( input_name.Data(), "UPDATE");
-	if(file == 0) {cout<<BOLD(FRED("--- ERROR : file not found ! Exit !"))<<endl; return 0;}
+	if(file == 0) {cout<<BOLD(FRED("--- ERROR : Control_Histograms file not found ! Exit !"))<<endl; return 0;}
 
 
 	//Want to plot ALL variables (inside the 2 different variable vectors !)
@@ -1204,7 +1261,7 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Templates(TString template_na
 	TString pseudodata_input_name = "outputs/Reader_" + template_name + filename_suffix + ".root";
     TFile* file = 0;
 	file = TFile::Open( pseudodata_input_name.Data(), "UPDATE");
-	if(file == 0) {cout<<BOLD(FRED("--- ERROR : file not found ! Exit !"))<<endl; return 0;}
+	if(file == 0) {cout<<BOLD(FRED("--- ERROR : Reader file not found ! Exit !"))<<endl; return 0;}
 
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
 	{
