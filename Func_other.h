@@ -104,17 +104,17 @@ float Convert_TString_To_Number(TString ts)
 float Find_Number_In_TString(TString ts)
 {
 	TString tmp = ""; int number = 0;
-	string s = ts.Data(); int ts_size = s.size(); //To get TString size
+	string s = ts.Data(); int ts_size = s.size(); //Only to get TString size
 
 	for (int i=0; i < ts_size; i++)
 	{
-		if (isdigit(ts[i]))
+		if( isdigit(ts[i]) )
 		{
 			do
 			{
 				tmp += ts[i];
 				i++;
-			} while(isdigit(ts[i]));
+			} while(isdigit(ts[i]) || ts[i] == '.'); //NB : "a" creates a 2-char array (letter+terminator) -> string. 'a' identifies a single character !
 
 		  break;
 		}
@@ -135,6 +135,32 @@ TString Convert_Sign_To_Word(TString ts_in)
 	else if(ts_in.Contains("==")) {sign = "Eq";}
 
 	return sign;
+}
+
+//Used when a "cut" is composed of 2 conditions -> breaks it into a pair of TStrings <cut1,cut2>
+pair<TString,TString> Break_Cuts_In_Two(TString multiple_cut)
+{
+	TString cut1, cut2;
+
+	string s = multiple_cut.Data(); int size = s.size(); //To get TString size
+
+	for (int i=0; i < size; i++) //Extract condition 1
+	{
+		if(multiple_cut[i] == '&') {break;}
+		if(multiple_cut[i] != ' ') {cut1 += multiple_cut[i];}
+	}
+
+	TString tmp;
+	for (int i=0; i < size; i++) //Extract condition 2
+	{
+		tmp+= multiple_cut[i];
+		if(!tmp.Contains("&&") || multiple_cut[i] == '&') {continue;}
+		if(multiple_cut[i] != ' ') {cut2 += multiple_cut[i];}
+	}
+
+	pair<TString,TString> the_cuts; the_cuts.first = cut1; the_cuts.second = cut2;
+
+	return the_cuts;
 }
 
 

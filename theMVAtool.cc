@@ -2,6 +2,7 @@
 #include "Func_other.h"
 
 #include <cassert> 	//Can be used to terminate program if argument is not true. Ex : assert(test > 0 && "Error message");
+#include <sys/stat.h> // to be able to use mkdir
 
 #include "TLegend.h"
 #include "TLine.h"
@@ -15,6 +16,7 @@
 #include "TGraphAsymmErrors.h"
 #include "TObject.h"
 #include "TRandom3.h"
+#include "TObjArray.h"
 
 //-----------------------------------------------------------------------------------------
 //    _____   __  __  __     __     _         ____    ___    ____    _____
@@ -50,7 +52,7 @@ theMVAtool::theMVAtool()
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Overloaded Constructor
-theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, int nofbin_templates = 5)
+theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, int nofbin_templates = 5)
 {
 	for(int i=0; i<thechanlist.size(); i++)
 	{
@@ -65,6 +67,7 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	{
 		v_cut_name.push_back(set_v_cut_name[i]);
 		v_cut_def.push_back(set_v_cut_def[i]);
+		v_cut_IsUsedForBDT.push_back(set_v_cut_IsUsedForBDT[i]);
 		v_cut_float.push_back(-999);
 	}
 	for(int i=0; i<thesamplelist.size(); i++)
@@ -105,8 +108,18 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	{
 		if(v_cut_def[ivar] != "")
 		{
-			tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(v_cut_def[ivar]));
-			filename_suffix+= tmp;
+			if(!v_cut_def[ivar].Contains("&&")) //Single condition
+			{
+				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(v_cut_def[ivar]));
+				filename_suffix+= tmp;
+			}
+			else //Double condition
+			{
+				TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first, cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
+				tmp+= "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut1) + Convert_Number_To_TString(Find_Number_In_TString(cut1));
+				tmp+= "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+				filename_suffix+= tmp;
+			}
 		}
 	}
 }
@@ -150,6 +163,8 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
     // This loads the TMVA libraries
     TMVA::Tools::Instance();
 
+	mkdir("outputs",0777);
+
 	TString output_file_name = "outputs/" + bdt_type;
 	if(channel != "") {output_file_name+= "_" + channel;}
 	output_file_name+= filename_suffix;
@@ -157,17 +172,21 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
 	TFile* output_file = TFile::Open( output_file_name, "RECREATE" );
 
 	// Create the factory object
-	TMVA::Factory* factory = new TMVA::Factory(bdt_type.Data(), output_file, "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" ); //some Transformations can trigger warnings
+	//TMVA::Factory* factory = new TMVA::Factory(bdt_type.Data(), output_file, "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" ); //some Transformations can trigger warnings
+	TMVA::Factory* factory = new TMVA::Factory(bdt_type.Data(), output_file, "!V:Silent:Color:DrawProgressBar:AnalysisType=Classification" );
 
 	// Define the input variables that shall be used for the MVA training
 	for(int i=0; i<var_list.size(); i++)
 	{
 		factory->AddVariable(var_list[i].Data(), 'F');
 	}
-	//Spectator variables not used in MVA methods but can be used for cuts, plots, ...
+	//Choose if the cut variables are used in BDT or not
 	for(int i=0; i<v_cut_name.size(); i++)
 	{
-		factory->AddSpectator(v_cut_name[i].Data(), v_cut_name[i].Data(), 'F');
+		cout<<"Is "<<v_cut_name[i]<<" used ? "<<(v_cut_IsUsedForBDT[i] && !v_cut_def[i].Contains("=="))<<endl;
+
+		if(v_cut_IsUsedForBDT[i] && !v_cut_def[i].Contains("==")) {factory->AddVariable(v_cut_name[i].Data(), 'F');}
+		else {factory->AddSpectator(v_cut_name[i].Data(), v_cut_name[i].Data(), 'F');}
 	}
 
     TFile *f(0);
@@ -179,11 +198,12 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
         // Read training and test data
         // --- Register the training and test trees
 		TString inputfile;
-		inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
+		//inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
 
-		//if(sample_list[isample] == "ttZ") {inputfile = "Ntuples/FCNCNTuple_ttZ_madgraph.root";} //This sample has more stat. but doesn't contain the Q2 systematic -> TRAIN on this sample, but all the other functions will use the smaller "ttZ" (amcatnlo) sample !
-		//else {inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";}
-		
+		//This sample has more stat. but doesn't contain the Q2 systematic -> TRAIN on this sample, but all the other functions will use the smaller "ttZ" (amcatnlo) sample !
+		if(sample_list[isample] == "ttZ") {inputfile = "Ntuples/FCNCNTuple_ttZMad.root"; cout<<endl<<BOLD(FBLU("[NB : use ttZ Madgraph sample for training only !]"))<<endl<<endl;}
+		else {inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";}
+
 	    TFile* file_input = TFile::Open( inputfile.Data() );
 
 		TTree* tree = (TTree*)file_input->Get("Default");
@@ -221,18 +241,33 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
 
 	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 	{
-		if(v_cut_def[ivar] != "") {tmp+= v_cut_name[ivar] + v_cut_def[ivar];}
+		if(v_cut_def[ivar] != "")
+		{
+			if(!v_cut_def[ivar].Contains("&&")) {tmp+= v_cut_name[ivar] + v_cut_def[ivar];} //If cut contains only 1 condition
+			else //If 2 conditions in the cut, break it in 2
+			{
+				tmp+= v_cut_name[ivar] + Break_Cuts_In_Two(v_cut_def[ivar]).first;
+				tmp+= " && ";
+				tmp+= v_cut_name[ivar] + Break_Cuts_In_Two(v_cut_def[ivar]).second;
+			}
+		}
+
 		//Complicated way of concatenating the TStrings
 		if((ivar+1) < v_cut_name.size() && v_cut_def[ivar+1] != "")
 		{
 			for(int i=0; i<ivar+1; i++)
 			{
-				if(v_cut_def[i] != "") {tmp += " && ";}
+				if(v_cut_def[i] != "") {tmp += " && "; break;}
 			}
 		}
+
+		//cout<<"tmp = "<<tmp<<endl;
 	}
 
+	cout<<"Total cut chain : "<<tmp<<endl;
+
 	if(tmp != "") {mycuts+= tmp; mycutb+= tmp;}
+
 
 //--------------------------------
 
@@ -302,41 +337,54 @@ float theMVAtool::Compute_Fake_Ratio(TString channel, bool fakes_summed_channels
 	double integral_MC_fake = 0;
 	float weight = 0; float i_channel = 9;
 
-	//Look in the variable vectors, and find the positions of the 2 floats associated with these variables
-	//Used for region selection
-	int i_NJets = -1, i_NBJets = -1;
-	for(int i=0; i<v_cut_name.size(); i++)
-	{
-		if(v_cut_name[i] == "NJets") {i_NJets = i;}
-		else if(v_cut_name[i] == "NBJets") {i_NBJets = i;}
-	}
-
 	for(int i=0; i<MC_fake_samples_list.size(); i++)
 	{
 		TString inputfile = "Ntuples/FCNCNTuple_" + MC_fake_samples_list[i] + ".root";
 		TFile* file_fake = TFile::Open( inputfile.Data() );
-
 		TTree* tree = (TTree*) file_fake->Get("Default");
-		weight = 0; i_channel = 9;
-
 		tree->SetBranchAddress("Weight", &weight);
 		tree->SetBranchAddress("Channel", &i_channel);
-		tree->SetBranchAddress("NJets", &v_cut_float[i_NJets]);
-		tree->SetBranchAddress("NBJets", &v_cut_float[i_NBJets]);
+		for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+		{
+			//Use only these variables for cuts
+			if(v_cut_name[ivar] == "NJets" || v_cut_name[ivar] == "NBJets" || v_cut_name[ivar] == "AdditionalMuonIso" || v_cut_name[ivar] == "AdditionalEleIso" || v_cut_name[ivar] == "AddLepPT")
+			{
+				tree->SetBranchAddress(v_cut_name[ivar].Data(), &v_cut_float[ivar]);
+			}
+		}
 
 		for(int ientry=0; ientry<tree->GetEntries(); ientry++)
 		{
 			weight = 0; i_channel = 9;
 			tree->GetEntry(ientry);
 
-			//Always compute the ratio in the WZ CR !
-			//NB : Make the hypothesis that the ratio [MC fakes]/[Data fakes enriched region] is the same in WZ CR and SR
-			if(v_cut_float[i_NJets] == 0 || v_cut_float[i_NBJets] != 0) {continue;}
-
-			if(channel == "uuu" && i_channel != 0) {continue;}
+//Apply cuts (only those on jets, bjets, leptons)
+//------------------------------------------------------------
+			if(channel == "uuu" && i_channel != 0) 		{continue;}
 			else if(channel == "uue" && i_channel != 1) {continue;}
 			else if(channel == "eeu" && i_channel != 2) {continue;}
 			else if(channel == "eee" && i_channel != 3) {continue;}
+
+			float cut_tmp = 0; bool pass_all_cuts = true;
+			for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+			{
+				//Always compute the ratio in the WZ CR !
+				//NB : Make the hypothesis that the ratio [MC fakes]/[Data fakes enriched region] is the same in WZ CR and SR
+				if( (v_cut_name[i] == "NJets" && v_cut_float[ivar] == 0) || (v_cut_name[i] == "NBJets" && v_cut_float[ivar] != 0) ) {pass_all_cuts = false; break;}
+				//Also apply cuts on leptons
+				else if(v_cut_def[ivar] != "" && (v_cut_name[ivar] == "AdditionalMuonIso" || v_cut_name[ivar] == "AdditionalEleIso" || v_cut_name[ivar] == "AddLepPT") )
+				{
+					cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
+					if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
+					else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
+					else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
+					else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+					else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
+				}
+			}
+
+			if(!pass_all_cuts) {continue;}
+//------------------------------------------------------------
 
 			integral_MC_fake+= weight;
 		}
@@ -346,35 +394,31 @@ float theMVAtool::Compute_Fake_Ratio(TString channel, bool fakes_summed_channels
 	double integral_data_fake = 0;
 	TString inputfile = "Ntuples/FCNCNTuple_Fakes.root";
 	TFile* file_fake = TFile::Open( inputfile.Data() );
-
 	TTree* tree = (TTree*) file_fake->Get("Default");
 	tree->SetBranchAddress("Weight", &weight);
 	tree->SetBranchAddress("Channel", &i_channel);
-	//i_NJets & i_NBJets are the same
-	tree->SetBranchAddress("NJets", &v_cut_float[i_NJets]);
-	tree->SetBranchAddress("NBJets", &v_cut_float[i_NBJets]);
+	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+	{
+		//Use only these variables for cuts
+		if(v_cut_name[ivar] == "NJets" || v_cut_name[ivar] == "NBJets" || v_cut_name[ivar] == "AdditionalMuonIso" || v_cut_name[ivar] == "AdditionalEleIso" || v_cut_name[ivar] == "AddLepPT")
+		{
+			tree->SetBranchAddress(v_cut_name[ivar].Data(), &v_cut_float[ivar]);
+		}
+	}
 
 	for(int ientry=0; ientry<tree->GetEntries(); ientry++)
 	{
 		weight = 0; i_channel = 9;
 		tree->GetEntry(ientry);
 
-		//Always compute the ratio in the WZ CR !
-		//NB : Make the hypothesis that the ratio [MC fakes]/[Data fakes enriched region] is the same in WZ CR and SR
-		if(v_cut_float[i_NJets] == 0 || v_cut_float[i_NBJets] != 0) {continue;}
-
+//Apply cuts (only those on jets, bjets, leptons)
+//------------------------------------------------------------
 		if(fakes_summed_channels)
 		{
 			//Fake muon
-			if( (channel=="uuu" || channel=="eeu") && (i_channel == 0 || i_channel == 2) )
-			{
-				integral_data_fake+= weight;
-			}
+			if( (channel=="uuu" || channel=="eeu") && i_channel != 0 && i_channel != 2) {continue;}
 			//Fake electron
-			else if( (channel=="eee" || channel=="uue") && (i_channel == 1 || i_channel == 3) )
-			{
-				integral_data_fake+= weight;
-			}
+			else if( (channel=="eee" || channel=="uue") && i_channel != 1 && i_channel != 3 ) {continue;}
 		}
 		else
 		{
@@ -382,12 +426,35 @@ float theMVAtool::Compute_Fake_Ratio(TString channel, bool fakes_summed_channels
 			else if(channel == "uue" && i_channel != 1) {continue;}
 			else if(channel == "eeu" && i_channel != 2) {continue;}
 			else if(channel == "eee" && i_channel != 3) {continue;}
-
-			integral_data_fake+= weight;
 		}
+
+		float cut_tmp = 0; bool pass_all_cuts = true;
+		for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+		{
+			//Always compute the ratio in the WZ CR !
+			//NB : Make the hypothesis that the ratio [MC fakes]/[Data fakes enriched region] is the same in WZ CR and SR
+			if( (v_cut_name[ivar] == "NJets" && v_cut_float[ivar] == 0) || (v_cut_name[ivar] == "NBJets" && v_cut_float[ivar] != 0) ) {pass_all_cuts = false; break;}
+			//Also apply cuts on leptons
+			else if(v_cut_def[ivar] != "" && (v_cut_name[ivar] == "AdditionalMuonIso" || v_cut_name[ivar] == "AdditionalEleIso" || v_cut_name[ivar] == "AddLepPT") )
+			{
+				cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
+				if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
+				else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
+				else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
+				else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+				else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
+			}
+		}
+
+		if(!pass_all_cuts) {continue;}
+//------------------------------------------------------------
+
+		integral_data_fake+= weight;
 	}
 
-	float ratio = integral_MC_fake / integral_data_fake; cout<<"ratio = "<<ratio<<endl;
+	//cout<<"integral_MC_fake = "<<integral_MC_fake<<" || integral_data_fake = "<<integral_data_fake<<endl;
+
+	float ratio = integral_MC_fake / integral_data_fake; //cout<<"ratio = "<<ratio<<endl;
 
 	return ratio;
 }
@@ -428,6 +495,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	TH1::SetDefaultSumw2();
 	TH1F *hist_BDT(0), *hist_BDTG(0);
 
+	mkdir("outputs",0777);
+
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
 	// Name & adress of local variables which carry the updated input values during the event loop
@@ -436,10 +505,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	{
 		reader->AddVariable(var_list[i].Data(), &vec_variables[i]); //cout<<"Added variable "<<var_list[i]<<endl;
 	}
-	//Spectator variables
 	for(int i=0; i<v_cut_name.size(); i++)
 	{
-		reader->AddSpectator(v_cut_name[i].Data(), &v_cut_float[i]); //cout<<"Added variable "<<var_list[i]<<endl;
+		if(v_cut_IsUsedForBDT[i] && !v_cut_def[i].Contains("==")) {reader->AddVariable(v_cut_name[i].Data(), &v_cut_float[i]);}
+		else {reader->AddSpectator(v_cut_name[i].Data(), &v_cut_float[i]);}
 	}
 
 	//Look in the variable vectors, and find the positions of the 2 floats associated with these variables
@@ -481,7 +550,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if(!real_data && sample_list[isample].Contains("Data")) {continue;} //Don't use the real data
 
 			if((sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) && syst_list[isyst]!="") {continue;}
-			else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;} //bug for now
+			//else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;} //incompatible w/ ttZMad
 
 			TString inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
 			TFile* file_input = TFile::Open( inputfile.Data() );
@@ -556,12 +625,33 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				{
 					if(v_cut_def[ivar] != "")
 					{
-						cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
-						if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
+						if(!v_cut_def[ivar].Contains("&&")) //If cut contains only 1 condition
+						{
+							cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
+							if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
+						}
+						else //If 2 conditions in the cut, break it in 2
+						{
+							TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first; TString cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
+							//CUT 1
+							cut_tmp = Find_Number_In_TString(cut1);
+							if(cut1.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut1.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
+							//CUT 2
+							cut_tmp = Find_Number_In_TString(cut2);
+							if(cut2.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut2.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
+						}
 					}
 				}
 
@@ -656,10 +746,14 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			float fake_ratio = 0;
 			if(fakes_from_data && sample_list[isample] == "Fakes" )
 			{
+				//cout<<"hist_uuu = "<<hist_uuu->Integral()<<endl;
 				fake_ratio = Compute_Fake_Ratio("uuu", fakes_summed_channels); hist_uuu->Scale(fake_ratio);
+				//cout<<"hist_uuu = "<<hist_uuu->Integral()<<endl;
 				fake_ratio = Compute_Fake_Ratio("uue", fakes_summed_channels); hist_uue->Scale(fake_ratio);
 				fake_ratio = Compute_Fake_Ratio("eeu", fakes_summed_channels); hist_eeu->Scale(fake_ratio);
+				//cout<<"hist_eee = "<<hist_eee->Integral()<<endl;
 				fake_ratio = Compute_Fake_Ratio("eee", fakes_summed_channels); hist_eee->Scale(fake_ratio);
+				//cout<<"hist_eee = "<<hist_eee->Integral()<<endl;
 			}
 			//Re-scale to desired luminosity, unless it's data
 			if(sample_list[isample] != "Data")
@@ -863,16 +957,18 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
+	mkdir("outputs",0777);
+
 	// Name & adress of local variables which carry the updated input values during the event loop
 	// - the variable names MUST corresponds in name and type to those given in the weight file(s) used
 	for(int i=0; i<var_list.size(); i++)
 	{
-		reader->AddVariable(var_list[i].Data(), &vec_variables[i]); //cout<<"Added variable "<<var_list[i]<<endl;
+		reader->AddVariable(var_list[i].Data(), &vec_variables[i]);
 	}
-	//Spectator variables
 	for(int i=0; i<v_cut_name.size(); i++)
 	{
-		reader->AddSpectator(v_cut_name[i].Data(), &v_cut_float[i]); //cout<<"Added variable "<<var_list[i]<<endl;
+		if(v_cut_IsUsedForBDT[i] && !v_cut_def[i].Contains("==")) {reader->AddVariable(v_cut_name[i].Data(), &v_cut_float[i]);}
+		else {reader->AddSpectator(v_cut_name[i].Data(), &v_cut_float[i]);}
 	}
 
 	// --- Book the MVA methods
@@ -900,7 +996,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			TFile* file_input = TFile::Open( inputfile.Data() );
 
 			if((sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) && syst_list[isyst]!="") {continue;}
-			else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;} //bug
+			//else if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2")) {continue;} //incompatible w/ ttZMad
 
 			//NB : call the output file here in UPDATE mode because otherwise I got memory errors
 			TString output_file_name = "outputs/Control_Trees" + filename_suffix + ".root";
@@ -963,12 +1059,33 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 				{
 					if(v_cut_def[ivar] != "")
 					{
-						cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
-						if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
+						if(!v_cut_def[ivar].Contains("&&")) //If cut contains only 1 condition
+						{
+							cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
+							if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
+						}
+						else //If 2 conditions in the cut, break it in 2
+						{
+							TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first; TString cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
+							//CUT 1
+							cut_tmp = Find_Number_In_TString(cut1);
+							if(cut1.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut1.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
+							//CUT 2
+							cut_tmp = Find_Number_In_TString(cut2);
+							if(cut2.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut2.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
+						}
 					}
 				}
 
@@ -1027,6 +1144,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	TTree* tree = 0;
 
 	int binning = 5;
+	TH1::SetDefaultSumw2();
 
 	//Want to plot ALL variables (inside the 2 different variable vectors !)
 	vector<TString> total_var_list;
@@ -1063,7 +1181,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
 
 					if((sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) && syst_list[isyst] != "") {continue;}
-					if(sample_list[isample].Contains("ttZ") && syst_list[isyst] == "Q2") {continue;} //bug
+					//if(sample_list[isample].Contains("ttZ") && syst_list[isyst] == "Q2") {continue;} //incompatible w/ ttZMad
 
 					TH1F* h_tmp = 0;
 					if(total_var_list[ivar] == "mTW") 								{h_tmp = new TH1F( "","", binning, 0, 150 );}
@@ -1091,9 +1209,11 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "NJets")						{h_tmp = new TH1F( "","", 5, 1, 6 );}
 					else if(total_var_list[ivar] == "ptQ")							{h_tmp = new TH1F( "","", binning, 0, 150 );}
 					else if(total_var_list[ivar] == "dRjj")							{h_tmp = new TH1F( "","", binning, 0, 1 );}
-					else {cout<<endl<<__LINE__<<" --> !!Unknown variable!!"<<endl<<endl;}
+					else if(total_var_list[ivar] == "AdditionalEleIso")				{h_tmp = new TH1F( "","", binning, 0, 0.5 );}
+					else if(total_var_list[ivar] == "AdditionalMuonIso")			{h_tmp = new TH1F( "","", binning, 0, 0.5 );}
+					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", binning, 0, 150 );}
 
-					h_tmp->Sumw2(); //force the storage and computation of the sum of the square of weights per bin (rather than just take srt(bin_content))
+					else {cout<<endl<<__LINE__<<BOLD(FRED(" --> !!Unknown variable!! Correct name or add it here"))<<endl<<endl;}
 
 					TString tree_name = "Control_" + sample_list[isample];
 					if(syst_list[isyst] != "") {tree_name+= "_" + syst_list[isyst];}
@@ -1179,6 +1299,8 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_from
 
 	TRandom3 therand(0);
 
+	mkdir("outputs",0777);
+
 	TString input_name = "outputs/Control_Histograms" + filename_suffix + ".root";
     TFile* file = 0;
 	file = TFile::Open( input_name.Data(), "UPDATE");
@@ -1227,7 +1349,7 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_from
 				int bin_content = h_sum->GetBinContent(i+1); //cout<<"Initial content = "<<bin_content<<endl;
 				int new_bin_content = therand.Poisson(bin_content); //cout<<"New content = "<<new_bin_content<<endl;
 				h_sum->SetBinContent(i+1, new_bin_content);
-				h_sum->SetBinError(i+1, sqrt(new_bin_content));
+				h_sum->SetBinError(i+1, sqrt(new_bin_content)); //Poissonian error
 			}
 
 			file->cd();
@@ -1299,7 +1421,7 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Templates(TString template_na
 			int bin_content = h_sum->GetBinContent(i+1); //cout<<"bin "<<i+1<<endl; cout<<"initial content = "<<bin_content<<endl;
 			int new_bin_content = therand.Poisson(bin_content); //cout<<"new content = "<<new_bin_content<<endl;
 			h_sum->SetBinContent(i+1, new_bin_content);
-			h_sum->SetBinError(i+1, sqrt(new_bin_content));
+			h_sum->SetBinError(i+1, sqrt(new_bin_content)); //Poissonian error
 		}
 
 		file->cd();
@@ -1312,6 +1434,8 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Templates(TString template_na
 	file->Close();
 	cout<<"--- Done with generation of pseudo-data"<<endl<<endl; return 0;
 }
+
+
 
 
 
@@ -1339,23 +1463,26 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 	f = TFile::Open( input_file_name );
 	if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 
+	TH1::SetDefaultSumw2();
+
+	mkdir("plots",0777); //Create directory if inexistant
+
 	TH1F *h_tmp = 0, *h_data = 0;
 	THStack *stack = 0;
 
 	//Variable names to be displayed on plots
-	TString title_MET = "Missing E_{T} [GeV]";
+	//TString title_MET = "Missing E_{T} [GeV]";
 
 	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
 	thechannellist.push_back("uuu");
 	thechannellist.push_back("uue");
 	thechannellist.push_back("eeu");
 	thechannellist.push_back("eee");
-	//thechannellist.push_back("");
 
-	//Canvas definition
+	//Load Canvas definition
 	Load_Canvas_Style();
 
-	//Want to plot ALL variables (inside the 2 different variable vectors !)
+	//Want to plot ALL activated variables (inside the 2 different variable vectors !)
 	vector<TString> total_var_list;
 	for(int i=0; i<v_cut_name.size(); i++)
 	{
@@ -1375,17 +1502,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		c1->SetBottomMargin(0.3);
 
 		h_data = 0; stack = 0;
-		vector<TH1F*> v_MC_histo;
-
-		//Idem for each systematics
-		//NB : the inclusion of systematics in plots is completely hard-coded !! If want to add a syst., make sure to follow the exact same pattern as for the other in the code !
-		vector<TH1F*> v_MC_histo_JER_plus; vector<TH1F*> v_MC_histo_JER_minus;
-		vector<TH1F*> v_MC_histo_JES_plus; vector<TH1F*> v_MC_histo_JES_minus;
-		vector<TH1F*> v_MC_histo_PU_plus; vector<TH1F*> v_MC_histo_PU_minus;
-		vector<TH1F*> v_MC_histo_Q2_plus; vector<TH1F*> v_MC_histo_Q2_minus;
-		vector<TH1F*> v_MC_histo_MuEff_plus; vector<TH1F*> v_MC_histo_MuEff_minus;
-		vector<TH1F*> v_MC_histo_EleEff_plus; vector<TH1F*> v_MC_histo_EleEff_minus;
-		//vector<TH1F*> v_MC_histo_test_plus; vector<TH1F*> v_MC_histo_test_minus;
+		vector<TH1F*> v_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
 
 		//TLegend* qw = new TLegend(.80,.60,.95,.90);
 		TLegend* qw = new TLegend(.85,.7,0.965,.915);
@@ -1393,110 +1510,127 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		qw->SetFillColor(0);
 		qw->SetLineColor(0);
 
-		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors
+		//---------------------------
+		//ERROR VECTORS INITIALIZATION
+		//---------------------------
+		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
+		//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
+		TString histo_name = "Control_uuu_"+ total_var_list[ivar] + "_Data";
+		if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<__LINE__<<histo_name<<BOLD(FRED(" : not found ! Exit !"))<<endl; return 0;}
+		h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
+		int nofbins = h_tmp->GetNbinsX();
+		for(int ibin=0; ibin<nofbins; ibin++)
+		{
+			v_eyl.push_back(0); v_eyh.push_back(0);
+			v_exl.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2); v_exh.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2);
+			v_x.push_back( (h_tmp->GetXaxis()->GetBinLowEdge(nofbins+1) - h_tmp->GetXaxis()->GetBinLowEdge(1) ) * ((ibin+1 - 0.5)/nofbins) + h_tmp->GetXaxis()->GetBinLowEdge(1));
+			v_y.push_back(0);
+		}
+
 
 		//---------------------------
-		//CREATE STACK (MC) AND DATA HISTO
+		//RETRIEVE & SUM HISTOGRAMS, SUM ERRORS QUADRATICALLY
 		//---------------------------
 
-		int niter_chan = 0; //is needed to know if histo must be cloned or added
-
+		int niter_chan = 0; //is needed to know if h_tmp must be cloned or added
 		for(int ichan=0; ichan<thechannellist.size(); ichan++)
 		{
-			if(!allchannels && channel != thechannellist[ichan]) {continue;}
+			if(!allchannels && channel != thechannellist[ichan]) {continue;} //If plot single channel
 
 			for(int isample = 0; isample < sample_list.size(); isample++)
 			{
+				if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
+				else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
+
+				bool isData = sample_list[isample] == "Data";
+				//cout<<thechannellist[ichan]<<" / "<<sample_list[isample]<<" / "<<endl;
+
+				TH1F* histo_nominal = 0; //Nominal histogram <-> syst == "" //Create it here because it's also used in the (syst != "") loop
+
+				h_tmp = 0; //Temporary storage of histogram
+
+				histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
+				if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+				h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
+				//cout<<"h_tmp = "<<h_tmp<<endl;
+				//cout<<__LINE__<<endl;
+
+				if(isData) //DATA
+				{
+					if(niter_chan == 0) {h_data = (TH1F*) h_tmp->Clone();}
+					else {h_data->Add(h_tmp);}
+					continue;
+				}
+				else //MC
+				{
+					//Normally the data sample is included in first position of the list, so for MC sample vectors -> need to use "isample - 1"
+					//But let's make sure that it won't be a problem
+					if(isample-1 < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address ! Exit !"))<<endl; return 0;}
+
+					//Use color vector filled in main()
+					h_tmp->SetFillStyle(1001);
+					h_tmp->SetFillColor(colorVector[isample-1]);
+					h_tmp->SetLineColor(colorVector[isample-1]);
+
+					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
+					else {v_MC_histo[isample-1]->Add(h_tmp);}
+
+					histo_nominal = (TH1F*) h_tmp->Clone();
+
+					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
+					{
+						//Lumi = 2.5% of bin content //WARNING : REPLACE by 6.2% FOR 2016 DATA
+						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
+						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
+						//MC Stat error
+						v_eyl[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
+						v_eyh[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
+
+						v_y[ibin]+= histo_nominal->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
+
+						if(ibin > 0) {continue;} //cout only first bin
+						cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+					}
+				}
+
 				for(int isyst=0; isyst<syst_list.size(); isyst++)
 				{
-					bool isData = sample_list[isample].Contains("Data");
+					if(isData || sample_list[isample].Contains("Fakes") ) {break;} //No syst
+					if(syst_list[isyst] == "") {continue;} //Already done
+					//if(sample_list[isample].Contains("ttZ") && syst_list[isyst].Contains("Q2") ) {continue;} //incompatible w/ ttZMad
 
-					if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
-					else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
+					TH1F* histo_syst = 0; //Store the "systematic histograms"
 
-					if((isData || sample_list[isample].Contains("Fakes")) && syst_list[isyst] != "") {continue;}
-					if(sample_list[isample].Contains("ttZ") && syst_list[isyst] == "Q2") {continue;} //bug
+					histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample] + "_" + syst_list[isyst];
+					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+					histo_syst = (TH1F*) f->Get(histo_name.Data())->Clone();
 
-					//cout<<thechannellist[ichan]<<" / "<<sample_list[isample]<<" / "<<syst_list[isyst]<<endl;
-
-					h_tmp = 0;
-
-					TString histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
-					if(syst_list[isyst] != "") {histo_name+= "_" + syst_list[isyst];}
-					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : problem"<<endl; continue;}
-
-					h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
-					//cout<<"htmp = "<<h_tmp<<endl;
-					//cout<<__LINE__<<endl;
-
-					if(isData)
+					//Add up here the different errors (quadratically), for each bin separately
+					for(int ibin=0; ibin<nofbins; ibin++)
 					{
-						if(h_data == 0) {h_data = (TH1F*) h_tmp->Clone();}
-						else {h_data->Add(h_tmp);}
-						continue;
-					}
+						double tmp = 0;
 
-					//SINCE WE USE ONLY ONE SAMPLE_LIST FOR DATA AND MC, IT MAKES A DIFFERENCE WHETHER DATA SAMPLE IS ACTIVATED OR NOT
-					//if indeed we also run on data, then for the following samples (= MC) we need to do iterator-= 1 in order to start the MC-dedicated vector at 0 !
-					if(sample_list[0].Contains("Data")) {isample = isample - 1;} //If the sample_list contains the data
+						//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding bin error
+						//--------------------------
+						tmp = histo_syst->GetBinContent(ibin+1) - histo_nominal->GetBinContent(ibin+1);
+						if(tmp>0) {v_eyh[ibin]+= pow(tmp,2);}
+						else if(tmp<0) {v_eyl[ibin]+= pow(tmp,2);}
+						//--------------------------
 
-					h_tmp->SetFillStyle(1001);
-					h_tmp->SetFillColor(colorVector[isample]);
-					h_tmp->SetLineColor(colorVector[isample]);
-
-					if(!isData && syst_list[isyst] == "" && niter_chan==0)
-					{
-						v_MC_histo.push_back(h_tmp);
-					}
-
-					else if(!isData && syst_list[isyst] == "") //niter_chan != 0
-					{
-						v_MC_histo[isample]->Add(h_tmp);
-					}
-
-					else if(!isData && niter_chan==0) // syst_list[isyst] != ""
-					{
-						if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "PU__plus") {v_MC_histo_PU_plus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "PU__minus") {v_MC_histo_PU_minus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "Q2__minus") {v_MC_histo_Q2_minus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "MuEff__plus") {v_MC_histo_MuEff_plus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus.push_back(h_tmp);}
-						else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus.push_back(h_tmp);}
-						else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
-					}
-					else if(!isData)// syst_list[isyst] != "" && niter_chan != 0
-					{
-						if(syst_list[isyst] == "JER__plus") {v_MC_histo_JER_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "JER__minus") {v_MC_histo_JER_minus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "JES__plus") {v_MC_histo_JES_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "JES__minus") {v_MC_histo_JES_minus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "PU__plus") {v_MC_histo_PU_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "PU__minus") {v_MC_histo_PU_minus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "Q2__plus") {v_MC_histo_Q2_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "Q2__minus") {v_MC_histo_Q2_minus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "MuEff__plus") {v_MC_histo_MuEff_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "MuEff__minus") {v_MC_histo_MuEff_minus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "EleEff__plus") {v_MC_histo_EleEff_plus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] == "EleEff__minus") {v_MC_histo_EleEff_minus[isample]->Add(h_tmp);}
-						else if(syst_list[isyst] != "") {cout<<"Unknow systematic name"<<endl;}
+						if(ibin > 0) {continue;} //cout only first bin
+						cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
 
 					}
-
-					if(sample_list[0].Contains("Data")) {isample = isample + 1;} //If we have de-incremented isample (cf. above), then we need to re-increment it here so we don't get an infinite loop !!
-
 				} //end syst loop
-
 			} //end sample loop
 
 			niter_chan++;
-
 		} //end channel loop
+
+		//---------------------------
+		//CREATE STACK (MC)
+		//---------------------------
+		TH1F* histo_total_MC = 0; //Sum of all MC samples
 
 		//Stack all the MC nominal histograms (contained in v_MC_histo)
 		for(int i=0; i<v_MC_histo.size(); i++)
@@ -1504,15 +1638,20 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			if(stack == 0) {stack = new THStack; stack->Add(v_MC_histo[i]);}
 			else {stack->Add(v_MC_histo[i]);}
 
+			if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+			else {histo_total_MC->Add(h_tmp);}
+
 			//NB : use (i+1) because sample_list also contains the data sample in first position
-			if(sample_list[i+1] != "WW" && sample_list[i+1] != "ZZ") {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");} //Need to keep ordered so that sample_list[i] <-> vector_MC[i]
-			//else if(sample_list[i] == "ttZ") {qw->AddEntry(v_MC_histo[i+1], "ttV" , "f");}
+			//ADD LEGEND ENTRIES
+			if(sample_list[i+1] != "WW" && sample_list[i+1] != "ZZ") {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
+			//else if(sample_list[i] == "ttZ") {qw->AddEntry(v_MC_histo[i+1], "ttV" , "f");} //If activate both ttZ and ttW
 			else if(sample_list[i+1] == "ZZ") {qw->AddEntry(v_MC_histo[i], "VV" , "f");}
 		}
 
 		if(h_data != 0) {qw->AddEntry(h_data, "Data" , "ep");}
+		else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
 
-		if(!stack) {cout<<__LINE__<<" : stack is null"<<endl;}
+		if(!stack) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
 
 		//---------------------------
 		//DRAW HISTOS
@@ -1539,172 +1678,23 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		  h_data->SetLineColor(1);
 		  h_data->Draw("e0psame");
 		}
-		else {cout<<__LINE__<<" : h_data is null"<<endl;}
 
-		//--------------------------
-		//MC SYSTEMATICS PLOT
-		//--------------------------
-		//Create a temporary TH1F* in order to put all the systematics into it via SetBinError, then create a TGraphError from this TH1F*
-		//Also used to compute the Data/MC ratio
-		TH1F* histo_syst_MC = 0;
-		TH1F* histo_syst_MC_JER_plus = 0;  TH1F* histo_syst_MC_JER_minus = 0;
-		TH1F* histo_syst_MC_JES_plus = 0;  TH1F* histo_syst_MC_JES_minus = 0;
-		TH1F* histo_syst_MC_PU_plus = 0;  TH1F* histo_syst_MC_PU_minus = 0;
-		TH1F* histo_syst_MC_Q2_plus = 0;  TH1F* histo_syst_MC_Q2_minus = 0;
-		TH1F* histo_syst_MC_MuEff_plus = 0;  TH1F* histo_syst_MC_MuEff_minus = 0;
-		TH1F* histo_syst_MC_EleEff_plus = 0;  TH1F* histo_syst_MC_EleEff_minus = 0;
-		//TH1F* histo_syst_MC_test_plus = 0;  TH1F* histo_syst_MC_test_minus = 0;
-		for(unsigned int imc=0; imc < v_MC_histo.size(); imc++) //Clone or Add histograms
+
+		//---------------------------
+		//DRAW SYST ERRORS ON PLOT
+		//---------------------------
+
+		//Need to take sqrt of total errors
+		for(int ibin=0; ibin<nofbins; ibin++)
 		{
-			if(histo_syst_MC == 0) {histo_syst_MC = (TH1F*) v_MC_histo[imc]->Clone();}
-			else {histo_syst_MC->Add(v_MC_histo[imc]);}
+			v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
+			v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
 
-			//cout<<"v_MC_histo[imc]->GetBinContent(1) = "<<v_MC_histo[imc]->GetBinContent(1)<<endl;
-			//cout<<"histo_syst_MC->GetBinContent(1) = "<<histo_syst_MC->GetBinContent(1)<<endl;
-
-			if(v_MC_histo_JER_plus.size() == v_MC_histo.size()) //If the syst. is taken into account, then both vectors should have same size
-			{
-				if(histo_syst_MC_JER_plus == 0) {histo_syst_MC_JER_plus = (TH1F*) v_MC_histo_JER_plus[imc]->Clone();}
-				else {histo_syst_MC_JER_plus->Add(v_MC_histo_JER_plus[imc]);}
-				if(histo_syst_MC_JER_minus == 0) {histo_syst_MC_JER_minus = (TH1F*) v_MC_histo_JER_minus[imc]->Clone();}
-				else {histo_syst_MC_JER_minus->Add(v_MC_histo_JER_minus[imc]);}
-			}
-
-			if(v_MC_histo_JES_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_JES_plus == 0) {histo_syst_MC_JES_plus = (TH1F*) v_MC_histo_JES_plus[imc]->Clone();}
-				else {histo_syst_MC_JES_plus->Add(v_MC_histo_JES_plus[imc]);}
-				if(histo_syst_MC_JES_minus == 0) {histo_syst_MC_JES_minus = (TH1F*) v_MC_histo_JES_minus[imc]->Clone();}
-				else {histo_syst_MC_JES_minus->Add(v_MC_histo_JES_minus[imc]);}
-			}
-			if(v_MC_histo_PU_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_PU_plus == 0) {histo_syst_MC_PU_plus = (TH1F*) v_MC_histo_PU_plus[imc]->Clone();}
-				else {histo_syst_MC_PU_plus->Add(v_MC_histo_PU_plus[imc]);}
-				if(histo_syst_MC_PU_minus == 0) {histo_syst_MC_PU_minus = (TH1F*) v_MC_histo_PU_minus[imc]->Clone();}
-				else {histo_syst_MC_PU_minus->Add(v_MC_histo_PU_minus[imc]);}
-			}
-			if(v_MC_histo_Q2_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_Q2_plus == 0) {histo_syst_MC_Q2_plus = (TH1F*) v_MC_histo_Q2_plus[imc]->Clone();}
-				else {histo_syst_MC_Q2_plus->Add(v_MC_histo_Q2_plus[imc]);}
-				if(histo_syst_MC_Q2_minus == 0) {histo_syst_MC_Q2_minus = (TH1F*) v_MC_histo_Q2_minus[imc]->Clone();}
-				else {histo_syst_MC_Q2_minus->Add(v_MC_histo_Q2_minus[imc]);}
-			}
-			if(v_MC_histo_MuEff_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_MuEff_plus == 0) {histo_syst_MC_MuEff_plus = (TH1F*) v_MC_histo_MuEff_plus[imc]->Clone();}
-				else {histo_syst_MC_MuEff_plus->Add(v_MC_histo_MuEff_plus[imc]);}
-				if(histo_syst_MC_MuEff_minus == 0) {histo_syst_MC_MuEff_minus = (TH1F*) v_MC_histo_MuEff_minus[imc]->Clone();}
-				else {histo_syst_MC_MuEff_minus->Add(v_MC_histo_MuEff_minus[imc]);}
-			}
-			if(v_MC_histo_EleEff_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_EleEff_plus == 0) {histo_syst_MC_EleEff_plus = (TH1F*) v_MC_histo_EleEff_plus[imc]->Clone();}
-				else {histo_syst_MC_EleEff_plus->Add(v_MC_histo_EleEff_plus[imc]);}
-				if(histo_syst_MC_EleEff_minus == 0) {histo_syst_MC_EleEff_minus = (TH1F*) v_MC_histo_EleEff_minus[imc]->Clone();}
-				else {histo_syst_MC_EleEff_minus->Add(v_MC_histo_EleEff_minus[imc]);}
-			}
-		}
-		int nofbin = histo_syst_MC->GetNbinsX();
-
-		//Add up here the different errors (quadratically), for each bin separately
-		for(int ibin=1; ibin<nofbin+1; ibin++) //Start at bin 1
-		{
-			double err_up = 0;
-			double err_low = 0;
-			double tmp = 0;
-
-			//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding error
-			//--------------------------
-
-			//JER
-			if(histo_syst_MC_JER_plus != 0)
-			{
-				tmp = histo_syst_MC_JER_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_JER_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//JES
-			if(histo_syst_MC_JES_plus != 0)
-			{
-				tmp = histo_syst_MC_JES_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_JES_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//PU
-			if(histo_syst_MC_PU_plus != 0)
-			{
-				tmp = histo_syst_MC_PU_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_PU_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Q2 - Scale
-			if(histo_syst_MC_Q2_plus != 0)
-			{
-				tmp = histo_syst_MC_Q2_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_Q2_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Muon Efficiency SF
-			if(histo_syst_MC_MuEff_plus != 0)
-			{
-				tmp = histo_syst_MC_MuEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_MuEff_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Electron Efficiency SF
-			if(histo_syst_MC_EleEff_plus != 0)
-			{
-				tmp = histo_syst_MC_EleEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_EleEff_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Luminosity //UPDATE TO 6.2% FOR 2016 ??
-			err_up+= pow(histo_syst_MC->GetBinContent(ibin)*0.025, 2);
-			err_low+= pow(histo_syst_MC->GetBinContent(ibin)*0.025, 2);
-			//MC Statistical uncertainty
-			err_up+= 	pow(histo_syst_MC->GetBinError(ibin), 2);
-			err_low+= 	pow(histo_syst_MC->GetBinError(ibin), 2);
-
-			//cout<<"histo_syst_MC->GetBinError(ibin) = "<<histo_syst_MC->GetBinError(ibin)<<endl;
-
-			//--------------------------
-			//Take sqrt
-			err_up = pow(err_up, 0.5); //cout<<"err_up = "<<err_up<<endl;
-			err_low = pow(err_low, 0.5); //cout<<"err_low = "<<err_low<<endl;
-
-			//Fill error vectors (one per bin)
-			v_eyh.push_back(err_up);
-			v_eyl.push_back(err_low);
-			v_exl.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
-			v_exh.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
-			v_x.push_back( (histo_syst_MC->GetXaxis()->GetBinLowEdge(nofbin+1) - histo_syst_MC->GetXaxis()->GetBinLowEdge(1) ) * ((ibin - 0.5)/nofbin) + histo_syst_MC->GetXaxis()->GetBinLowEdge(1));
-			v_y.push_back(histo_syst_MC->GetBinContent(ibin)); //see warning above about THStack and negative weights
-
-			//if(ibin > 1) {continue;} //display only first bin
-			//cout<<"x = "<<v_x[ibin-1]<<endl;    cout<<", y = "<<v_y[ibin-1]<<endl;    cout<<", eyl = "<<v_eyl[ibin-1]<<endl;    cout<<", eyh = "<<v_eyh[ibin-1]<<endl; cout<<", exl = "<<v_exl[ibin-1]<<endl;    cout<<", exh = "<<v_exh[ibin-1]<<endl;
+			if(ibin > 0) {continue;} //cout only first bin
+			cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
 		}
 
-		//Pointers to vectors : need to give the adress of first element (all other elements then can be accessed iteratively)
+		//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
 		double* eyl = &v_eyl[0];
 		double* eyh = &v_eyh[0];
 		double* exl = &v_exl[0];
@@ -1712,26 +1702,22 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		double* x = &v_x[0];
 		double* y = &v_y[0];
 
-		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates
+		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
 		TGraphAsymmErrors* gr = 0;
-		gr = new TGraphAsymmErrors(nofbin,x,y,exl,exh,eyl,eyh);
+		gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
 		gr->SetFillStyle(3005);
 		gr->SetFillColor(1);
 		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 		//cout << __LINE__ << endl;
 
-
 		//-------------------
 		//CAPTIONS
 		//-------------------
-
 		TLatex* latex = new TLatex();
 		latex->SetNDC();
 		latex->SetTextSize(0.04);
 		latex->SetTextAlign(31);
 		latex->DrawLatex(0.45, 0.95, "CMS Preliminary");
-
-		 // cout << __LINE__ << endl;
 
 		TLatex* latex2 = new TLatex();
 		latex2->SetNDC();
@@ -1760,12 +1746,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		text2->SetTextSize(0.0610687);
 		//text2->SetTextSizePixels(24);// dflt=28
 		text2->Draw();
-
 		qw->Draw();
 
-
 		//--------------------------
-		//DATA OVER BACKGROUND RATIO
+		//DRAW DATA/MC RATIO
 		//--------------------------
 		//Create Data/MC ratio plot (bottom of canvas)
 		if(h_data != 0 && v_MC_histo.size() != 0) //Need both data and MC
@@ -1779,8 +1763,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			canvas_2->cd(0);
 
 			TH1F * histo_ratio_data = (TH1F*) h_data->Clone();
-
-			histo_ratio_data->Divide(histo_syst_MC);
+			histo_ratio_data->Divide(histo_total_MC); //Ratio
 
 			//if(total_var_list[ivar] == "METpt")   histo_ratio_data->GetXaxis()->SetTitle(title_MET.Data());
 			histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
@@ -1792,11 +1775,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
 			histo_ratio_data->GetYaxis()->SetNdivisions(6);
 			histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
-			histo_ratio_data->Draw("E1X0");
+			histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
 			//Copy previous TGraphAsymmErrors
 			TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
-
 			double *theErrorX_h = thegraph_tmp->GetEXhigh();
 			double *theErrorY_h = thegraph_tmp->GetEYhigh();
 			double *theErrorX_l = thegraph_tmp->GetEXlow();
@@ -1816,7 +1798,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
 			thegraph_ratio->SetFillStyle(3005);
 			thegraph_ratio->SetFillColor(1);
-
 			thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 		}
 
@@ -1842,6 +1823,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 
 
+
 //Plot stacked BDT templates VS pseudo-data
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
@@ -1856,6 +1838,9 @@ int theMVAtool::Plot_Templates(TString channel, TString template_name, bool allc
 	TFile* file_input = 0;
 	file_input = TFile::Open( input_name.Data() );
 	if(file_input == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+
+	mkdir("plots",0777);
+	TH1::SetDefaultSumw2();
 
 	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
 	thechannellist.push_back("uuu");
@@ -1950,515 +1935,3 @@ int theMVAtool::Plot_Templates(TString channel, TString template_name, bool allc
 
 	delete c1; delete leg; return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//    _____   _____   ____    _____   ___   _   _    ____
-//   |_   _| | ____| / ___|  |_   _| |_ _| | \ | |  / ___|
-//     | |   |  _|   \___ \    | |    | |  |  \| | | |  _
-//     | |   | |___   ___) |   | |    | |  | |\  | | |_| |
-//     |_|   |_____| |____/    |_|   |___| |_| \_|  \____|
-//
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
-/*
-int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool allchannels)
-{
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	cout<<FYEL("--- Draw Contol Plots ---")<<endl;
-	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
-
-	TString input_file_name = "outputs/Control_Histograms" + filename_suffix + ".root";
-	TFile* f = 0;
-	f = TFile::Open( input_file_name );
-	if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
-
-	TH1F *h_tmp = 0, *h_data = 0;
-	THStack *stack = 0;
-
-	//Variable names to be displayed on plots
-	TString title_MET = "Missing E_{T} [GeV]";
-
-	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
-	thechannellist.push_back("uuu");
-	thechannellist.push_back("uue");
-	thechannellist.push_back("eeu");
-	thechannellist.push_back("eee");
-	//thechannellist.push_back("");
-
-	//Canvas definition
-	Load_Canvas_Style();
-
-	//Want to plot ALL variables (inside the 2 different variable vectors !)
-	vector<TString> total_var_list;
-	for(int i=0; i<v_cut_name.size(); i++)
-	{
-		total_var_list.push_back(v_cut_name[i].Data());
-	}
-	for(int i=0; i<var_list.size(); i++)
-	{
-		total_var_list.push_back(var_list[i].Data());
-	}
-
-//---------------------
-//Loop on var > chan > sample > syst
-//Retrieve histograms, stack, compare, plot
-	for(int ivar=0; ivar<total_var_list.size(); ivar++)
-	{
-		TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-		c1->SetBottomMargin(0.3);
-
-		h_data = 0; stack = 0;
-		vector<TH1F*> v_MC_histo;
-
-		vector<TH1F*> v_MC_histo_syst_plus; vector<TH1F*> v_MC_histo_syst_minus;
-
-		//TLegend* qw = new TLegend(.80,.60,.95,.90);
-		TLegend* qw = new TLegend(.85,.7,0.965,.915);
-		qw->SetShadowColor(0);
-		qw->SetFillColor(0);
-		qw->SetLineColor(0);
-
-		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors
-
-		//---------------------------
-		//CREATE STACK (MC) AND DATA HISTO
-		//---------------------------
-
-
-
-		for(int isyst=0; isyst<syst_list.size(); isyst++)
-		{
-			for(int isample = 0; isample < sample_list.size(); isample++)
-			{
-				if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
-				else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
-
-				bool isData = sample_list[isample].Contains("Data");
-				int niter_chan = 0; //is needed to know if histo must be cloned or added
-
-				for(int ichan=0; ichan<thechannellist.size(); ichan++)
-				{
-					if(!allchannels && channel != thechannellist[ichan]) {continue;}
-
-					if((isData || sample_list[isample].Contains("Fakes")) && syst_list[isyst] != "") {continue;}
-					if(sample_list[isample].Contains("ttZ") && syst_list[isyst] == "Q2") {continue;} //bug
-
-					//cout<<thechannellist[ichan]<<" / "<<sample_list[isample]<<" / "<<syst_list[isyst]<<endl;
-
-					h_tmp = 0;
-
-					TString histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
-					if(syst_list[isyst] != "") {histo_name+= "_" + syst_list[isyst];}
-					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
-
-					h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
-					//cout<<"h_tmp = "<<h_tmp<<endl;
-					//cout<<__LINE__<<endl;
-
-					if(isData)
-					{
-						if(h_data == 0) {h_data = (TH1F*) h_tmp->Clone();}
-						else {h_data->Add(h_tmp);}
-						continue;
-					}
-
-					//SINCE WE USE ONLY ONE SAMPLE_LIST FOR DATA AND MC, IT MAKES A DIFFERENCE WHETHER DATA SAMPLE IS ACTIVATED OR NOT
-					//if indeed we also run on data, then for the following samples (= MC) we need to do iterator-= 1 in order to start the MC-dedicated vector at 0 !
-					if(sample_list[0].Contains("Data")) {isample = isample - 1;} //If the sample_list contains the data
-
-					h_tmp->SetFillStyle(1001);
-					h_tmp->SetFillColor(colorVector[isample]);
-					h_tmp->SetLineColor(colorVector[isample]);
-
-					if(!isData && syst_list[isyst] == "")
-					{
-						if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
-						else {v_MC_histo[isample]->Add(h_tmp);}
-
-					}
-					else if(!isData) // syst_list[isyst] != ""
-					{
-						if(niter_chan == 0)
-						{
-							if(syst_list[isyst].Contains("plus") {v_MC_histo_syst_plus.push_back(h_tmp);}
-							else if(syst_list[isyst].Contains("minus") {v_MC_histo_syst_minus.push_back(h_tmp);}
-							else {cout<<__LINE__<<BOLD(FRED("Systematic name problem !"))<<endl;}
-						}
-						else
-						{
-							if(syst_list[isyst].Contains("plus") {v_MC_histo_syst_plus[isample]->Add(h_tmp);}
-							else if(syst_list[isyst].Contains("minus") {v_MC_histo_syst_minus[isample]->Add(h_tmp);}
-							else {cout<<__LINE__<<BOLD(FRED("Systematic name problem !"))<<endl;}
-						}
-					}
-
-					if(sample_list[0].Contains("Data")) {isample = isample + 1;} //If we have de-incremented isample (cf. above), then we need to re-increment it here so we don't get an infinite loop !!
-
-					niter_chan++;
-				} //end channel loop
-
-			} //end sample loop
-
-		} //end syst loop
-
-		//Stack all the MC nominal histograms (contained in v_MC_histo)
-		for(int i=0; i<v_MC_histo.size(); i++)
-		{
-			if(stack == 0) {stack = new THStack; stack->Add(v_MC_histo[i]);}
-			else {stack->Add(v_MC_histo[i]);}
-
-			//NB : use (i+1) because sample_list also contains the data sample in first position
-			if(sample_list[i+1] != "WW" && sample_list[i+1] != "ZZ") {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");} //Need to keep ordered so that sample_list[i] <-> vector_MC[i]
-			//else if(sample_list[i] == "ttZ") {qw->AddEntry(v_MC_histo[i+1], "ttV" , "f");}
-			else if(sample_list[i+1] == "ZZ") {qw->AddEntry(v_MC_histo[i], "VV" , "f");}
-		}
-
-		if(h_data != 0) {qw->AddEntry(h_data, "Data" , "ep");}
-
-		if(!stack) {cout<<__LINE__<<" : stack is null"<<endl;}
-
-		//---------------------------
-		//DRAW HISTOS
-		//---------------------------
-
-		c1->cd();
-
-		//Set Yaxis maximum & min
-		if(h_data != 0 && stack != 0)
-		{
-			if(h_data->GetMaximum() > stack->GetMaximum() ) {stack->SetMaximum(h_data->GetMaximum()+0.3*h_data->GetMaximum());}
-			else stack->SetMaximum(stack->GetMaximum()+0.3*stack->GetMaximum());
-		}
-		stack->SetMinimum(0);
-
-		//Draw stack
-		if(stack != 0) {stack->Draw("HIST"); stack->GetXaxis()->SetLabelSize(0.0);}
-
-		//Draw data
-		if(h_data != 0)
-		{
-		  h_data->SetMarkerStyle(20);
-		  h_data->SetMarkerSize(1.2);
-		  h_data->SetLineColor(1);
-		  h_data->Draw("e0psame");
-		}
-		else {cout<<__LINE__<<" : h_data is null"<<endl;}
-
-		//--------------------------
-		//MC SYSTEMATICS PLOT
-		//--------------------------
-		//Create a temporary TH1F* in order to put all the systematics into it via SetBinError, then create a TGraphError from this TH1F*
-		//Also used to compute the Data/MC ratio
-		TH1F* histo_syst_MC = 0;
-		TH1F* histo_syst_MC_JER_plus = 0;  TH1F* histo_syst_MC_JER_minus = 0;
-		TH1F* histo_syst_MC_JES_plus = 0;  TH1F* histo_syst_MC_JES_minus = 0;
-		TH1F* histo_syst_MC_PU_plus = 0;  TH1F* histo_syst_MC_PU_minus = 0;
-		TH1F* histo_syst_MC_Q2_plus = 0;  TH1F* histo_syst_MC_Q2_minus = 0;
-		TH1F* histo_syst_MC_MuEff_plus = 0;  TH1F* histo_syst_MC_MuEff_minus = 0;
-		TH1F* histo_syst_MC_EleEff_plus = 0;  TH1F* histo_syst_MC_EleEff_minus = 0;
-		//TH1F* histo_syst_MC_test_plus = 0;  TH1F* histo_syst_MC_test_minus = 0;
-		for(unsigned int imc=0; imc < v_MC_histo.size(); imc++) //Clone or Add histograms
-		{
-			if(histo_syst_MC == 0) {histo_syst_MC = (TH1F*) v_MC_histo[imc]->Clone();}
-			else {histo_syst_MC->Add(v_MC_histo[imc]);}
-
-			//cout<<"v_MC_histo[imc]->GetBinContent(1) = "<<v_MC_histo[imc]->GetBinContent(1)<<endl;
-			//cout<<"histo_syst_MC->GetBinContent(1) = "<<histo_syst_MC->GetBinContent(1)<<endl;
-
-			if(v_MC_histo_JER_plus.size() == v_MC_histo.size()) //If the syst. is taken into account, then both vectors should have same size
-			{
-				if(histo_syst_MC_JER_plus == 0) {histo_syst_MC_JER_plus = (TH1F*) v_MC_histo_JER_plus[imc]->Clone();}
-				else {histo_syst_MC_JER_plus->Add(v_MC_histo_JER_plus[imc]);}
-				if(histo_syst_MC_JER_minus == 0) {histo_syst_MC_JER_minus = (TH1F*) v_MC_histo_JER_minus[imc]->Clone();}
-				else {histo_syst_MC_JER_minus->Add(v_MC_histo_JER_minus[imc]);}
-			}
-
-			if(v_MC_histo_JES_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_JES_plus == 0) {histo_syst_MC_JES_plus = (TH1F*) v_MC_histo_JES_plus[imc]->Clone();}
-				else {histo_syst_MC_JES_plus->Add(v_MC_histo_JES_plus[imc]);}
-				if(histo_syst_MC_JES_minus == 0) {histo_syst_MC_JES_minus = (TH1F*) v_MC_histo_JES_minus[imc]->Clone();}
-				else {histo_syst_MC_JES_minus->Add(v_MC_histo_JES_minus[imc]);}
-			}
-			if(v_MC_histo_PU_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_PU_plus == 0) {histo_syst_MC_PU_plus = (TH1F*) v_MC_histo_PU_plus[imc]->Clone();}
-				else {histo_syst_MC_PU_plus->Add(v_MC_histo_PU_plus[imc]);}
-				if(histo_syst_MC_PU_minus == 0) {histo_syst_MC_PU_minus = (TH1F*) v_MC_histo_PU_minus[imc]->Clone();}
-				else {histo_syst_MC_PU_minus->Add(v_MC_histo_PU_minus[imc]);}
-			}
-			if(v_MC_histo_Q2_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_Q2_plus == 0) {histo_syst_MC_Q2_plus = (TH1F*) v_MC_histo_Q2_plus[imc]->Clone();}
-				else {histo_syst_MC_Q2_plus->Add(v_MC_histo_Q2_plus[imc]);}
-				if(histo_syst_MC_Q2_minus == 0) {histo_syst_MC_Q2_minus = (TH1F*) v_MC_histo_Q2_minus[imc]->Clone();}
-				else {histo_syst_MC_Q2_minus->Add(v_MC_histo_Q2_minus[imc]);}
-			}
-			if(v_MC_histo_MuEff_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_MuEff_plus == 0) {histo_syst_MC_MuEff_plus = (TH1F*) v_MC_histo_MuEff_plus[imc]->Clone();}
-				else {histo_syst_MC_MuEff_plus->Add(v_MC_histo_MuEff_plus[imc]);}
-				if(histo_syst_MC_MuEff_minus == 0) {histo_syst_MC_MuEff_minus = (TH1F*) v_MC_histo_MuEff_minus[imc]->Clone();}
-				else {histo_syst_MC_MuEff_minus->Add(v_MC_histo_MuEff_minus[imc]);}
-			}
-			if(v_MC_histo_EleEff_plus.size() == v_MC_histo.size())
-			{
-				if(histo_syst_MC_EleEff_plus == 0) {histo_syst_MC_EleEff_plus = (TH1F*) v_MC_histo_EleEff_plus[imc]->Clone();}
-				else {histo_syst_MC_EleEff_plus->Add(v_MC_histo_EleEff_plus[imc]);}
-				if(histo_syst_MC_EleEff_minus == 0) {histo_syst_MC_EleEff_minus = (TH1F*) v_MC_histo_EleEff_minus[imc]->Clone();}
-				else {histo_syst_MC_EleEff_minus->Add(v_MC_histo_EleEff_minus[imc]);}
-			}
-		}
-		int nofbin = histo_syst_MC->GetNbinsX();
-
-		//Add up here the different errors (quadratically), for each bin separately
-		for(int ibin=1; ibin<nofbin+1; ibin++) //Start at bin 1
-		{
-			double err_up = 0;
-			double err_low = 0;
-			double tmp = 0;
-
-			//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding error
-			//--------------------------
-
-			//JER
-			if(histo_syst_MC_JER_plus != 0)
-			{
-				tmp = histo_syst_MC_JER_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_JER_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//JES
-			if(histo_syst_MC_JES_plus != 0)
-			{
-				tmp = histo_syst_MC_JES_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_JES_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//PU
-			if(histo_syst_MC_PU_plus != 0)
-			{
-				tmp = histo_syst_MC_PU_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_PU_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Q2 - Scale
-			if(histo_syst_MC_Q2_plus != 0)
-			{
-				tmp = histo_syst_MC_Q2_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_Q2_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Muon Efficiency SF
-			if(histo_syst_MC_MuEff_plus != 0)
-			{
-				tmp = histo_syst_MC_MuEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_MuEff_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Electron Efficiency SF
-			if(histo_syst_MC_EleEff_plus != 0)
-			{
-				tmp = histo_syst_MC_EleEff_plus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-				tmp = histo_syst_MC_EleEff_minus->GetBinContent(ibin) - histo_syst_MC->GetBinContent(ibin);
-				if(tmp>0) {tmp = pow(tmp,2); err_up+= tmp;}
-				else if(tmp<0) {tmp = pow(tmp,2); err_low+= tmp;}
-			}
-			//Luminosity //UPDATE TO 6.2% FOR 2016 ??
-			err_up+= pow(histo_syst_MC->GetBinContent(ibin)*0.025, 2);
-			err_low+= pow(histo_syst_MC->GetBinContent(ibin)*0.025, 2);
-			//MC Statistical uncertainty
-			err_up+= 	pow(histo_syst_MC->GetBinError(ibin), 2);
-			err_low+= 	pow(histo_syst_MC->GetBinError(ibin), 2);
-
-			//cout<<"histo_syst_MC->GetBinError(ibin) = "<<histo_syst_MC->GetBinError(ibin)<<endl;
-
-			//--------------------------
-			//Take sqrt
-			err_up = pow(err_up, 0.5); //cout<<"err_up = "<<err_up<<endl;
-			err_low = pow(err_low, 0.5); //cout<<"err_low = "<<err_low<<endl;
-
-			//Fill error vectors (one per bin)
-			v_eyh.push_back(err_up);
-			v_eyl.push_back(err_low);
-			v_exl.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
-			v_exh.push_back(histo_syst_MC->GetXaxis()->GetBinWidth(ibin) / 2);
-			v_x.push_back( (histo_syst_MC->GetXaxis()->GetBinLowEdge(nofbin+1) - histo_syst_MC->GetXaxis()->GetBinLowEdge(1) ) * ((ibin - 0.5)/nofbin) + histo_syst_MC->GetXaxis()->GetBinLowEdge(1));
-			v_y.push_back(histo_syst_MC->GetBinContent(ibin)); //see warning above about THStack and negative weights
-
-			//if(ibin > 1) {continue;} //display only first bin
-			//cout<<"x = "<<v_x[ibin-1]<<endl;    cout<<", y = "<<v_y[ibin-1]<<endl;    cout<<", eyl = "<<v_eyl[ibin-1]<<endl;    cout<<", eyh = "<<v_eyh[ibin-1]<<endl; cout<<", exl = "<<v_exl[ibin-1]<<endl;    cout<<", exh = "<<v_exh[ibin-1]<<endl;
-		}
-
-		//Pointers to vectors : need to give the adress of first element (all other elements then can be accessed iteratively)
-		double* eyl = &v_eyl[0];
-		double* eyh = &v_eyh[0];
-		double* exl = &v_exl[0];
-		double* exh = &v_exh[0];
-		double* x = &v_x[0];
-		double* y = &v_y[0];
-
-		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates
-		TGraphAsymmErrors* gr = 0;
-		gr = new TGraphAsymmErrors(nofbin,x,y,exl,exh,eyl,eyh);
-		gr->SetFillStyle(3005);
-		gr->SetFillColor(1);
-		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
-		//cout << __LINE__ << endl;
-
-
-		//-------------------
-		//CAPTIONS
-		//-------------------
-
-		TLatex* latex = new TLatex();
-		latex->SetNDC();
-		latex->SetTextSize(0.04);
-		latex->SetTextAlign(31);
-		latex->DrawLatex(0.45, 0.95, "CMS Preliminary");
-
-		 // cout << __LINE__ << endl;
-
-		TLatex* latex2 = new TLatex();
-		latex2->SetNDC();
-		latex2->SetTextSize(0.04);
-		latex2->SetTextAlign(31);
-		//------------------
-		float lumi = 2.26 * luminosity_rescale;
-		TString lumi_ts = Convert_Number_To_TString(lumi);
-		lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
-		latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
-		//------------------
-
-		TString info_data;
-		if (channel=="eee")    info_data = "eee channel";
-		else if (channel=="eeu")  info_data = "ee#mu channel";
-		else if (channel=="uue")  info_data = "#mu#mu e channel";
-		else if (channel=="uuu") info_data = "#mu#mu #mu channel";
-		else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
-
-		TLatex* text2 = new TLatex(0.45,0.98, info_data);
-		text2->SetNDC();
-		text2->SetTextAlign(13);
-		text2->SetX(0.18);
-		text2->SetY(0.92);
-		text2->SetTextFont(42);
-		text2->SetTextSize(0.0610687);
-		//text2->SetTextSizePixels(24);// dflt=28
-		text2->Draw();
-
-		qw->Draw();
-
-
-		//--------------------------
-		//DATA OVER BACKGROUND RATIO
-		//--------------------------
-		//Create Data/MC ratio plot (bottom of canvas)
-		if(h_data != 0 && v_MC_histo.size() != 0) //Need both data and MC
-		{
-			TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-			canvas_2->SetTopMargin(0.7);
-			canvas_2->SetFillColor(0);
-			canvas_2->SetFillStyle(0);
-			canvas_2->SetGridy(1);
-			canvas_2->Draw();
-			canvas_2->cd(0);
-
-			TH1F * histo_ratio_data = (TH1F*) h_data->Clone();
-
-			histo_ratio_data->Divide(histo_syst_MC);
-
-			//if(total_var_list[ivar] == "METpt")   histo_ratio_data->GetXaxis()->SetTitle(title_MET.Data());
-			histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
-
-			histo_ratio_data->SetMinimum(0.0);
-			histo_ratio_data->SetMaximum(2.0);
-			histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
-			histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
-			histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
-			histo_ratio_data->GetYaxis()->SetNdivisions(6);
-			histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
-			histo_ratio_data->Draw("E1X0");
-
-			//Copy previous TGraphAsymmErrors
-			TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
-
-			double *theErrorX_h = thegraph_tmp->GetEXhigh();
-			double *theErrorY_h = thegraph_tmp->GetEYhigh();
-			double *theErrorX_l = thegraph_tmp->GetEXlow();
-			double *theErrorY_l = thegraph_tmp->GetEYlow();
-			double *theY        = thegraph_tmp->GetY() ;
-			double *theX        = thegraph_tmp->GetX() ;
-
-			//Divide error --> ratio
-			for(int i=0; i<thegraph_tmp->GetN(); i++)
-			{
-			  theErrorY_l[i] = theErrorY_l[i]/theY[i];
-			  theErrorY_h[i] = theErrorY_h[i]/theY[i];
-			  theY[i]=1; //To center the filled area around "1"
-			}
-
-			//--> Create new TGraphAsymmErrors
-			TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-			thegraph_ratio->SetFillStyle(3005);
-			thegraph_ratio->SetFillColor(1);
-
-			thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
-		}
-
-		//Yaxis title
-		if(stack!= 0) {stack->GetYaxis()->SetTitleSize(0.04); stack->GetYaxis()->SetTitle("Events");}
-
-		//-------------------
-		//OUTPUT
-		//-------------------
-
-		//Image name (.png)
-		TString outputname = "plots/"+total_var_list[ivar]+"_"+channel+".png";
-		if(channel == "" || allchannels) {outputname = "plots/"+total_var_list[ivar]+"_all.png";}
-
-		//cout << __LINE__ << endl;
-		if(c1!= 0) {c1->SaveAs(outputname.Data() );}
-		//cout << __LINE__ << endl;
-
-		delete c1; //Must free dinamically-allocated memory
-	} //end var loop
-	return 0;
-}*/

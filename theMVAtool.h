@@ -62,7 +62,7 @@ public :
 
 //Methods
 	theMVAtool();
-	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, std::vector<TString>, std::vector<TString>, int);
+	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, std::vector<TString>, std::vector<TString>, std::vector<bool>, int);
 	~theMVAtool(){delete reader;};
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
@@ -73,9 +73,8 @@ public :
 	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
 	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
-	int Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
-
 	int Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
+	int Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 	int Plot_Templates(TString, TString, bool);
 
 //Members
@@ -86,7 +85,7 @@ public :
 	std::vector<TString> var_list; std::vector<float> vec_variables; //Contains as many floats as there are variables in var_list
 	std::vector<TString> syst_list;
 	std::vector<TString> channel_list;
-	std::vector<TString> v_cut_name; std::vector<TString> v_cut_def; std::vector<float> v_cut_float;
+	std::vector<TString> v_cut_name; std::vector<TString> v_cut_def; std::vector<float> v_cut_float; std::vector<bool> v_cut_IsUsedForBDT;
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram
