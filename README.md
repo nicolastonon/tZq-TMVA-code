@@ -28,7 +28,6 @@ _____________________________________________________________________________
 _____________________________________________________________________________
 
 /!\ : The code looks for the Ntuples in ./Ntuples/, writes the plots in ./plots/ and writes te output files in ./outputs/
-    ---> Make sure you have created these repositories yourself !
 
 - NB : the Makefile is basic, so as long as these files are in the same directory, it should work anywhere.
 /!\ Only make sure to change the "LFLAGS" line in Makefile, so that it looks for the MVA libraries in *your* folder !
@@ -40,12 +39,15 @@ _____________________________________________________________________________
 ### BDT_analysis.cc : Configuration, int main(), function calls ###
 
 * Configuration options :
-    - List of cuts : treated as spectator variables -> not used in BDT, but can be used for cuts/plots. Can add as many as you want. (NB : for ex. if you set NBJets == 0, then btagDiscri becomes constant, so you need to remove it from the BDT variables list !) ;
+    - List of 'cut variables'. These vars will either be "active" or "spectator" in BDT, depending if they're constant or not. Treated separately than 'simple' BDT vars for optimization of loops. Each of these variables must have an entry in v_cut_name/v_cut_def/v_cut_IsUsedForBDT in the same order (an entry is made in v_cut_float in constructor).
+    (NB : for ex. if you set NBJets == 0, then btagDiscri becomes constant, so you need to remove it from the BDT variables list !) ;
+
     - set_luminosity : choose the luminosity in fb-1. Computes a re-scaling factor by which *histograms* are re-scaled ;
     - nofbin_templates : choose the number of bins for template histograms ;
     - fakes_from_data : choose b/w MC or data-driven fakes ;
+    - fakes_summed_channels : choose if want to sum channels 2 by 2 wrt the flavour of 3rd lepton (artificial way of ~doubling the stat.)
     - real_data_templates : choose if want to obtain the "DATA" templates from real data or pseudodata ;
-    - do_optimization_scan : activates the part of the main() which loops on fuctions for optimization studies. Not properly implemented yet.
+    - do_optimization_scan : activates the part of the main() which loops on fuctions for optimization studies. Needs better implementation/configurability
 
 * Set the lists of variables, samples, systematics, channels
     - /!\ : Always include the 3 MC fake samples (DY, TT, WW) at the end of the sample_list, so they are recognized as such ;
@@ -79,8 +81,7 @@ _____________________________________________________________________________
 
 //--- Draw Plots
     - NB : Can choose if sum 4 channels or not. Plots are in /plots repository.
-* Draw_Control_Plots() : uses the control histograms to draw control plots. Everything is pretty much automatized, but code may be a bit messy.
-    - NB : the drawing of systematics is highly hard-coded here ! If want to add one, need to understand/follow the exact same patern as for the other ones !!
+* Draw_Control_Plots() : uses the control histograms to draw control plots.
 * Plot_Templates() : uses the histograms from the Read() output file containing the templates & draws them.
 
 
