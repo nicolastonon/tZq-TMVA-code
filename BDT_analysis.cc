@@ -6,7 +6,7 @@ int main()
 {
 //-------------------
     std::vector<TString> thesamplelist;
-    std::vector<TString > thevarlist; //Variables used in BDT
+    std::vector<TString > thevarlist;
 	std::vector<TString > thesystlist;
     std::vector<TString > thechannellist;
     std::vector<TString > set_v_cut_name;
@@ -28,25 +28,37 @@ int main()
 //ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
 //NB : * WZ CR --> >0j & ==0bj // * ttZ CR --> >1j & >1bj // * SR ---> >0j & ==1bj //
 //-------------------
-    set_v_cut_name.push_back("METpt");                  set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
-    set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
-    set_v_cut_name.push_back("AddLepPT");               set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+//always keep mTW in the list of cuts, even if cut at >0, because it is needed for producing the templates
+    set_v_cut_name.push_back("METpt");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+    //set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">-1");          set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1");    set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 && <4");    set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 ");    set_v_cut_IsUsedForBDT.push_back(true); // Isis
+
+    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("==0");         set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");         set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("==1");         set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");         set_v_cut_IsUsedForBDT.push_back(true); //Isis
+
+    //set_v_cut_name.push_back("AddLepPT");               set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
     //WARNING : CAN ONLY USE "< X" FOR ISO !! (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
-    set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+    //set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+    //set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
 
     //Used to re-scale every weights in the code by a lumi factor. (NB : default value is 2015 / 7.6.x lumi = 2.26 !)
-    double set_luminosity = 2.26; //in fb-1
+    double set_luminosity = 12.8; //in fb-1
+    //double set_luminosity = 50; //in fb-1
+    //double set_luminosity = 2.26; //in fb-1
 
     //Use MC fakes or data-driven fakes)
     bool fakes_from_data = true;
 
     //Templates
-    int nofbin_templates = 5; //Binning to be used for *template* production
-    bool fakes_summed_channels = true; //Sum uuu/eeu & eee/uue --> Double the fake stat.! Only possible for Templates (not for CR plots)
+    int nofbin_templates = 8; //Binning to be used for *template* production
+    bool fakes_summed_channels = false; //Sum uuu/eeu & eee/uue --> Double the fake stat.! Only possible for Templates (not for CR plots)
     bool real_data_templates = false; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
 
     //If true, activates only the "optimization" part (@ end of file)
@@ -91,7 +103,8 @@ int main()
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed);
     //thesamplelist.push_back("ST_tW");         v_color.push_back(kBlack);
     //thesamplelist.push_back("ST_tW_antitop"); v_color.push_back(kBlack);
-    //thesamplelist.push_back("ttW");           v_color.push_back(kRed+1);
+    thesamplelist.push_back("ttW");           v_color.push_back(kRed+1);
+
 
     //FAKES
     thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
@@ -99,6 +112,19 @@ int main()
     thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
     thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
     thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
+
+
+    /*
+    thesamplelist.push_back("DataFakes");
+
+    thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
+
+    thesamplelist.push_back("DYjetsFakes");          v_color.push_back(kAzure-2); //MC
+    thesamplelist.push_back("TTFakes");              v_color.push_back(kRed-1); //MC
+    thesamplelist.push_back("WWFakes");              v_color.push_back(kYellow); //MC
+
+    */
+
 //-------------------
 
 //-----------------------------------------------------------------------------------------
@@ -113,9 +139,10 @@ int main()
 //-------------------
 //NB : treat leaves/variables "Weight" and "Channel" separately
 
-    thevarlist.push_back("m3l");
+    thevarlist.push_back("mTW");
+    //thevarlist.push_back("m3l");
     thevarlist.push_back("ZCandMass");
-    thevarlist.push_back("btagDiscri"); //NB : for now, if NBJets == 0 --> btagDiscri is constant --> Need to desactivate it !
+    thevarlist.push_back("btagDiscri"); //NB : for now, if NBJets == 0 --> btagDiscri is constant --> Need to disactivate it !
     thevarlist.push_back("dRAddLepJet");
     thevarlist.push_back("dRAddLepClosestJet");
     thevarlist.push_back("deltaPhilb");
@@ -132,11 +159,11 @@ int main()
     thevarlist.push_back("ptQ");
     thevarlist.push_back("dRjj");
 
-    // mtop not properly reconstructed yet
-    //thevarlist.push_back("mtop");
+    //mtop not properly reconstructed yet
+    thevarlist.push_back("mtop");
     //thevarlist.push_back("dRAddLepBFromTop");
     //thevarlist.push_back("dRZTop");
-    //thevarlist.push_back("TopPT");
+    thevarlist.push_back("TopPT");
 
 //-------------------
 
@@ -161,15 +188,11 @@ int main()
     thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
     thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
-    //B-tag syst
-    /*thesystlist.push_back("btag_lf__plus"); thesystlist.push_back("btag_lf__minus");
-    thesystlist.push_back("btag_hf__plus"); thesystlist.push_back("btag_hf__minus");
-    thesystlist.push_back("btag_hfstats1__plus"); thesystlist.push_back("btag_hfstats1__minus");
-    thesystlist.push_back("btag_lfstats1__plus"); thesystlist.push_back("btag_lfstats1__minus");
-    thesystlist.push_back("btag_hfstats2__plus"); thesystlist.push_back("btag_hfstats2__minus");
-    thesystlist.push_back("btag_lfstats2__plus"); thesystlist.push_back("btag_lfstats2__minus");
-    thesystlist.push_back("btag_cferr1__plus"); thesystlist.push_back("btag_cferr1__minus");
-    thesystlist.push_back("btag_cferr2__plus"); thesystlist.push_back("btag_cferr2__minus");*/
+    thesystlist.push_back("btag__plus"); thesystlist.push_back("btag__minus");
+    thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
+
+
+
 
 //-------------------
 
@@ -198,15 +221,14 @@ int main()
         for(int i=0; i<thechannellist.size(); i++)
         {
             TString bdt_type = "BDT"; //'BDT' or 'BDTttZ' depending on the region (for theta disambiguation)
-            //MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
+            MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
         }
 
         //#############################################
         //  READING --- TEMPLATES CREATION
         //#############################################
-        TString template_name = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
+        TString template_name = "BDT"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
         //MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
-
         if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
         //#############################################
@@ -230,7 +252,13 @@ int main()
 
         //MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
         //MVAtool->Plot_Templates("", template_name, true); //Sum of 4 channels
+
+        TString function = "landau"; //'gaus' or 'landau'
+        //MVAtool->Fit_Fake_Templates(fakes_from_data, function);
+
+        //MVAtool->Create_Fake_Templates_From_Fit(fakes_from_data, function);
     }
+
 
 
 //---------------------------------------------------------------
@@ -254,23 +282,28 @@ int main()
 
         //For scan
         vector<TString> v_METpt_cut_values;
-        /*v_METpt_cut_values.push_back(">0");
-        v_METpt_cut_values.push_back(">10");
-        v_METpt_cut_values.push_back(">20");
-        v_METpt_cut_values.push_back(">30");
-        v_METpt_cut_values.push_back(">40");
-        v_METpt_cut_values.push_back(">50");*/
+        v_METpt_cut_values.push_back(">0.01");
+        //v_METpt_cut_values.push_back(">10");
+        //v_METpt_cut_values.push_back(">20");
+        //v_METpt_cut_values.push_back(">30");
+        //v_METpt_cut_values.push_back(">40");
+        //v_METpt_cut_values.push_back(">50");
 
         vector<TString> v_mTW_cut_values;
-        /*v_mTW_cut_values.push_back(">0");
-        v_mTW_cut_values.push_back(">10");
-        v_mTW_cut_values.push_back(">20");
-        v_mTW_cut_values.push_back(">30");
-        v_mTW_cut_values.push_back(">40");
-        v_mTW_cut_values.push_back(">50");*/
+        v_mTW_cut_values.push_back(">0.01");
+        //v_mTW_cut_values.push_back(">10");
+        //v_mTW_cut_values.push_back(">20");
+        //v_mTW_cut_values.push_back(">30");
+        //v_mTW_cut_values.push_back(">40");
+        //v_mTW_cut_values.push_back(">50");
 
         vector<TString> v_isoMu_cut_values;
         v_isoMu_cut_values.push_back("");
+        /*v_isoMu_cut_values.push_back("<0.125");
+        v_isoMu_cut_values.push_back("<0.100");
+        v_isoMu_cut_values.push_back("<0.075");
+        v_isoMu_cut_values.push_back("<0.050");
+        v_isoMu_cut_values.push_back("<0.025");*/
 
 
         vector<TString> v_isoEl_cut_values;
@@ -282,6 +315,10 @@ int main()
         //#############################################
 
         //SCAN LOOP
+        for(int h = 0; h < v_METpt_cut_values.size(); h++) //First scanned variable
+        {
+        for(int i = 0; i < v_mTW_cut_values.size(); i++) //First scanned variable
+        {
         for(int j = 0; j < v_isoMu_cut_values.size(); j++) //First scanned variable
         {
             for(int k=0; k < v_isoEl_cut_values.size(); k++) //Second scanned variable
@@ -295,23 +332,23 @@ int main()
                 //Use scope delimiters so that I can re-use the exact same vectors names for each region (different scopes)
                 {
                     std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
-                    scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">0");     scan_v_cut_IsUsedForBDT.push_back(true);
+                    scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1");     scan_v_cut_IsUsedForBDT.push_back(true);
                     scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back("==0");    scan_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant be used in BDT
 
 
                     scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    //scan_v_cut_def.push_back(v_METpt_cut_values[j]);
+                    //scan_v_cut_def.push_back(v_METpt_cut_values[h]);
                     scan_v_cut_def.push_back("");
 
                     scan_v_cut_name.push_back("mTW"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    //scan_v_cut_def.push_back(v_mTW_cut_values[k]);
+                    //scan_v_cut_def.push_back(v_mTW_cut_values[i]);
                     scan_v_cut_def.push_back("");
 
-                    scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
+                    //scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
+                    //scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
 
-                    scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
+                    //scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
+                    //scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
                     theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates); if(MVAtool_WZ->stop_program) {return 1;}
                     MVAtool_WZ->Set_Luminosity(set_luminosity);
@@ -320,12 +357,15 @@ int main()
                     MVAtool_WZ->Read(template_name_WZ, fakes_from_data, real_data_templates, fakes_summed_channels);
                     if(!real_data_templates) {MVAtool_WZ->Generate_PseudoData_Histograms_For_Templates(template_name_WZ);}
 
+
                     for(int i=0; i<thechannellist.size(); i++)
                     {
-                        MVAtool_WZ->Plot_Templates(thechannellist[i], template_name_WZ, false); //Plot the BDT distributions of MC & pseudo-data templates
+                      //MVAtool_WZ->Plot_Templates(thechannellist[i], template_name_WZ, false); //Plot the BDT distributions of MC & pseudo-data templates
                     }
-                    MVAtool_WZ->Plot_Templates("", template_name_WZ, true); //Sum of 4 channels
+                    //MVAtool_WZ->Plot_Templates("", template_name_WZ, true); //Sum of 4 channels
                     MVAtool_WZ->~theMVAtool();
+
+
                 }
                 //#############################################
                 //               ttZ CR Templates
@@ -336,18 +376,18 @@ int main()
                     scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back(">1");     scan_v_cut_IsUsedForBDT.push_back(true);
 
                     scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    //scan_v_cut_def.push_back(v_METpt_cut_values[j]);
-                    scan_v_cut_def.push_back("");
+                    scan_v_cut_def.push_back(v_METpt_cut_values[h]);
+                    //scan_v_cut_def.push_back("");
 
                     scan_v_cut_name.push_back("mTW"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    //scan_v_cut_def.push_back(v_mTW_cut_values[k]);
-                    scan_v_cut_def.push_back("");
+                    scan_v_cut_def.push_back(v_mTW_cut_values[i]);
+                    //scan_v_cut_def.push_back("");
 
-                    scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
+                    //scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
+                    //scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
 
-                    scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
+                    //scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
+                    //scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
                     theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates); if(MVAtool_ttZ->stop_program) {return 1;}
                     MVAtool_ttZ->Set_Luminosity(set_luminosity);
@@ -364,32 +404,37 @@ int main()
 
                     for(int i=0; i<thechannellist.size(); i++)
                     {
-                        MVAtool_ttZ->Plot_Templates(thechannellist[i], template_name_ttZ, false); //Plot the BDT distributions of MC & pseudo-data templates
+                        //MVAtool_ttZ->Plot_Templates(thechannellist[i], template_name_ttZ, false); //Plot the BDT distributions of MC & pseudo-data templates
                     }
-                    MVAtool_ttZ->Plot_Templates("", template_name_ttZ, true); //Sum of 4 channels
+                    //MVAtool_ttZ->Plot_Templates("", template_name_ttZ, true); //Sum of 4 channels
                     MVAtool_ttZ->~theMVAtool();
+
+
+
+
+
                 }
                 //#############################################
                 //               tZq SR Templates
                 //#############################################
                 {
                     std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
-                    scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1");     scan_v_cut_IsUsedForBDT.push_back(true);
+                    scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1 && <4");     scan_v_cut_IsUsedForBDT.push_back(true);
                     scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back("==1");    scan_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant be used in BDT
 
                     scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    //scan_v_cut_def.push_back(v_METpt_cut_values[j]);
-                    scan_v_cut_def.push_back("");
+                    scan_v_cut_def.push_back(v_METpt_cut_values[h]);
+                    //scan_v_cut_def.push_back("");
 
                     scan_v_cut_name.push_back("mTW"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    //scan_v_cut_def.push_back(v_mTW_cut_values[k]);
-                    scan_v_cut_def.push_back("");
+                    scan_v_cut_def.push_back(v_mTW_cut_values[i]);
+                    //scan_v_cut_def.push_back("");
 
-                    scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
+                    //scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
+                    //scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
 
-                    scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-                    scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
+                    //scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
+                    //scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
                     theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates); if(MVAtool_tZq->stop_program) {return 1;}
                     MVAtool_tZq->Set_Luminosity(set_luminosity);
@@ -406,15 +451,18 @@ int main()
 
                     for(int i=0; i<thechannellist.size(); i++)
                     {
-                        MVAtool_tZq->Plot_Templates(thechannellist[i], template_name_tZq, false); //Plot the BDT distributions of MC & pseudo-data templates
+                        //MVAtool_tZq->Plot_Templates(thechannellist[i], template_name_tZq, false); //Plot the BDT distributions of MC & pseudo-data templates
                     }
-                    MVAtool_tZq->Plot_Templates("", template_name_tZq, true); //Sum of 4 channels
+                    //MVAtool_tZq->Plot_Templates("", template_name_tZq, true); //Sum of 4 channels
                     MVAtool_tZq->~theMVAtool();
+
+
                 }
 
             } //end second scanned variable loop
         } //end first scanned variable loop
-
+      }
+    }
     } //End optimization Scan
 
 
