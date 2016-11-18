@@ -29,18 +29,19 @@ int main()
 //NB : * WZ CR --> >0j & ==0bj // * ttZ CR --> >1j & >1bj // * SR ---> >0j & ==1bj //
 //-------------------
 //always keep mTW in the list of cuts, even if cut at >0, because it is needed for producing the templates
-    set_v_cut_name.push_back("METpt");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    //set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+//--> can always produce mTW templates even if mTW is not included in BDT var_list !
+    set_v_cut_name.push_back("METpt");                    set_v_cut_def.push_back(">0");            set_v_cut_IsUsedForBDT.push_back(false);
+    set_v_cut_name.push_back("mTW");                      set_v_cut_def.push_back(">0");            set_v_cut_IsUsedForBDT.push_back(false);
 
     //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">-1");          set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1");    set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 && <4");    set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 ");    set_v_cut_IsUsedForBDT.push_back(true); // Isis
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 ");          set_v_cut_IsUsedForBDT.push_back(true); // Isis
 
     //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("==0");         set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");         set_v_cut_IsUsedForBDT.push_back(true);
+    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");          set_v_cut_IsUsedForBDT.push_back(true);
     //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("==1");         set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");         set_v_cut_IsUsedForBDT.push_back(true); //Isis
+    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");          set_v_cut_IsUsedForBDT.push_back(true); //Isis
 
     //set_v_cut_name.push_back("AddLepPT");               set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
     //WARNING : CAN ONLY USE "< X" FOR ISO !! (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
@@ -117,7 +118,7 @@ int main()
     /*
     thesamplelist.push_back("DataFakes");
 
-    thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
+    thesamplelist.push_back("tZq");                  v_color.push_back(kGreen+2);
 
     thesamplelist.push_back("DYjetsFakes");          v_color.push_back(kAzure-2); //MC
     thesamplelist.push_back("TTFakes");              v_color.push_back(kRed-1); //MC
@@ -140,9 +141,9 @@ int main()
 //NB : treat leaves/variables "Weight" and "Channel" separately
 
     thevarlist.push_back("mTW");
-    //thevarlist.push_back("m3l");
+    thevarlist.push_back("m3l");
     thevarlist.push_back("ZCandMass");
-    thevarlist.push_back("btagDiscri"); //NB : for now, if NBJets == 0 --> btagDiscri is constant --> Need to disactivate it !
+    //thevarlist.push_back("btagDiscri"); //NB : for now, if NBJets == 0 --> btagDiscri is constant --> Need to disactivate it !
     thevarlist.push_back("dRAddLepJet");
     thevarlist.push_back("dRAddLepClosestJet");
     thevarlist.push_back("deltaPhilb");
@@ -160,10 +161,10 @@ int main()
     thevarlist.push_back("dRjj");
 
     //mtop not properly reconstructed yet
-    thevarlist.push_back("mtop");
+    //thevarlist.push_back("mtop");
     //thevarlist.push_back("dRAddLepBFromTop");
     //thevarlist.push_back("dRZTop");
-    thevarlist.push_back("TopPT");
+    //thevarlist.push_back("TopPT");
 
 //-------------------
 
@@ -180,7 +181,7 @@ int main()
     thesystlist.push_back(""); //Always keep it activated
 
 //Affect the variable distributions
-    thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
+    /*thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
     thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
 
 //Affect the event weight
@@ -189,7 +190,7 @@ int main()
     thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
     thesystlist.push_back("btag__plus"); thesystlist.push_back("btag__minus");
-    thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
+    thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");*/
 
 
 
@@ -221,22 +222,24 @@ int main()
         for(int i=0; i<thechannellist.size(); i++)
         {
             TString bdt_type = "BDT"; //'BDT' or 'BDTttZ' depending on the region (for theta disambiguation)
-            MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
+            //MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
         }
 
         //#############################################
         //  READING --- TEMPLATES CREATION
         //#############################################
         TString template_name = "BDT"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
-        //MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+        //MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99); //No cut on templates
         if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
         //#############################################
-        //  CONTROL TREES & HISTOGRAMS
+        //  CONTROL TEMPLATES / TREES / HISTOGRAMS
         //#############################################
         float cut_BDT_CR = MVAtool->Determine_Control_Cut();
         bool cut_on_BDT = false; bool use_pseudodata_CR_plots = false;
 
+        template_name = "mTW";
+        if(cut_on_BDT) {MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, true, cut_BDT_CR);} //cut on BDT template
         //MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR, use_pseudodata_CR_plots);
         //MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots); //NB : very long ! You should only activate necessary syst./var. !
         if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
