@@ -15,7 +15,7 @@ ROOTFLAGS = `root-config --glibs --cflags`
 SRCS = $(wildcard *.cc) #Source files are all files with .cc extension
 HDRS = $(wildcard *.h) #Header files are all files with .h extension
 OBJS = $(SRCS:.cc=.o) #Object files are all files with .o extension, which have same names as source files
-EXEC = main #Name of executable file
+EXEC = BDT_analysis #Name of executable file
 
 
 #Instructions
@@ -23,8 +23,8 @@ all: $(EXEC)
 
 #Obtain executable from object files
 $(EXEC): $(OBJS)
-	@$(CC) $(OBJS) -o $@ $(ROOTFLAGS) $(LFLAGS)
 	@echo "-- Linking --"
+	@$(CC) $(OBJS) -o $@ $(ROOTFLAGS) $(LFLAGS)
 	@echo "-- Done --"
 
 #Obtain objects from source and header files
