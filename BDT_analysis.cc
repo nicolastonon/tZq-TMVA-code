@@ -4,20 +4,26 @@ using namespace std;
 
 int main()
 {
+//-----------------------------------------------------------------------------------------
+//                 _                       _     _
+//    ___    ___  | |_      ___    _ __   | |_  (_)   ___    _ __    ___
+//   / __|  / _ \ | __|    / _ \  | '_ \  | __| | |  / _ \  | '_ \  / __|
+//   \__ \ |  __/ | |_    | (_) | | |_) | | |_  | | | (_) | | | | | \__ \
+//   |___/  \___|  \__|    \___/  | .__/   \__| |_|  \___/  |_| |_| |___/
+//                                |_|
+//-----------------------------------------------------------------------------------------
+
+    //If true, activates only the "optimization" part (@ end of file)
+    bool do_optimization_scan = false;
+
     //Used to re-scale every weights in the code by a lumi factor. (NB : default value is 2015 / 7.6.x lumi = 2.26 !)
     double set_luminosity = 12.9; //in fb-1
-    //double set_luminosity = 100; //in fb-1
-
     //Use MC fakes or data-driven fakes)
     bool fakes_from_data = true;
-
     //Templates
     int nofbin_templates = 10; //Binning to be used for *template* production
     bool fakes_summed_channels = false; //Sum uuu/eeu & eee/uue --> Double the fake stat.! Only possible for Templates (not for CR plots)
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
-
-    //If true, activates only the "optimization" part (@ end of file)
-    bool do_optimization_scan = false;
 
 //-------------------
     std::vector<TString> thesamplelist;
@@ -31,13 +37,15 @@ int main()
     std::vector<int> v_color; //sample <-> color
 //-------------------
 
+
 //-----------------------------------------------------------------------------------------
-//                 _                       _     _
-//    ___    ___  | |_      ___    _ __   | |_  (_)   ___    _ __    ___
-//   / __|  / _ \ | __|    / _ \  | '_ \  | __| | |  / _ \  | '_ \  / __|
-//   \__ \ |  __/ | |_    | (_) | | |_) | | |_  | | | (_) | | | | | \__ \
-//   |___/  \___|  \__|    \___/  | .__/   \__| |_|  \___/  |_| |_| |___/
-//                                |_|
+//  ######     ########    ########        ######     ##     ##    ########     ######
+// ##    ##    ##             ##          ##    ##    ##     ##       ##       ##    ##
+// ##          ##             ##          ##          ##     ##       ##       ##
+//  ######     ######         ##          ##          ##     ##       ##        ######
+//       ##    ##             ##          ##          ##     ##       ##             ##
+// ##    ##    ##             ##          ##    ##    ##     ##       ##       ##    ##
+//  ######     ########       ##           ######      #######        ##        ######
 //-----------------------------------------------------------------------------------------
 
 //Specify here the cuts that you wish to apply (propagated to training, reading, ...). To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
@@ -47,20 +55,12 @@ int main()
 //-------------------
     //set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false); //code fix - don't need it anymore
     //set_v_cut_name.push_back("METpt");                  set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-
-    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NJets");                  set_v_cut_def.push_back(">1 ");          set_v_cut_IsUsedForBDT.push_back(true);
-
-    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("==0");         set_v_cut_IsUsedForBDT.push_back(false);
-    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back("==1");         set_v_cut_IsUsedForBDT.push_back(true);
-    //set_v_cut_name.push_back("NBJets");                 set_v_cut_def.push_back(">1");          set_v_cut_IsUsedForBDT.push_back(true);
-
     //set_v_cut_name.push_back("AddLepPT");               set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
     //WARNING : CAN ONLY USE "< X" FOR ISO !! (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
     //set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     //set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
+    //Region selection
 
     //bool isttZ = true;
     bool isttZ = false;
@@ -76,7 +76,7 @@ int main()
     {
         //set_v_cut_name.push_back("NJets");    set_v_cut_def.push_back(">1");      set_v_cut_IsUsedForBDT.push_back(true);
         set_v_cut_name.push_back("NJets");      set_v_cut_def.push_back(">0");      set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");     set_v_cut_def.push_back(" == 0");   set_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant
+        set_v_cut_name.push_back("NBJets");     set_v_cut_def.push_back("== 0");   set_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant
     }
     if(isttZ) //ttZ CR Region : NJets>1 && NBJets>1
     {
@@ -115,29 +115,23 @@ int main()
     //DATA --- THE DATA SAMPLE MUST BE UNIQUE AND IN FIRST POSITION
     thesamplelist.push_back("Data");
 
-    //Signal
+    //Signal --- must be placed before backgrounds
     thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
 
     //BKG
     thesamplelist.push_back("WZjets");          v_color.push_back(11);
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed);
+    thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
     //thesamplelist.push_back("ST_tW");         v_color.push_back(kBlack);
     //thesamplelist.push_back("ST_tW_antitop"); v_color.push_back(kBlack);
-    thesamplelist.push_back("ttW");           v_color.push_back(kRed+1);
 
     //FAKES
-    thesamplelist.push_back("DataFakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
+    thesamplelist.push_back("Fakes");       v_color.push_back(kAzure-2); //Data-driven (DD)
     //-- THESE 3 SAMPLES MUST BE THE LAST OF THE SAMPLE LIST FOR THE READER TO KNOW WHICH ARE THE MC FAKE SAMPLES !
     thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
     thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
     thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
-
-    /*
-    thesamplelist.push_back("DYjetsFakes");          v_color.push_back(kAzure-2); //MC
-    thesamplelist.push_back("TTFakes");              v_color.push_back(kRed-1); //MC
-    thesamplelist.push_back("WWFakes");              v_color.push_back(kYellow); //MC
-    */
 
 //-------------------
 
@@ -235,14 +229,14 @@ int main()
 
 //-------------------
     thesystlist.push_back(""); //Nominal -- keep this line
-
+/*
     //Affect the variable distributions
     thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
     thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
     thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
     //Affect the event weight
     thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus"); //NB : not included in ttZMad --> Use ttZ Madgraph for training, amcatnlo for the rest
-/*    thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus"); //FIXME -- disactivated for faster execution
+    thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
     thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
     thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
@@ -289,7 +283,7 @@ int main()
 
             if(!isWZ)
             {
-                //MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
+                // MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
             }
         }
 
@@ -300,12 +294,12 @@ int main()
         if(isWZ)   template_name = "mTW";
         if(isttZ)  template_name = "BDTttZ";
 
-        //MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+        // MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+
         if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
-        TString function = "gaus"; //'gaus' or 'landau'
-        //MVAtool->Fit_Fake_Templates(function, "BDT");
-        //MVAtool->Create_Fake_Templates_From_Fit(function, "BDT");
+        //Fit templates to fill empty bins ('gaus' or 'landau')
+        //TString function = "gaus"; MVAtool->Fit_Fake_Templates(function, "BDT"); MVAtool->Create_Fake_Templates_From_Fit(function, "BDT");
 
         //#############################################
         //  CONTROL TREES & HISTOGRAMS
@@ -315,23 +309,28 @@ int main()
         if(isWZ || isttZ )  cut_on_BDT = false;
         bool use_pseudodata_CR_plots = false;
 
-        //if(cut_on_BDT) {template_name = "mTW"; MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, true, cut_BDT_CR);} //Create mTW template w/ cut on BDT
+        if(cut_on_BDT) {template_name = "mTW"; MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, true, cut_BDT_CR);} //Create mTW template w/ cut on BDT
 
-        //MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR, use_pseudodata_CR_plots);
-        //MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots); //NB : very long ! You should only activate necessary syst./var. !
+        // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR, use_pseudodata_CR_plots);
+        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots); //NOTE : very long ! You should only activate necessary syst./var. !
         if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
         //#############################################
         //  DRAW PLOTS
         //#############################################
-        for(int i=0; i<thechannellist.size(); i++)
-        {
-            //MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
-            //MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the BDT distributions of MC & pseudo-data templates
-        }
+        bool draw_plots = false;
 
-        //MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
-        //MVAtool->Plot_Templates("", template_name, true); //Sum of 4 channels
+        if(draw_plots)
+        {
+            for(int i=0; i<thechannellist.size(); i++)
+            {
+                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
+                MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the BDT distributions of MC & pseudo-data templates
+            }
+
+            MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
+            MVAtool->Plot_Templates("", template_name, true); //Sum of 4 channels
+        }
     }
 
 //---------------------------------------------------------------
@@ -442,7 +441,7 @@ int main()
             //#############################################
             {
     			std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
-    			scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1");  //FIXME >=4 scan_v_cut_IsUsedForBDT.push_back(true);
+    			scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1"); scan_v_cut_IsUsedForBDT.push_back(true);
     			scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back(">1");     scan_v_cut_IsUsedForBDT.push_back(true);
 
     			scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);

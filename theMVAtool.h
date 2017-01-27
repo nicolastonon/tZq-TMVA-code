@@ -77,9 +77,6 @@ public :
 	int Fit_Fake_Templates(TString, TString);
 	int Create_Fake_Templates_From_Fit(TString, TString);
 
-	float compute_PDFweights(std::vector<float>);
-
-
 //Members
 	TMVA::Reader *reader;
 
