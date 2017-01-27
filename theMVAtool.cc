@@ -40,23 +40,17 @@ using namespace std;
 //
 //-----------------------------------------------------------------------------------------
 
-
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-//Default Constructor
-// theMVAtool::theMVAtool()
-// {
-//   cout<<BOLD(FRED("### ERROR : USE THE OVERLOADED CONSTRUCTOR ! ###"))<<endl;
-//   stop_program = true;
-//   dbgMode = false;
-// }
-
-
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 //Overloaded Constructor
 theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, int nofbin_templates = 5, bool in_isttZ = false)
 {
+	// dir_ntuples="Ntuples_80X_input"; //old - without MEM
+	// tree_name = "Default";
+
+	dir_ntuples="Ntuples_MEM_input"; //With MEM
+	t_name = "Tree";
+
 	dbgMode = false;
 
 	for(int i=0; i<thechanlist.size(); i++)
@@ -153,7 +147,7 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 //Set the luminosity re-scaling factor to be used thoughout the code
 void theMVAtool::Set_Luminosity(double desired_luminosity = 12.9)
 {
-	double current_luminosity = 12.9; //2015 data / 7.6.x Ntuples --- TO BE CHANGED IN 8.0 / 2016 data!
+	double current_luminosity = 12.9; //NOTE -- to be changed
 	this->luminosity_rescale = desired_luminosity / current_luminosity;
 
 
@@ -215,21 +209,26 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
 
 	for(int isample=0; isample<sample_list.size(); isample++)
     {
-		if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) {cout<<"Train only on MC without fakes -- ignored sample"<<endl; continue;} //Train only on MC
+		if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes")) {cout<<"Train only on MC without fakes -- ignore sample : "<<sample_list[isample]<<endl; continue;} //Train only on MC
 
         // Read training and test data
         // --- Register the training and test trees
 		TString inputfile;
-		//inputfile = "Ntuples/FCNCNTuple_" + sample_list[isample] + ".root";
 
 		//This sample has more stat. but doesn't contain the Q2 systematic -> TRAIN on this sample, but all the other functions will use the smaller "ttZ" (amcatnlo) sample !
-		if(sample_list[isample] == "ttZ") {inputfile = "Ntuples_80X_input/FCNCNTuple_ttZMad.root"; if(dbgMode) {cout<<endl<<BOLD(FBLU("[NB : use ttZ Madgraph sample for training only !]"))<<endl<<endl;}}
-		else {inputfile = "Ntuples_80X_input/FCNCNTuple_" + sample_list[isample] + ".root";}
+		if(sample_list[isample] == "ttZ") {inputfile = dir_ntuples + "/FCNCNTuple_ttZMad.root"; if(dbgMode) {cout<<endl<<BOLD(FBLU("[!NB : use ttZ Madgraph sample for training only !]"))<<endl<<endl;}}
+		else {inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";}
 
-	    TFile* file_input = TFile::Open( inputfile.Data() );
+	    TFile* file_input = TFile::Open(inputfile.Data() );
 		files_to_close.push_back(file_input);
 
-		TTree* tree = (TTree*) file_input->Get("Default");
+		TTree* tree = 0;
+		tree = (TTree*) file_input->Get(t_name.Data());
+		if(tree==0)
+		{
+			cout<<BOLD(FRED("ERROR :"))<<" file "<<inputfile.Data()<<" --> *tree = 0 !"<<endl; continue;
+		}
+
 
         // global event weights per tree (see below for setting event-wise weights)
         Double_t signalWeight     = 1.0;
@@ -307,8 +306,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT")
 	//factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
 
 	//Gradient Boost, used by ttH
-    factory->BookMethod( TMVA::Types::kBDT, method_title.Data(),"!H:!V:NTrees=500:nCuts=30:MaxDepth=2:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:PruneMethod=CostComplexity:PruneStrength=3:IgnoreNegWeightsInTraining=True");
-
+	factory->BookMethod( TMVA::Types::kBDT,method_title.Data(),"!H:V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.10:IgnoreNegWeightsInTraining=True");
 	output_file->cd();
 
     // Train MVAs using the set of training events
@@ -368,9 +366,9 @@ float theMVAtool::Compute_Fake_Ratio(TString channel, bool fakes_summed_channels
 
 	for(int i=0; i<MC_fake_samples_list.size(); i++)
 	{
-		TString inputfile = "Ntuples_80X_input/FCNCNTuple_" + MC_fake_samples_list[i] + ".root";
+		TString inputfile = dir_ntuples + "/FCNCNTuple_" + MC_fake_samples_list[i] + ".root";
 		TFile* file_fake = TFile::Open( inputfile.Data() );
-		TTree* tree = (TTree*) file_fake->Get("Default");
+		TTree* tree = (TTree*) file_fake->Get(t_name.Data());
 		tree->SetBranchAddress("Weight", &weight);
 		tree->SetBranchAddress("Channel", &i_channel);
 		//cout << MC_fake_samples_list[i] << endl;
@@ -437,10 +435,9 @@ float theMVAtool::Compute_Fake_Ratio(TString channel, bool fakes_summed_channels
 
 	//FAKES FROM DATA
 	double integral_data_fake = 0.;
-	TString inputfile = "Ntuples_80X_input/FCNCNTuple_Fakes.root";
-	//TString inputfile = "Ntuples_80X_input/FCNCNTuple_Fakes.root";
+	TString inputfile = dir_ntuples + "/FCNCNTuple_Fakes.root";
 	TFile* file_fake = TFile::Open( inputfile.Data() );
-	TTree* tree = (TTree*) file_fake->Get("Default");
+	TTree* tree = (TTree*) file_fake->Get(t_name.Data());
 	tree->SetBranchAddress("Weight", &weight);
 	tree->SetBranchAddress("Channel", &i_channel);
 	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
@@ -606,7 +603,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes"))   {continue;} //"Fakes" syst only in fakes samples
 
 
-			TString inputfile = "Ntuples_80X_input/FCNCNTuple_" + sample_list[isample] + ".root";
+			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 			TFile* file_input = TFile::Open( inputfile.Data() );
 			files_to_close.push_back(file_input);
 			if(dbgMode) std::cout << "--- Select "<<sample_list[isample]<<" sample" << __LINE__ <<std::endl;
@@ -649,7 +646,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				tree = (TTree*) file_input->Get(syst_list[isyst].Data());
 				if (dbgMode ) cout << " fakes tree check  "  << tree << "  " << syst_list[isyst] << endl;
 			}
-			else {tree = (TTree*) file_input->Get("Default");}
+			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
 //--- Prepare the event tree -- Set Branch Addresses
 			for(int i=0; i<var_list.size(); i++)
@@ -671,13 +668,16 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if(syst_list[isyst] == "" || syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes"))	{tree->SetBranchAddress("Weight", &weight);}
 			else {tree->SetBranchAddress(syst_list[isyst].Data(), &weight);}
 
-			std::cout << "--- Processing: " << tree->GetEntries() << " events" << std::endl;
+			cout<<endl<< "--- Processing: " << tree->GetEntries() << " events" << std::endl;
 
 
 //------------------------------------------------------------
 // --- Event loop
-			for(int ievt=0; ievt<tree->GetEntries(); ievt++)
+			int n_entries = tree->GetEntries();
+			for(int ievt=0; ievt<n_entries; ievt++)
 			{
+				if(ievt%10000==0) cout<<ievt<<" / "<<n_entries<<endl;
+
 				if(dbgMode) {cout<<endl<<"--- Syst "<<syst_list[isyst]<<" / Sample : "<<sample_list[isample]<<endl;}
 
 				weight = 0; i_channel = 9; mTW=-666; m3l=-666;
@@ -919,7 +919,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if(syst_list[isyst] != "") {syst_name = "__" + syst_list[isyst];}
 
 			TString sample_name = sample_list[isample];
-			if(real_data && sample_list[isample] == "Data") {sample_name = "DATA";} //THETA CONVENTION
+			// if(real_data && sample_list[isample] == "Data") {sample_name = "DATA";} //THETA CONVENTION
+			if(real_data && sample_list[isample] == "Data") {sample_name = "data_obs";} //Combine CONVENTION
 
 			if(!fakes_from_data && (isample == (sample_list.size() - 3) || isample == (sample_list.size() - 2)) ) //If sample is MC fake, don't reinitialize histos -> sum 3 MC fake samples
 			{
@@ -1156,7 +1157,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
 			else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
 
-			TString inputfile = "Ntuples_80X_input/FCNCNTuple_" + sample_list[isample] + ".root";
+			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 			TFile* file_input = TFile::Open( inputfile.Data() );
 
 			if( (sample_list[isample] == "Data" && syst_list[isyst]!="")
@@ -1191,7 +1192,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") ) {tree = (TTree*) file_input->Get(syst_list[isyst].Data());}
-			else {tree = (TTree*) file_input->Get("Default");}
+			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
 
 			// SetBranchAddress
@@ -1617,7 +1618,8 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Templates(TString template_na
 		}
 
 		file->cd();
-		TString output_histo_name = template_name + "_" + channel_list[ichan] + "__DATA";
+		// TString output_histo_name = template_name + "_" + channel_list[ichan] + "__DATA"; //THETA
+		TString output_histo_name = template_name + "_" + channel_list[ichan] + "__data_obs"; //Combine
 		h_sum->Write(output_histo_name, TObject::kOverwrite);
 
 	} //end channel loop
@@ -2090,7 +2092,8 @@ int theMVAtool::Plot_Templates(TString channel, TString template_name, bool allc
 
 		//DATA
 		h_tmp = 0;
-		histo_name = template_name + "_" + thechannellist[ichan] + "__DATA";
+		// histo_name = template_name + "_" + thechannellist[ichan] + "__DATA"; //THETA
+		histo_name = template_name + "_" + thechannellist[ichan] + "__data_obs"; //Combine
 		if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
 		else
 		{

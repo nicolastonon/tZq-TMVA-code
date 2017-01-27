@@ -16,12 +16,11 @@ int main()
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_scan = false;
 
-    //Used to re-scale every weights in the code by a lumi factor. (NB : default value is 2015 / 7.6.x lumi = 2.26 !)
-    double set_luminosity = 12.9; //in fb-1
+    double set_luminosity = 12.9; ////Used to re-scale every weights in the code by a lumi factor (in fb-1)
     //Use MC fakes or data-driven fakes)
     bool fakes_from_data = true;
     //Templates
-    int nofbin_templates = 10; //Binning to be used for *template* production
+    int nofbin_templates = 10; //NOTE : to be optimized --- Binning to be used for *template* production
     bool fakes_summed_channels = false; //Sum uuu/eeu & eee/uue --> Double the fake stat.! Only possible for Templates (not for CR plots)
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
 
@@ -50,7 +49,7 @@ int main()
 
 //Specify here the cuts that you wish to apply (propagated to training, reading, ...). To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
 //ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
-//NB : * WZ CR --> >0j & ==0bj // * ttZ CR --> >1j & >1bj // * SR ---> >0j & ==1bj //
+//NOTE : * WZ CR --> >0j & ==0bj // * ttZ CR --> >1j & >1bj // * SR ---> >0j & ==1bj //
 
 //-------------------
     //set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false); //code fix - don't need it anymore
@@ -119,19 +118,22 @@ int main()
     thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
 
     //BKG
+    // thesamplelist.push_back("ZZ");           v_color.push_back(kYellow);
     thesamplelist.push_back("WZjets");          v_color.push_back(11);
-    thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed);
     thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
+    thesamplelist.push_back("ttH");             v_color.push_back(kPink+1);
+    thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack);
     //thesamplelist.push_back("ST_tW");         v_color.push_back(kBlack);
     //thesamplelist.push_back("ST_tW_antitop"); v_color.push_back(kBlack);
+  	//thesamplelist.push_back("STtWll");        v_color.push_back(kSpring-5);
 
     //FAKES
     thesamplelist.push_back("Fakes");       v_color.push_back(kAzure-2); //Data-driven (DD)
     //-- THESE 3 SAMPLES MUST BE THE LAST OF THE SAMPLE LIST FOR THE READER TO KNOW WHICH ARE THE MC FAKE SAMPLES !
-    thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
-    thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
-    thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
+    // thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
+    // thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
+    // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
 
 //-------------------
 
@@ -145,77 +147,81 @@ int main()
 //-----------------------------------------------------------------------------------------
 
 //-------------------
-//NB : treat leaves/variables "Weight" and "Channel" separately
+//NOTE : treat leaves/variables "Weight" and "Channel" separately
 
-    //thevarlist.push_back("mTW");
-    //thevarlist.push_back("m3l");
-    //thevarlist.push_back("ZCandMass");
-    thevarlist.push_back("btagDiscri");
-    //thevarlist.push_back("dRAddLepQ");
-    thevarlist.push_back("dRAddLepClosestJet");
-    //thevarlist.push_back("dPhiAddLepB");
-    thevarlist.push_back("ZEta");
+//------------------------ for tZq
 
-    thevarlist.push_back("Zpt");
-    thevarlist.push_back("mtop");
+  //thevarlist.push_back("mTW");
+  //thevarlist.push_back("m3l");
+  //thevarlist.push_back("ZCandMass");
+  thevarlist.push_back("btagDiscri"); //NOTE : for now, if NBJets == 0 --> btagDiscri is constant --> Need to desactivate it !
+  thevarlist.push_back("dRAddLepQ");
+  thevarlist.push_back("dRAddLepClosestJet");
+  thevarlist.push_back("dPhiAddLepB");
+  thevarlist.push_back("ZEta");
+  thevarlist.push_back("Zpt");
+  thevarlist.push_back("mtop");
+  thevarlist.push_back("AddLepAsym");
+  thevarlist.push_back("etaQ");
+  thevarlist.push_back("AddLepETA");
+  thevarlist.push_back("LeadJetEta");
+  thevarlist.push_back("dPhiZAddLep");
+  thevarlist.push_back("dRZAddLep"); // --> little discrim --> to be included
+  thevarlist.push_back("dRjj");
+  thevarlist.push_back("ptQ"); // --> little discrim
+  thevarlist.push_back("tZq_pT");
+  //thevarlist.push_back("leadingLeptonPT");
+  //thevarlist.push_back("MAddLepB");
+  //thevarlist.push_back("dPhiAddLepQ");
+  //thevarlist.push_back("dPhiZMET");// low discri power
+  //thevarlist.push_back("dRZTop");
+  //thevarlist.push_back("TopPT");
+  //thevarlist.push_back("tZq_mass");
+  //thevarlist.push_back("tZq_eta");
+  // thevarlist.push_back("tq_mass");
+  //thevarlist.push_back("tq_pT"); // strong correlation with ZpT
+  //thevarlist.push_back("tq_eta");
 
-    //thevarlist.push_back("AddLepAsym");
-    thevarlist.push_back("etaQ");
-    thevarlist.push_back("AddLepETA");
+  // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))");
+  // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)");
+  // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)");
 
-    thevarlist.push_back("LeadJetEta");
-    thevarlist.push_back("dPhiZAddLep");
-    thevarlist.push_back("dRZAddLep"); // --> little discrim
-    thevarlist.push_back("dRjj");
-    thevarlist.push_back("ptQ"); // --> little discrim
-    thevarlist.push_back("tZq_pT");
 
-    //thevarlist.push_back("leadingLeptonPT");
-    //thevarlist.push_back("MAddLepB");
-    //thevarlist.push_back("dPhiAddLepQ");
-    //thevarlist.push_back("dPhiZMET");// low discri power
-    //thevarlist.push_back("dRZTop");
+//------------------------ for ttZ
+  thevarlist_ttZ.push_back("btagDiscri");
+  thevarlist_ttZ.push_back("dRAddLepQ");
+  thevarlist_ttZ.push_back("dRAddLepB");
+  thevarlist_ttZ.push_back("dRAddLepClosestJet");
+  thevarlist_ttZ.push_back("Zpt");
+  thevarlist_ttZ.push_back("ZEta");
+  thevarlist_ttZ.push_back("AddLepAsym");
+  thevarlist_ttZ.push_back("etaQ");
+  thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
+  thevarlist_ttZ.push_back("AddLepETA");
+  // thevarlist_ttZ.push_back("LeadJetEta");
+  thevarlist_ttZ.push_back("dPhiZAddLep");
+  thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
+  thevarlist_ttZ.push_back("dRjj");
+  thevarlist_ttZ.push_back("mtop");
+  thevarlist_ttZ.push_back("dRZTop");
+  thevarlist_ttZ.push_back("TopPT"); // low discri power
+  //thevarlist_ttZ.push_back("tZq_mass");
+  thevarlist_ttZ.push_back("tZq_pT");
+  thevarlist_ttZ.push_back("m3l");
+  // thevarlist_ttZ.push_back("dPhiAddLepB");
+  // thevarlist_ttZ.push_back("dPhiAddLepQ");
+  // thevarlist_ttZ.push_back("leadingLeptonPT");
+  // thevarlist_ttZ.push_back("dPhiZMET");
+  //thevarlist_ttZ.push_back("dRAddLepBFromTop");
+  //thevarlist_ttZ.push_back("tZq_eta");
+  //thevarlist_ttZ.push_back("tq_mass");
+  //thevarlist_ttZ.push_back("tq_pT"); // strong correlation with ZpT
+  // thevarlist_ttZ.push_back("tq_eta");
 
-    /// --- removing topPT
-    //thevarlist.push_back("TopPT");
-    //thevarlist.push_back("tZq_mass");
-    //thevarlist.push_back("tZq_eta");
-    // thevarlist.push_back("tq_mass");
-    //thevarlist.push_back("tq_pT"); // strong correlation with ZpT
-    //thevarlist.push_back("tq_eta");
+  // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)");
+  // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)");
+  // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)");
 
-//------------------------ FOR TTZ (different vector)
-    thevarlist_ttZ.push_back("btagDiscri");
-    thevarlist_ttZ.push_back("dRAddLepQ");
-    thevarlist_ttZ.push_back("dRAddLepB");
-    thevarlist_ttZ.push_back("dRAddLepClosestJet");
-    thevarlist_ttZ.push_back("Zpt");
-    thevarlist_ttZ.push_back("ZEta");
-    thevarlist_ttZ.push_back("AddLepAsym");
-    thevarlist_ttZ.push_back("etaQ");
-    thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
-    thevarlist_ttZ.push_back("AddLepETA");
-    // thevarlist_ttZ.push_back("LeadJetEta");
-    thevarlist_ttZ.push_back("dPhiZAddLep");
-    thevarlist_ttZ.push_back("dRZAddLep");
-    thevarlist_ttZ.push_back("dRjj");
-    thevarlist_ttZ.push_back("mtop");
-    thevarlist_ttZ.push_back("dRZTop");
-    thevarlist_ttZ.push_back("TopPT"); // low discri power
-    //thevarlist_ttZ.push_back("tZq_mass");
-    thevarlist_ttZ.push_back("tZq_pT");
-    thevarlist_ttZ.push_back("m3l");
-
-    // thevarlist_ttZ.push_back("dPhiAddLepB");
-    // thevarlist_ttZ.push_back("dPhiAddLepQ");
-    // thevarlist_ttZ.push_back("leadingLeptonPT");
-    // thevarlist_ttZ.push_back("dPhiZMET");
-
-    //thevarlist_ttZ.push_back("dRAddLepBFromTop");
-    //thevarlist_ttZ.push_back("tZq_eta");
-    //thevarlist_ttZ.push_back("tq_mass");
-    //thevarlist_ttZ.push_back("tq_pT"); // strong correlation with ZpT
-    // thevarlist_ttZ.push_back("tq_eta");
 //-------------------
 
   //-----------------------------------------------------------------------------------------
@@ -235,7 +241,7 @@ int main()
     thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
     thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
     //Affect the event weight
-    thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus"); //NB : not included in ttZMad --> Use ttZ Madgraph for training, amcatnlo for the rest
+    thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus"); //NOTE : not included in ttZMad --> Use ttZ Madgraph for training, amcatnlo for the rest
     thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
     thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
@@ -259,7 +265,7 @@ int main()
 //   |_|    \__,_| |_| |_|  \___|  \__| |_|  \___/  |_| |_|    \___|  \__,_| |_| |_| |___/
 //
 //-----------------------------------------------------------------------------------------
-    //(NB : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the full variable list)
+    //(NOTE : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the full variable list)
 
     if(!do_optimization_scan)
     {
@@ -283,7 +289,7 @@ int main()
 
             if(!isWZ)
             {
-                // MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
+                MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
             }
         }
 
@@ -294,7 +300,7 @@ int main()
         if(isWZ)   template_name = "mTW";
         if(isttZ)  template_name = "BDTttZ";
 
-        // MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+        MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
 
         if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
 
@@ -348,7 +354,7 @@ int main()
         //  SET THE CUT DEFINITIONS ON WHICH YOU WANT TO LOOP
         //#############################################
 
-//For scan -- NB : different values for each region
+//For scan -- NOTE : different values for each region
         //vector<TString> v_NJets_cut_values;
         //vector<TString> v_NBJets_cut_values;
 
@@ -384,7 +390,7 @@ int main()
 //------------------------------
 
         //SCAN LOOP
-        //NB : there should only be 2 scanned variables (2 loops) -- all the other cuts should be specified explicitely for each region
+        //NOTE : there should only be 2 scanned variables (2 loops) -- all the other cuts should be specified explicitely for each region
         for(int h = 0; h < v_METpt_cut_values.size(); h++)
         {
 	    for(int i = 0; i < v_mTW_cut_values.size(); i++)

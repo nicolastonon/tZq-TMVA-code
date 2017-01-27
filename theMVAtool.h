@@ -59,7 +59,6 @@ class theMVAtool
 public :
 
 //Methods
-	theMVAtool();
 	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, std::vector<TString>, std::vector<TString>, std::vector<bool>, int, bool );
 	~theMVAtool(){delete reader;};
 
@@ -91,9 +90,11 @@ public :
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram
-	double luminosity_rescale;
- 	bool isttZ;
-	TString filename_suffix;
+	double luminosity_rescale; //Rescale weights to desired lumi
+ 	bool isttZ; //Work in ttZ CR
+	TString filename_suffix; //add sufix to filename for clarity
+	TString dir_ntuples; //path to input ntuples
+	TString t_name; //name of tree to be used in input ntuples
 
 	bool dbgMode  ;
 	bool stop_program;
