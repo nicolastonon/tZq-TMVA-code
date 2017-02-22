@@ -2,27 +2,41 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 {
-//-----------------------------------------------------------------------------------------
-//                 _                       _     _
-//    ___    ___  | |_      ___    _ __   | |_  (_)   ___    _ __    ___
-//   / __|  / _ \ | __|    / _ \  | '_ \  | __| | |  / _ \  | '_ \  / __|
-//   \__ \ |  __/ | |_    | (_) | | |_) | | |_  | | | (_) | | | | | \__ \
-//   |___/  \___|  \__|    \___/  | .__/   \__| |_|  \___/  |_| |_| |___/
-//                                |_|
-//-----------------------------------------------------------------------------------------
+    if(argc > 2 || (strcmp(argv[1],"tZq") && strcmp(argv[1],"ttZ") && strcmp(argv[1],"WZ") ) ) //String comparison -- strcmp returns 0 if both contents are equal
+    {
+        cout<<BOLD(FRED("Error : wrong arguments at execution !"))<<endl;
+        cout<<"argc = "<<argc<<endl;
+        cout<<"argv[1] = "<<argv[1]<<endl;
+        return 1;
+    }
+
+//---------------------------------------------------------------------------
+//  #######  ########  ######## ####  #######  ##    ##  ######
+// ##     ## ##     ##    ##     ##  ##     ## ###   ## ##    ##
+// ##     ## ##     ##    ##     ##  ##     ## ####  ## ##
+// ##     ## ########     ##     ##  ##     ## ## ## ##  ######
+// ##     ## ##           ##     ##  ##     ## ##  ####       ##
+// ##     ## ##           ##     ##  ##     ## ##   ### ##    ##
+//  #######  ##           ##    ####  #######  ##    ##  ######
+//---------------------------------------------------------------------------
+
 
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_scan = false;
 
-    double set_luminosity = 12.9; ////Used to re-scale every weights in the code by a lumi factor (in fb-1)
+    double set_luminosity = 12.9; //Used to re-scale every weights in the code by a lumi factor (in fb-1)
     //Use MC fakes or data-driven fakes)
     bool fakes_from_data = true;
     //Templates
     int nofbin_templates = 10; //NOTE : to be optimized --- Binning to be used for *template* production
-    bool fakes_summed_channels = false; //Sum uuu/eeu & eee/uue --> Double the fake stat.! Only possible for Templates (not for CR plots)
+    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.! //NOTE : only available for templates (not for plots)
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
+    bool use_ttZMad_training = false; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
+
+
+    TString format = ".png"; //.png or .pdf only
 
 //-------------------
     std::vector<TString> thesamplelist;
@@ -38,33 +52,45 @@ int main()
 
 
 //-----------------------------------------------------------------------------------------
-//  ######     ########    ########        ######     ##     ##    ########     ######
-// ##    ##    ##             ##          ##    ##    ##     ##       ##       ##    ##
-// ##          ##             ##          ##          ##     ##       ##       ##
-//  ######     ######         ##          ##          ##     ##       ##        ######
-//       ##    ##             ##          ##          ##     ##       ##             ##
-// ##    ##    ##             ##          ##    ##    ##     ##       ##       ##    ##
-//  ######     ########       ##           ######      #######        ##        ######
+// ########  ########  ######   ####  #######  ##    ##         ####           ######  ##     ## ########  ######
+// ##     ## ##       ##    ##   ##  ##     ## ###   ##        ##  ##         ##    ## ##     ##    ##    ##    ##
+// ##     ## ##       ##         ##  ##     ## ####  ##         ####          ##       ##     ##    ##    ##
+// ########  ######   ##   ####  ##  ##     ## ## ## ##        ####           ##       ##     ##    ##     ######
+// ##   ##   ##       ##    ##   ##  ##     ## ##  ####       ##  ## ##       ##       ##     ##    ##          ##
+// ##    ##  ##       ##    ##   ##  ##     ## ##   ###       ##   ##         ##    ## ##     ##    ##    ##    ##
+// ##     ## ########  ######   ####  #######  ##    ##        ####  ##        ######   #######     ##     ######
 //-----------------------------------------------------------------------------------------
 
 //Specify here the cuts that you wish to apply (propagated to training, reading, ...). To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
-//ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
-//NOTE : * WZ CR --> >0j & ==0bj // * ttZ CR --> >1j & >1bj // * SR ---> >0j & ==1bj //
+//--- ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
 
 //-------------------
     //set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false); //code fix - don't need it anymore
     //set_v_cut_name.push_back("METpt");                  set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     //set_v_cut_name.push_back("AddLepPT");               set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
-    //WARNING : CAN ONLY USE "< X" FOR ISO !! (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
+    //NOTE : can only use "< X" for iso (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
     //set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     //set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
-    //Region selection
+    //Region selection -- manual
+    bool tZq_region = false;
+    bool ttZ_region = false;
+    bool WZ_region = false;
 
-    //bool isttZ = true;
-    bool isttZ = false;
-    //bool isWZ = true;
-    bool isWZ = false;
+    //Region selection is overwritten if arguments are given during execution
+    if(argc==2)
+    {
+        if(!strcmp(argv[1],"tZq")) {tZq_region = true;}
+        else if(!strcmp(argv[1],"WZ")) {WZ_region = true;}
+        else if(!strcmp(argv[1],"ttZ")) {ttZ_region = true;}
+    }
+
+    if( (!tZq_region && !WZ_region && !ttZ_region) || (tZq_region && WZ_region) || (tZq_region && ttZ_region) || (WZ_region && ttZ_region) ) {cout<<__LINE__<<" : Problem : wrong region ! Exit"<<endl; return 0;}
+
+//--- DON'T CHANGE THIS : Region choice automatized from here !
+    bool isttZ = false; bool isWZ = false;
+    if(WZ_region) {isWZ = true;}
+    else if(ttZ_region) {isttZ = true;}
 
     if(!isWZ && !isttZ) //Default selection is Signal Region : 1<NJets<4 && NBJets == 1
     {
@@ -82,32 +108,36 @@ int main()
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1");     set_v_cut_IsUsedForBDT.push_back(true);
         set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");     set_v_cut_IsUsedForBDT.push_back(true);
     }
+//---------------------
 
 
-//-----------------------------------------------------------------------------------------
-//           _                                      _
-//     ___  | |__     __ _   _ __    _ __     ___  | |  ___
-//    / __| | '_ \   / _` | | '_ \  | '_ \   / _ \ | | / __|
-//   | (__  | | | | | (_| | | | | | | | | | |  __/ | | \__ \
-//    \___| |_| |_|  \__,_| |_| |_| |_| |_|  \___| |_| |___/
+
+
+//---------------------------------------------------------------------------
+//  ######  ##     ##    ###    ##    ## ##    ## ######## ##        ######
+// ##    ## ##     ##   ## ##   ###   ## ###   ## ##       ##       ##    ##
+// ##       ##     ##  ##   ##  ####  ## ####  ## ##       ##       ##
+// ##       ######### ##     ## ## ## ## ## ## ## ######   ##        ######
+// ##       ##     ## ######### ##  #### ##  #### ##       ##             ##
+// ##    ## ##     ## ##     ## ##   ### ##   ### ##       ##       ##    ##
+//  ######  ##     ## ##     ## ##    ## ##    ## ######## ########  ######
+//---------------------------------------------------------------------------
 //
-//-----------------------------------------------------------------------------------------
-
-//-------------------
-    thechannellist.push_back("uuu");
-    thechannellist.push_back("uue");
+// thechannellist.push_back("uue");
+    // thechannellist.push_back("uuu");
     thechannellist.push_back("eeu");
-    thechannellist.push_back("eee");
-//-------------------
+    // thechannellist.push_back("eee");
 
-//-----------------------------------------------------------------------------------------
-//                                      _
-//    ___    __ _   _ __ ___    _ __   | |   ___   ___
-//   / __|  / _` | | '_ ` _ \  | '_ \  | |  / _ \ / __|
-//   \__ \ | (_| | | | | | | | | |_) | | | |  __/ \__ \
-//   |___/  \__,_| |_| |_| |_| | .__/  |_|  \___| |___/
-//                             |_|
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//  ######     ###    ##     ## ########  ##       ########  ######
+// ##    ##   ## ##   ###   ### ##     ## ##       ##       ##    ##
+// ##        ##   ##  #### #### ##     ## ##       ##       ##
+//  ######  ##     ## ## ### ## ########  ##       ######    ######
+//       ## ######### ##     ## ##        ##       ##             ##
+// ##    ## ##     ## ##     ## ##        ##       ##       ##    ##
+//  ######  ##     ## ##     ## ##        ######## ########  ######
+//---------------------------------------------------------------------------
+
 
 //-------------------
 //Sample order is important in function Read (so it knows which are the fake samples it must sum) and in Draw_Control_Plots (see explanation in code)
@@ -118,43 +148,36 @@ int main()
     thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
 
     //BKG
-    // thesamplelist.push_back("ZZ");           v_color.push_back(kYellow);
-    thesamplelist.push_back("WZjets");          v_color.push_back(11);
+    thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed);
-    thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
-    thesamplelist.push_back("ttH");             v_color.push_back(kPink+1);
-    thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack);
-    //thesamplelist.push_back("ST_tW");         v_color.push_back(kBlack);
-    //thesamplelist.push_back("ST_tW_antitop"); v_color.push_back(kBlack);
-  	//thesamplelist.push_back("STtWll");        v_color.push_back(kSpring-5);
+    thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
+    thesamplelist.push_back("ttW");             v_color.push_back(kRed);
+    thesamplelist.push_back("ttH");             v_color.push_back(kRed);
 
     //FAKES
-    thesamplelist.push_back("Fakes");       v_color.push_back(kAzure-2); //Data-driven (DD)
-    //-- THESE 3 SAMPLES MUST BE THE LAST OF THE SAMPLE LIST FOR THE READER TO KNOW WHICH ARE THE MC FAKE SAMPLES !
+    thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
+    //-- THESE SAMPLES MUST BE THE LAST OF THE SAMPLE LIST FOR THE READER TO KNOW WHICH ARE THE MC FAKE SAMPLES !
     // thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
     // thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
     // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
+    // thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack); //MC -- not taken into account in code
 
 //-------------------
 
-//-----------------------------------------------------------------------------------------
-//    ____    ____    _____                            _           _       _
-//   | __ )  |  _ \  |_   _|   __   __   __ _   _ __  (_)   __ _  | |__   | |   ___   ___
-//   |  _ \  | | | |   | |     \ \ / /  / _` | | '__| | |  / _` | | '_ \  | |  / _ \ / __|
-//   | |_) | | |_| |   | |      \ V /  | (_| | | |    | | | (_| | | |_) | | | |  __/ \__ \
-//   |____/  |____/    |_|       \_/    \__,_| |_|    |_|  \__,_| |_.__/  |_|  \___| |___/
-//
-//-----------------------------------------------------------------------------------------
 
-//-------------------
-//NOTE : treat leaves/variables "Weight" and "Channel" separately
+//---------------------------------------------------------------------------
+// ########  ########  ########       ##     ##    ###    ########   ######
+// ##     ## ##     ##    ##          ##     ##   ## ##   ##     ## ##    ##
+// ##     ## ##     ##    ##          ##     ##  ##   ##  ##     ## ##
+// ########  ##     ##    ##          ##     ## ##     ## ########   ######
+// ##     ## ##     ##    ##           ##   ##  ######### ##   ##         ##
+// ##     ## ##     ##    ##            ## ##   ##     ## ##    ##  ##    ##
+// ########  ########     ##             ###    ##     ## ##     ##  ######
+//---------------------------------------------------------------------------
 
 //------------------------ for tZq
 
-  //thevarlist.push_back("mTW");
-  //thevarlist.push_back("m3l");
-  //thevarlist.push_back("ZCandMass");
-  thevarlist.push_back("btagDiscri"); //NOTE : for now, if NBJets == 0 --> btagDiscri is constant --> Need to desactivate it !
+  thevarlist.push_back("btagDiscri");
   thevarlist.push_back("dRAddLepQ");
   thevarlist.push_back("dRAddLepClosestJet");
   thevarlist.push_back("dPhiAddLepB");
@@ -166,14 +189,22 @@ int main()
   thevarlist.push_back("AddLepETA");
   thevarlist.push_back("LeadJetEta");
   thevarlist.push_back("dPhiZAddLep");
-  thevarlist.push_back("dRZAddLep"); // --> little discrim --> to be included
+  thevarlist.push_back("dRZAddLep");
   thevarlist.push_back("dRjj");
-  thevarlist.push_back("ptQ"); // --> little discrim
+  thevarlist.push_back("ptQ");
   thevarlist.push_back("tZq_pT");
+
+  // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
+  // thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
+  // thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
+
+  //thevarlist.push_back("mTW");
+  //thevarlist.push_back("m3l");
+  //thevarlist.push_back("ZCandMass");
   //thevarlist.push_back("leadingLeptonPT");
   //thevarlist.push_back("MAddLepB");
   //thevarlist.push_back("dPhiAddLepQ");
-  //thevarlist.push_back("dPhiZMET");// low discri power
+  //thevarlist.push_back("dPhiZMET");
   //thevarlist.push_back("dRZTop");
   //thevarlist.push_back("TopPT");
   //thevarlist.push_back("tZq_mass");
@@ -181,14 +212,14 @@ int main()
   // thevarlist.push_back("tq_mass");
   //thevarlist.push_back("tq_pT"); // strong correlation with ZpT
   //thevarlist.push_back("tq_eta");
+  // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
+  // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
+  // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
 
-  // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))");
-  // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)");
-  // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)");
 
 
 //------------------------ for ttZ
-  thevarlist_ttZ.push_back("btagDiscri");
+thevarlist_ttZ.push_back("btagDiscri"); //FIXME -- if removed ,no bug wit negW for training
   thevarlist_ttZ.push_back("dRAddLepQ");
   thevarlist_ttZ.push_back("dRAddLepB");
   thevarlist_ttZ.push_back("dRAddLepClosestJet");
@@ -198,16 +229,22 @@ int main()
   thevarlist_ttZ.push_back("etaQ");
   thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
   thevarlist_ttZ.push_back("AddLepETA");
-  // thevarlist_ttZ.push_back("LeadJetEta");
   thevarlist_ttZ.push_back("dPhiZAddLep");
   thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
   thevarlist_ttZ.push_back("dRjj");
   thevarlist_ttZ.push_back("mtop");
-  thevarlist_ttZ.push_back("dRZTop");
   thevarlist_ttZ.push_back("TopPT"); // low discri power
-  //thevarlist_ttZ.push_back("tZq_mass");
-  thevarlist_ttZ.push_back("tZq_pT");
   thevarlist_ttZ.push_back("m3l");
+  thevarlist_ttZ.push_back("dRZTop");
+  thevarlist_ttZ.push_back("tZq_pT");
+
+
+  // thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
+  // thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
+  // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
+
+  //thevarlist_ttZ.push_back("tZq_mass");
+  // thevarlist_ttZ.push_back("LeadJetEta");
   // thevarlist_ttZ.push_back("dPhiAddLepB");
   // thevarlist_ttZ.push_back("dPhiAddLepQ");
   // thevarlist_ttZ.push_back("leadingLeptonPT");
@@ -217,35 +254,46 @@ int main()
   //thevarlist_ttZ.push_back("tq_mass");
   //thevarlist_ttZ.push_back("tq_pT"); // strong correlation with ZpT
   // thevarlist_ttZ.push_back("tq_eta");
-
-  // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)");
-  // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)");
-  // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)");
-
-//-------------------
-
-  //-----------------------------------------------------------------------------------------
-  //                        _                                _     _
-  //    ___   _   _   ___  | |_    ___   _ __ ___     __ _  | |_  (_)   ___   ___
-  //   / __| | | | | / __| | __|  / _ \ | '_ ` _ \   / _` | | __| | |  / __| / __|
-  //   \__ \ | |_| | \__ \ | |_  |  __/ | | | | | | | (_| | | |_  | | | (__  \__ \
-  //   |___/  \__, | |___/  \__|  \___| |_| |_| |_|  \__,_|  \__| |_|  \___| |___/
-  //          |___/
-  //-----------------------------------------------------------------------------------------
+  // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
+  // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
+  // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
 
 //-------------------
-    thesystlist.push_back(""); //Nominal -- keep this line
-/*
+
+
+
+//---------------------------------------------------------------------------
+//  ######  ##    ##  ######  ######## ######## ##     ##    ###    ######## ####  ######   ######
+// ##    ##  ##  ##  ##    ##    ##    ##       ###   ###   ## ##      ##     ##  ##    ## ##    ##
+// ##         ####   ##          ##    ##       #### ####  ##   ##     ##     ##  ##       ##
+//  ######     ##     ######     ##    ######   ## ### ## ##     ##    ##     ##  ##        ######
+//       ##    ##          ##    ##    ##       ##     ## #########    ##     ##  ##             ##
+// ##    ##    ##    ##    ##    ##    ##       ##     ## ##     ##    ##     ##  ##    ## ##    ##
+//  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
+//---------------------------------------------------------------------------
+
+    //0 = no syst, 1 = theta, 2 = combine !
+    int i_systematics_choice = 0;
+
+    thesystlist.push_back(""); //Nominal -- KEEP this line
+
+
+//THETA CONVENTION NAMING -- USE IT ONLY TO WORK DIRECTLY ON MARA'S NTUPLE
+// --> Can't use systs in Combine !!
+//-------------------
+    if(i_systematics_choice==1)
+    {
     //Affect the variable distributions
     thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
     thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
     thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
     //Affect the event weight
-    thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus"); //NOTE : not included in ttZMad --> Use ttZ Madgraph for training, amcatnlo for the rest
+    // thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
+
+    thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
     thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
     thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
     thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
-    thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
     thesystlist.push_back("LFcont__plus"); thesystlist.push_back("LFcont__minus");
     thesystlist.push_back("HFstats1__plus"); thesystlist.push_back("HFstats1__minus");
     thesystlist.push_back("HFstats2__plus"); thesystlist.push_back("HFstats2__minus");
@@ -253,18 +301,52 @@ int main()
     thesystlist.push_back("CFerr2__plus"); thesystlist.push_back("CFerr2__minus");
     thesystlist.push_back("HFcont__plus"); thesystlist.push_back("HFcont__minus");
     thesystlist.push_back("LFstats1__plus"); thesystlist.push_back("LFstats1__minus");
-    thesystlist.push_back("LFstats2__plus"); thesystlist.push_back("LFstats2__minus");*/
+    thesystlist.push_back("LFstats2__plus"); thesystlist.push_back("LFstats2__minus");
+    }
+
+
+//COMBINE CONVENTION -- USE THIS TO WORK ON INTERFACED NTUPLES (FOR MEM, ...)
+//-------------------
+    else if(i_systematics_choice==2)
+    {
+    //Affect the variable distributions -- NOTE : not available yet
+    thesystlist.push_back("JERUp"); thesystlist.push_back("JERDown");
+    thesystlist.push_back("JESUp"); thesystlist.push_back("JESDown");
+    thesystlist.push_back("FakesUp"); thesystlist.push_back("FakesDown");
+    //Affect the event weight
+    // thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down"); //BUG for now
+
+    thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
+    thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
+    thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
+    thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
+    thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
+    thesystlist.push_back("HFstats1Up"); thesystlist.push_back("HFstats1Down");
+    thesystlist.push_back("HFstats2Up"); thesystlist.push_back("HFstats2Down");
+    thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
+    thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
+    thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
+    thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
+    thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
+    }
+    else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 2;}
 //-------------------
 
 
-//-----------------------------------------------------------------------------------------
-//     __                          _     _                                    _   _
-//    / _|  _   _   _ __     ___  | |_  (_)   ___    _ __       ___    __ _  | | | |  ___
-//   | |_  | | | | | '_ \   / __| | __| | |  / _ \  | '_ \     / __|  / _` | | | | | / __|
-//   |  _| | |_| | | | | | | (__  | |_  | | | (_) | | | | |   | (__  | (_| | | | | | \__ \
-//   |_|    \__,_| |_| |_|  \___|  \__| |_|  \___/  |_| |_|    \___|  \__,_| |_| |_| |___/
-//
-//-----------------------------------------------------------------------------------------
+
+
+
+
+//---------------------------------------------------------------------------
+// ######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##        ######     ###    ##       ##        ######
+// ##       ##     ## ###   ## ##    ##    ##     ##  ##     ## ###   ##       ##    ##   ## ##   ##       ##       ##    ##
+// ##       ##     ## ####  ## ##          ##     ##  ##     ## ####  ##       ##        ##   ##  ##       ##       ##
+// ######   ##     ## ## ## ## ##          ##     ##  ##     ## ## ## ##       ##       ##     ## ##       ##        ######
+// ##       ##     ## ##  #### ##          ##     ##  ##     ## ##  ####       ##       ######### ##       ##             ##
+// ##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ###       ##    ## ##     ## ##       ##       ##    ##
+// ##        #######  ##    ##  ######     ##    ####  #######  ##    ##        ######  ##     ## ######## ########  ######
+//---------------------------------------------------------------------------
+
     //(NOTE : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the full variable list)
 
     if(!do_optimization_scan)
@@ -275,7 +357,7 @@ int main()
         std::vector<TString > thevarlist_tmp;
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
         else       thevarlist_tmp = thevarlist;
-        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, nofbin_templates, isttZ); if(MVAtool->stop_program) {return 1;}
+        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, nofbin_templates, isttZ, isWZ, format); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
         //#############################################
@@ -289,7 +371,7 @@ int main()
 
             if(!isWZ)
             {
-                MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type);
+                MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type, use_ttZMad_training);
             }
         }
 
@@ -300,9 +382,9 @@ int main()
         if(isWZ)   template_name = "mTW";
         if(isttZ)  template_name = "BDTttZ";
 
-        MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+        // MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
 
-        if(!real_data_templates) {MVAtool->Generate_PseudoData_Histograms_For_Templates(template_name);}
+        // if(!real_data_templates) {MVAtool->Generate_PseudoData_Templates(template_name);} //NOTE : GENERATE PSEUDODATA ON Combine_Input_ScaledFakes.root (fakes already re-scaled)
 
         //Fit templates to fill empty bins ('gaus' or 'landau')
         //TString function = "gaus"; MVAtool->Fit_Fake_Templates(function, "BDT"); MVAtool->Create_Fake_Templates_From_Fit(function, "BDT");
@@ -310,43 +392,98 @@ int main()
         //#############################################
         //  CONTROL TREES & HISTOGRAMS
         //#############################################
-        float cut_BDT_CR = -99;
-        bool cut_on_BDT = false; if(cut_on_BDT) {cut_BDT_CR = MVAtool->Determine_Control_Cut();}
-        if(isWZ || isttZ )  cut_on_BDT = false;
+        float cut_BDT_value = -99;
         bool use_pseudodata_CR_plots = false;
+        bool cut_on_BDT = false;
+        if(isWZ)  cut_on_BDT = false;
 
-        if(cut_on_BDT) {template_name = "mTW"; MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, true, cut_BDT_CR);} //Create mTW template w/ cut on BDT
-
-        // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_CR, use_pseudodata_CR_plots);
+        // if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();} MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
         // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots); //NOTE : very long ! You should only activate necessary syst./var. !
-        if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
+
+        // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
         //#############################################
         //  DRAW PLOTS
         //#############################################
-        bool draw_plots = false;
+        bool draw_plots = false; //Draw Control & Template plots
 
         if(draw_plots)
         {
             for(int i=0; i<thechannellist.size(); i++)
             {
-                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false); //Draw plots for the BDT CR
-                MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the BDT distributions of MC & pseudo-data templates
+                // MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, fakes_summed_channels, false); //Draw plots for the BDT CR
+
+                MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
+
+                // MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
+                // MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
             }
 
-            MVAtool->Draw_Control_Plots("", fakes_from_data, true); //Sum of 4 channels
-            MVAtool->Plot_Templates("", template_name, true); //Sum of 4 channels
+            // MVAtool->Draw_Control_Plots("", fakes_from_data, fakes_summed_channels, true);
+
+            MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
+
+            // MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
+            // MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
+
+            //--- Single Channel
+            // MVAtool->Plot_Templates("uuu", template_name, false); //Plot the prefit templates
+            // MVAtool->Plot_Templates_from_Combine("uuu", template_name, false); //Postfit templates from Combine file
         }
     }
 
-//---------------------------------------------------------------
-//     ___            _     _               _                 _     _
-//    / _ \   _ __   | |_  (_)  _ __ ___   (_)  ____   __ _  | |_  (_)   ___    _ __
-//   | | | | | '_ \  | __| | | | '_ ` _ \  | | |_  /  / _` | | __| | |  / _ \  | '_ \
-//   | |_| | | |_) | | |_  | | | | | | | | | |  / /  | (_| | | |_  | | | (_) | | | | |
-//    \___/  | .__/   \__| |_| |_| |_| |_| |_| /___|  \__,_|  \__| |_|  \___/  |_| |_|
-//           |_|
-//---------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+
+//---------------------------------------------------------------------------
+//  #######  ########  ######## #### ##     ## #### ########    ###    ######## ####  #######  ##    ##
+// ##     ## ##     ##    ##     ##  ###   ###  ##       ##    ## ##      ##     ##  ##     ## ###   ##
+// ##     ## ##     ##    ##     ##  #### ####  ##      ##    ##   ##     ##     ##  ##     ## ####  ##
+// ##     ## ########     ##     ##  ## ### ##  ##     ##    ##     ##    ##     ##  ##     ## ## ## ##
+// ##     ## ##           ##     ##  ##     ##  ##    ##     #########    ##     ##  ##     ## ##  ####
+// ##     ## ##           ##     ##  ##     ##  ##   ##      ##     ##    ##     ##  ##     ## ##   ###
+//  #######  ##           ##    #### ##     ## #### ######## ##     ##    ##    ####  #######  ##    ##
+//---------------------------------------------------------------------------
+//Loop on variable cuts to find "best-working" templates/region
+
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+
+
+
 
     if(do_optimization_scan)
     {
@@ -399,6 +536,7 @@ int main()
 		{
 		for(int k=0; k < v_isoEl_cut_values.size(); k++)
 		{
+
             //#############################################
             //               WZ CR Templates
             //#############################################
@@ -424,19 +562,18 @@ int main()
     			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
     			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, false); if(MVAtool_WZ->stop_program) {return 1;}
+    			theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, false, true, format); if(MVAtool_WZ->stop_program) {return 1;}
     			MVAtool_WZ->Set_Luminosity(set_luminosity);
 
     			TString template_name_WZ = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
     			MVAtool_WZ->Read(template_name_WZ, fakes_from_data, real_data_templates, fakes_summed_channels);
-    			if(!real_data_templates) {MVAtool_WZ->Generate_PseudoData_Histograms_For_Templates(template_name_WZ);}
+    			if(!real_data_templates) {MVAtool_WZ->Generate_PseudoData_Templates(template_name_WZ);}
 
     			/** mmm
     			   for(int i=0; i<thechannellist.size(); i++)
     			   {
-    			   //MVAtool_WZ->Plot_Templates(thechannellist[i], template_name_WZ, false); //Plot the BDT distributions of MC & pseudo-data templates
+    			   //MVAtool_WZ->Plot_Templates(thechannellist[i], template_name_WZ); //Plot the BDT distributions of MC & pseudo-data templates
     			   }
-    			//MVAtool_WZ->Plot_Templates("", template_name_WZ, true); //Sum of 4 channels
     			**/
 
     			MVAtool_WZ->~theMVAtool();
@@ -464,26 +601,25 @@ int main()
     			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
     			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist_ttZ, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, true); if(MVAtool_ttZ->stop_program) {return 1;}
+    			theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist_ttZ, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, true, false, format); if(MVAtool_ttZ->stop_program) {return 1;}
     			MVAtool_ttZ->Set_Luminosity(set_luminosity);
 
                 TString bdt_type_ttZ = "BDTttZ"; //'BDT' or 'BDTttZ'
     			for(int i=0; i<thechannellist.size(); i++)
     			  {
-    			    MVAtool_ttZ->Train_Test_Evaluate(thechannellist[i], bdt_type_ttZ);
+    			    MVAtool_ttZ->Train_Test_Evaluate(thechannellist[i], bdt_type_ttZ, use_ttZMad_training);
     			  }
 
     			TString template_name_ttZ = "BDTttZ"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
     			MVAtool_ttZ->Read(template_name_ttZ, fakes_from_data, real_data_templates, fakes_summed_channels);
-    			if(!real_data_templates) {MVAtool_ttZ->Generate_PseudoData_Histograms_For_Templates(template_name_ttZ);}
+    			if(!real_data_templates) {MVAtool_ttZ->Generate_PseudoData_Templates(template_name_ttZ);}
 
     			/**
     			   for(int i=0; i<thechannellist.size(); i++)
     			   {
-    			   //MVAtool_ttZ->Plot_Templates(thechannellist[i], template_name_ttZ, false); //Plot the BDT distributions of MC & pseudo-data templates
+    			   //MVAtool_ttZ->Plot_Templates(thechannellist[i], template_name_ttZ); //Plot the BDT distributions of MC & pseudo-data templates
     			   }
     			**/
-    			//MVAtool_ttZ->Plot_Templates("", template_name_ttZ, true); //Sum of 4 channels
     			MVAtool_ttZ->~theMVAtool();
 		    }
 
@@ -509,25 +645,24 @@ int main()
     			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
     			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, false); if(MVAtool_tZq->stop_program) {return 1;}
+    			theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, false, false, format); if(MVAtool_tZq->stop_program) {return 1;}
     			MVAtool_tZq->Set_Luminosity(set_luminosity);
 
                 TString bdt_type_tZq = "BDT"; //'BDT' or 'BDTttZ'
     			for(int i=0; i<thechannellist.size(); i++)
     			  {
-    			    MVAtool_tZq->Train_Test_Evaluate(thechannellist[i], bdt_type_tZq);
+    			    MVAtool_tZq->Train_Test_Evaluate(thechannellist[i], bdt_type_tZq, use_ttZMad_training);
     			  }
 
     			TString template_name_tZq = "BDT"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
     			MVAtool_tZq->Read(template_name_tZq, fakes_from_data, real_data_templates, fakes_summed_channels);
-    			if(!real_data_templates) {MVAtool_tZq->Generate_PseudoData_Histograms_For_Templates(template_name_tZq);}
+    			if(!real_data_templates) {MVAtool_tZq->Generate_PseudoData_Templates(template_name_tZq);}
 
     			/**  mmm
     			   for(int i=0; i<thechannellist.size(); i++)
     			   {
-    			   //MVAtool_tZq->Plot_Templates(thechannellist[i], template_name_tZq, false); //Plot the BDT distributions of MC & pseudo-data templates
+    			   //MVAtool_tZq->Plot_Templates(thechannellist[i], template_name_tZq); //Plot the BDT distributions of MC & pseudo-data templates
     			   }
-    			//MVAtool_tZq->Plot_Templates("", template_name_tZq, true); //Sum of 4 channels
     			**/
 
     			MVAtool_tZq->~theMVAtool();
@@ -540,14 +675,7 @@ int main()
     } //End optimization Scan
 
 
-  //-------------------------------------------
-  //    _____   _   _   ____
-  //   | ____| | \ | | |  _ \
-  //   |  _|   |  \| | | | | |
-  //   | |___  | |\  | | |_| |
-  //   |_____| |_| \_| |____/
-  //
-  //-------------------------------------------
+
 
   return 0;
 }

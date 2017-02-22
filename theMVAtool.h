@@ -1,8 +1,9 @@
 #ifndef theMVAtool_h
+
 #define theMVAtool_h
 
 /* BASH COLORS */
-#define RST  "\x1B[0m"
+#define RST   "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
 #define KYEL  "\x1B[33m"
@@ -28,8 +29,6 @@
 #include <TH1F.h>
 #include <TStyle.h>
 #include <TCanvas.h>
-#include <TFile.h>
-#include <TString.h>
 #include <TLorentzVector.h>
 #include "TTree.h"
 #include "TObjString.h"
@@ -45,7 +44,7 @@
 #include <map>
 #include <string>
 #include <cmath>
-#include<sstream>
+#include <sstream>
 
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
@@ -53,28 +52,32 @@
 #include "TMVA/Reader.h"
 #include "TMVA/MethodCuts.h"
 
+using namespace std;
+
 class theMVAtool
 {
 
-public :
+	public :
 
 //Methods
-	theMVAtool(std::vector<TString >, std::vector<TString >, std::vector<TString>, std::vector<TString>, std::vector<int>, std::vector<TString>, std::vector<TString>, std::vector<bool>, int, bool );
+	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, int, bool, bool, TString);
 	~theMVAtool(){delete reader;};
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
-	void Train_Test_Evaluate(TString, TString); //Train, Test, Evaluate BDT with MC samples
+	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
 	float Compute_Fake_Ratio(TString, bool); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
-	int Read(TString, bool, bool, bool, bool = false, double = -99); //Produce templates of BDT, mTW (or else ?)
+	int Read(TString, bool, bool, bool, bool = false, double = -99); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
 	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
-	int Generate_PseudoData_Histograms_For_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
-	int Draw_Control_Plots(TString, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
-	int Plot_Templates(TString, TString, bool);
-	int Fit_Fake_Templates(TString, TString);
-	int Create_Fake_Templates_From_Fit(TString, TString);
+	int Generate_PseudoData_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
+	int Draw_Control_Plots(TString, bool, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
+	int Plot_Templates(TString, TString, bool = false); //Plot prefit templates (given to Combine)
+	int Plot_Templates_from_Combine(TString, TString, bool = false); //Plot postfit templates from Combine output
+	int Fit_Fake_Templates(TString, TString); //Fit the fake templates
+	int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
+	void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members
 	TMVA::Reader *reader;
@@ -92,12 +95,15 @@ public :
 	int nbin; //Control number of bins in BDT histogram
 	double luminosity_rescale; //Rescale weights to desired lumi
  	bool isttZ; //Work in ttZ CR
+	bool isWZ;
 	TString filename_suffix; //add sufix to filename for clarity
 	TString dir_ntuples; //path to input ntuples
 	TString t_name; //name of tree to be used in input ntuples
 
 	bool dbgMode  ;
 	bool stop_program;
+
+	TString format; //Format extension for plots (pdf of png?)
 };
 
 #endif

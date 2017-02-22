@@ -4,8 +4,6 @@
 #                          #
 ############################
 
-- FIXME / ADD : ...
-
 _____________________________________________________________________________
 * This GitHub repository contains the BDT-framework used in the tZq-SM analysis @ 13 TeV.
 

@@ -12,26 +12,44 @@ DEBUG = -g
 CFLAGS = -c  $(DEBUG) #Compilation options
 LFLAGS = $(DEBUG) -L/home/nico/root/lib -lTMVA -lTMVAGui
 ROOTFLAGS = `root-config --glibs --cflags`
+
 SRCS = $(wildcard *.cc) #Source files are all files with .cc extension
 HDRS = $(wildcard *.h) #Header files are all files with .h extension
 OBJS = $(SRCS:.cc=.o) #Object files are all files with .o extension, which have same names as source files
-EXEC = BDT_analysis #Name of executable file
+BDT_AN = BDT_analysis.exe #Name of executable file
+INTERFACE = Interface_ntuples_TMVA.exe
+SCALEFAKES = scaleFakes.exe
+#.PHONY : $(wildcard *.o)  #Force to always recompile object
 
 
 #Instructions
-all: $(EXEC)
+all: $(BDT_AN) $(INTERFACE) $(SCALEFAKES)
 
-#Obtain executable from object files
-$(EXEC): $(OBJS)
-	@echo "-- Linking --"
-	@$(CC) $(OBJS) -o $@ $(ROOTFLAGS) $(LFLAGS)
+#Obtain executables from object files
+$(SCALEFAKES) :	scaleFakes.o
+	@echo "-- Creating executable ./$(SCALEFAKES) --"
+	@$(CC) scaleFakes.o -o $@ $(ROOTFLAGS) $(LFLAGS)
 	@echo "-- Done --"
+
+$(INTERFACE) :	Interface_ntuples_TMVA.o
+	@echo "-- Creating executable ./$(INTERFACE) --"
+	@$(CC) Interface_ntuples_TMVA.o -o $@ $(ROOTFLAGS) $(LFLAGS)
+	@echo "-- Done --"
+
+$(BDT_AN): BDT_analysis.o theMVAtool.o
+	@echo "-- Creating executable ./$(BDT_AN) --"
+	@$(CC) BDT_analysis.o theMVAtool.o -o $@ $(ROOTFLAGS) $(LFLAGS)
+	@echo "-- Done --"
+
+
 
 #Obtain objects from source and header files
 %.o: %.cc $(HDRS)
-	@$(CC) $(ROOTFLAGS) $(CFLAGS) $< -o $@
 	@echo "-- Compiling --"
+	@$(CC) $(ROOTFLAGS) $(CFLAGS) $< -o $@
+
+
 
 #Erase all objects and executable
 clean:
-	@rm -f $(OBJS) $(EXEC)
+	@rm -f *.o *.exe
