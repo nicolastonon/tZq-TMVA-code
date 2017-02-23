@@ -1,0 +1,24 @@
+imax    1   number of observables (channels or bins)
+jmax    *   number of backgrounds
+kmax    *   number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes * BDTttZ_uuu ../../templates/Combine_Input_ScaledFakes.root $CHANNEL__$PROCESS $CHANNEL__$PROCESS__$SYSTEMATIC
+----------------------------------------------------------------------------------------------------------------------------------
+bin             BDTttZ_uuu
+observation     -1
+----------------------------------------------------------------------------------------------------------------------------------
+bin                      		BDTttZ_uuu	BDTttZ_uuu	BDTttZ_uuu	BDTttZ_uuu	BDTttZ_uuu	BDTttZ_uuu	BDTttZ_uuu
+process                      	tZq			WZjets     	ZZ       	ttZ      	ttW			ttH			FakeMuMuMu
+process                         0       	1           2        	3        	4			5			7
+rate                            -1      	-1          -1       	-1       	-1			-1			-1
+----------------------------------------------------------------------------------------------------------------------
+lumi 			lnN				-	 		1.062 		1.062 		1.062 		1.062 		1.062 		-
+
+WZ_rate			lnN 			- 			1.3	 		-	 		-	 		-	 		- 			-
+ZZ_rate			lnN 			-	 		-	 		1.3	 		-	 		-	 		- 			-
+ttZ_rate		lnN 			-			-	 		-	 		1.3	 		-	 		- 			-
+ttW_rate		lnN 			-	 		-	 		-	 		-	 		1.3	 		- 			-
+ttH_rate		lnN 			-	 		-	 		-	 		-	 		-	 		1.3 		-
+
+FakeRate_mu		lnN				-			-			-			-			-			-			5.00
+FakeRate_el		lnN				-			-			-			-			-			-			-

@@ -67,7 +67,12 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 	//Input
 	TString input_filename;
+
 	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
+
+	//FIXME -- Change Here if want to use "readyForMEM" (no MEM) rather than "withMEM" ntuples in ttZ/tZq regions
+	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
+
 	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
 
 	TFile* f_input = 0;
@@ -155,6 +160,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	}
 	for(int ivar=0; ivar<MEMvarlist.size(); ivar++)
 	{
+		//FIXME -- Change Here if want to use "readyForMEM" (no MEM) rather than "withMEM" ntuples in ttZ/tZq regions
 		if(MEM_or_WZ == "MEM") t_input->SetBranchAddress(MEMvarlist[ivar].Data(), &v_double_MEM[ivar]); //For SetBranchAddress, need to use doubles
 	}
 	for(int ivar=0; ivar<thesystlist.size(); ivar++)
@@ -174,6 +180,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 		// cout<<"v_floats[0] / "<<thevarlist[0].Data()<<" = "<<v_floats[0]<<endl;
 
+		//FIXME -- Change Here if want to use "readyForMEM" (no MEM) rather than "withMEM" ntuples in ttZ/tZq regions
 		if(MEM_or_WZ == "MEM")
 		{
 			//NOTE : MEMvar list is :
@@ -303,12 +310,12 @@ int main()
 		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, thesystlist, MEM_or_WZ);
 	}
 
-//--- Intercace ntuples for WZ CR study (mTW template fit)
-	// MEM_or_WZ = "WZ";
-	// for(int isample=0; isample<sample_list.size(); isample++)
-	// {
-	// 	Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, thesystlist, MEM_or_WZ);
-	// }
+//--- Interface ntuples for WZ CR study (mTW template fit)
+	MEM_or_WZ = "WZ";
+	for(int isample=0; isample<sample_list.size(); isample++)
+	{
+		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, thesystlist, MEM_or_WZ);
+	}
 
 	return 0;
 }

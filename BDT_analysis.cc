@@ -35,7 +35,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
     bool use_ttZMad_training = false; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
 
-
     TString format = ".png"; //.png or .pdf only
 
 //-------------------
@@ -72,20 +71,25 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     //set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
-    //Region selection -- manual
+
+// CAN CHOOSE REGION EITHER HERE IN CODE, OR AT EXECUTION !
+
+    //Region selection -- manual (set 1 region to TRUE)
     bool tZq_region = false;
     bool ttZ_region = false;
     bool WZ_region = false;
 
-    //Region selection is overwritten if arguments are given during execution
+    //Manual region selection is overwritten if arguments are given during execution
     if(argc==2)
     {
-        if(!strcmp(argv[1],"tZq")) {tZq_region = true;}
-        else if(!strcmp(argv[1],"WZ")) {WZ_region = true;}
-        else if(!strcmp(argv[1],"ttZ")) {ttZ_region = true;}
+        if(!strcmp(argv[1],"tZq")) {tZq_region = true; WZ_region = false; ttZ_region = false;}
+        else if(!strcmp(argv[1],"WZ")) {tZq_region = false; WZ_region = true; ttZ_region = false;}
+        else if(!strcmp(argv[1],"ttZ")) {tZq_region = false; WZ_region = false; ttZ_region = true;}
     }
 
-    if( (!tZq_region && !WZ_region && !ttZ_region) || (tZq_region && WZ_region) || (tZq_region && ttZ_region) || (WZ_region && ttZ_region) ) {cout<<__LINE__<<" : Problem : wrong region ! Exit"<<endl; return 0;}
+
+
+    if( (!tZq_region && !WZ_region && !ttZ_region) || (tZq_region && WZ_region) || (tZq_region && ttZ_region) || (WZ_region && ttZ_region) ) {cout<<__LINE__<<" BDT_analysis : Problem : wrong region ! Exit"<<endl; return 0;}
 
 //--- DON'T CHANGE THIS : Region choice automatized from here !
     bool isttZ = false; bool isWZ = false;
@@ -122,11 +126,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##    ## ##     ## ##     ## ##   ### ##   ### ##       ##       ##    ##
 //  ######  ##     ## ##     ## ##    ## ##    ## ######## ########  ######
 //---------------------------------------------------------------------------
-//
-// thechannellist.push_back("uue");
-    // thechannellist.push_back("uuu");
+
+    thechannellist.push_back("uuu");
     thechannellist.push_back("eeu");
-    // thechannellist.push_back("eee");
+    thechannellist.push_back("uue");
+    thechannellist.push_back("eee");
 
 //---------------------------------------------------------------------------
 //  ######     ###    ##     ## ########  ##       ########  ######
@@ -149,8 +153,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //BKG
     thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
-    thesamplelist.push_back("ttZ");             v_color.push_back(kRed);
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
+    thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed);
     thesamplelist.push_back("ttH");             v_color.push_back(kRed);
 
@@ -219,7 +223,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 //------------------------ for ttZ
-thevarlist_ttZ.push_back("btagDiscri"); //FIXME -- if removed ,no bug wit negW for training
+  thevarlist_ttZ.push_back("btagDiscri");
   thevarlist_ttZ.push_back("dRAddLepQ");
   thevarlist_ttZ.push_back("dRAddLepB");
   thevarlist_ttZ.push_back("dRAddLepClosestJet");
@@ -395,9 +399,11 @@ thevarlist_ttZ.push_back("btagDiscri"); //FIXME -- if removed ,no bug wit negW f
         float cut_BDT_value = -99;
         bool use_pseudodata_CR_plots = false;
         bool cut_on_BDT = false;
-        if(isWZ)  cut_on_BDT = false;
+        if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
 
-        // if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();} MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
+        if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+        // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
+
         // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots); //NOTE : very long ! You should only activate necessary syst./var. !
 
         // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
@@ -405,30 +411,22 @@ thevarlist_ttZ.push_back("btagDiscri"); //FIXME -- if removed ,no bug wit negW f
         //#############################################
         //  DRAW PLOTS
         //#############################################
-        bool draw_plots = false; //Draw Control & Template plots
+        bool draw_plots = true; //Draw Control & Template plots
 
         if(draw_plots)
         {
             for(int i=0; i<thechannellist.size(); i++)
             {
-                // MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, fakes_summed_channels, false); //Draw plots for the BDT CR
-
-                MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
-
+                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, fakes_summed_channels, false); //Draw plots for the BDT CR
+                // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
                 // MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
                 // MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
             }
 
-            // MVAtool->Draw_Control_Plots("", fakes_from_data, fakes_summed_channels, true);
-
-            MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
-
+            MVAtool->Draw_Control_Plots("", fakes_from_data, fakes_summed_channels, true);
+            // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
             // MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
             // MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
-
-            //--- Single Channel
-            // MVAtool->Plot_Templates("uuu", template_name, false); //Plot the prefit templates
-            // MVAtool->Plot_Templates_from_Combine("uuu", template_name, false); //Postfit templates from Combine file
         }
     }
 
