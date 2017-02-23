@@ -5,11 +5,8 @@ cp ../*.C .
 cp ../Makefile .
 cp ../README.md .
 
-cp -r ../COMBINE/datacards ./COMBINE
-cp ../COMBINE/*.C ./COMBINE
-cp ../COMBINE/*.py ./COMBINE
-cp ../COMBINE/*.txt ./COMBINE
-cp ../COMBINE/*.sh ./COMBINE
+cp -r ../COMBINE/ ./COMBINE
+
 
 git add .
 git commit -m "update"
