@@ -1,17 +1,26 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### README FILE W/ MOST BASIC STEPS TO RUN COMBINE ###
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Combine Twiki : https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideHiggsAnalysisCombinedLimit
+
+*** INSTALLATION
+
+- Follow instructions here :
+http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
+
+
+-----------------------------------
 *** SETUP
 
 1) Go to your Combine dir (e.g. : .../login/CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis)
 
 2) Create directories 'datacards' & 'templates'
 
-3) From /afs/cern.ch/user/n/ntonon/public/forJeremy :
-
+3) From /afs/cern.ch/user/n/ntonon/public/forJeremy/COMBINE/datacards/ :
 --> Copy 'datacards_ttZ', 'datacards_tZq', 'datacards_WZ' to your 'datacards' dir. ; each contains 4 datacards (1/channel)
 NB : Basically, we have 1 datacard / per region & channel (3*4=12 in total). Each contains the names of processes, systematics which apply to each of them, etc. We also give the name of the rootfile containing all the templates to fit.
 
+3) From /afs/cern.ch/user/n/ntonon/public/forJeremy/ :
 --> Copy 'Combine_Input_ScaledFakes.root' (that's the input file for the fit, w/ all templates in 3 regions) to 'templates' dir.
 
 4) Go to dir. 'datacards'
@@ -60,8 +69,16 @@ combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 datacar
 
 -----------------------------------
 -----------------------------------
-*** COMBINE HARVES
+*** COMBINE HARVESTER
+Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit).
 
+- From /afs/cern.ch/user/n/ntonon/public/forJeremy/COMBINE/ :
+--> Copy 'addBinbyBin.py', 'generateDatacards.py', 'generateCombinedDatacard.sh', 'datacard_template.txt' to your 'datacards' dir.
+
+- generateDatacards.py : uses 'datacard_template.txt' to generate the desired datacard. Use it like this :
+# python generateDatacards.py CHANNEL VARIABLE FILE_HISTO_NAME
+
+- 
 
 
 

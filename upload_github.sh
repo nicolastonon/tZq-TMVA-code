@@ -5,7 +5,7 @@ cp ../*.C .
 cp ../Makefile .
 cp ../README.md .
 
-cp -r ../COMBINE/ ./COMBINE
+cp -r ../COMBINE/ .
 
 
 git add .
