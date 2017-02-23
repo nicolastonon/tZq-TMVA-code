@@ -2,7 +2,7 @@ cp ../*.cc .
 cp ../*.h .
 cp ../*.cxx .
 cp ../*.C .
-cp ../Makefile
+cp ../Makefile .
 cp ../README.md .
 
 cp -r ../COMBINE/datacards ./COMBINE
