@@ -160,7 +160,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //FAKES
     thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
+
     //-- THESE SAMPLES MUST BE THE LAST OF THE SAMPLE LIST FOR THE READER TO KNOW WHICH ARE THE MC FAKE SAMPLES !
+    //WARNING : OBSOLETE -- don't use MC fakes (or update code)
     // thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
     // thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
     // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
@@ -180,89 +182,106 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
 
 //------------------------ for tZq
+    thevarlist.push_back("btagDiscri");
+    thevarlist.push_back("dRAddLepQ");
+    thevarlist.push_back("dRAddLepClosestJet");
+    thevarlist.push_back("dPhiAddLepB");
+    thevarlist.push_back("ZEta");
+    thevarlist.push_back("Zpt");
+    thevarlist.push_back("mtop");
+    thevarlist.push_back("AddLepAsym");
+    thevarlist.push_back("etaQ");
+    thevarlist.push_back("AddLepETA");
+    thevarlist.push_back("LeadJetEta");
+    thevarlist.push_back("dPhiZAddLep");
+    thevarlist.push_back("dRZAddLep");
+    thevarlist.push_back("dRjj");
+    thevarlist.push_back("ptQ");
+    thevarlist.push_back("tZq_pT");
 
-  thevarlist.push_back("btagDiscri");
-  thevarlist.push_back("dRAddLepQ");
-  thevarlist.push_back("dRAddLepClosestJet");
-  thevarlist.push_back("dPhiAddLepB");
-  thevarlist.push_back("ZEta");
-  thevarlist.push_back("Zpt");
-  thevarlist.push_back("mtop");
-  thevarlist.push_back("AddLepAsym");
-  thevarlist.push_back("etaQ");
-  thevarlist.push_back("AddLepETA");
-  thevarlist.push_back("LeadJetEta");
-  thevarlist.push_back("dPhiZAddLep");
-  thevarlist.push_back("dRZAddLep");
-  thevarlist.push_back("dRjj");
-  thevarlist.push_back("ptQ");
-  thevarlist.push_back("tZq_pT");
+    // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
+    // thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
+    // thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
 
-  // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
-  // thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
-  // thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
-
-  //thevarlist.push_back("mTW");
-  //thevarlist.push_back("m3l");
-  //thevarlist.push_back("ZCandMass");
-  //thevarlist.push_back("leadingLeptonPT");
-  //thevarlist.push_back("MAddLepB");
-  //thevarlist.push_back("dPhiAddLepQ");
-  //thevarlist.push_back("dPhiZMET");
-  //thevarlist.push_back("dRZTop");
-  //thevarlist.push_back("TopPT");
-  //thevarlist.push_back("tZq_mass");
-  //thevarlist.push_back("tZq_eta");
-  // thevarlist.push_back("tq_mass");
-  //thevarlist.push_back("tq_pT"); // strong correlation with ZpT
-  //thevarlist.push_back("tq_eta");
-  // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
-  // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
-  // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
+    //thevarlist.push_back("mTW");
+    //thevarlist.push_back("m3l");
+    //thevarlist.push_back("ZCandMass");
+    //thevarlist.push_back("leadingLeptonPT");
+    //thevarlist.push_back("MAddLepB");
+    //thevarlist.push_back("dPhiAddLepQ");
+    //thevarlist.push_back("dPhiZMET");
+    //thevarlist.push_back("dRZTop");
+    //thevarlist.push_back("TopPT");
+    //thevarlist.push_back("tZq_mass");
+    //thevarlist.push_back("tZq_eta");
+    // thevarlist.push_back("tq_mass");
+    //thevarlist.push_back("tq_pT"); // strong correlation with ZpT
+    //thevarlist.push_back("tq_eta");
+    // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
+    // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
+    // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
 
 
 
 //------------------------ for ttZ
-  thevarlist_ttZ.push_back("btagDiscri");
-  thevarlist_ttZ.push_back("dRAddLepQ");
-  thevarlist_ttZ.push_back("dRAddLepB");
-  thevarlist_ttZ.push_back("dRAddLepClosestJet");
-  thevarlist_ttZ.push_back("Zpt");
-  thevarlist_ttZ.push_back("ZEta");
-  thevarlist_ttZ.push_back("AddLepAsym");
-  thevarlist_ttZ.push_back("etaQ");
-  thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
-  thevarlist_ttZ.push_back("AddLepETA");
-  thevarlist_ttZ.push_back("dPhiZAddLep");
-  thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
-  thevarlist_ttZ.push_back("dRjj");
-  thevarlist_ttZ.push_back("mtop");
-  thevarlist_ttZ.push_back("TopPT"); // low discri power
-  thevarlist_ttZ.push_back("m3l");
-  thevarlist_ttZ.push_back("dRZTop");
-  thevarlist_ttZ.push_back("tZq_pT");
+    thevarlist_ttZ.push_back("btagDiscri");
+    thevarlist_ttZ.push_back("dRAddLepQ");
+    thevarlist_ttZ.push_back("dRAddLepB");
+    thevarlist_ttZ.push_back("dRAddLepClosestJet");
+    thevarlist_ttZ.push_back("Zpt");
+    thevarlist_ttZ.push_back("ZEta");
+    thevarlist_ttZ.push_back("AddLepAsym");
+    thevarlist_ttZ.push_back("etaQ");
+    thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
+    thevarlist_ttZ.push_back("AddLepETA");
+    thevarlist_ttZ.push_back("dPhiZAddLep");
+    thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
+    thevarlist_ttZ.push_back("dRjj");
+    thevarlist_ttZ.push_back("mtop");
+    thevarlist_ttZ.push_back("TopPT"); // low discri power
+    thevarlist_ttZ.push_back("m3l");
+    thevarlist_ttZ.push_back("dRZTop");
+    thevarlist_ttZ.push_back("tZq_pT");
 
 
-  // thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
-  // thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
-  // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
+    // thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
+    // thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
+    // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
 
-  //thevarlist_ttZ.push_back("tZq_mass");
-  // thevarlist_ttZ.push_back("LeadJetEta");
-  // thevarlist_ttZ.push_back("dPhiAddLepB");
-  // thevarlist_ttZ.push_back("dPhiAddLepQ");
-  // thevarlist_ttZ.push_back("leadingLeptonPT");
-  // thevarlist_ttZ.push_back("dPhiZMET");
-  //thevarlist_ttZ.push_back("dRAddLepBFromTop");
-  //thevarlist_ttZ.push_back("tZq_eta");
-  //thevarlist_ttZ.push_back("tq_mass");
-  //thevarlist_ttZ.push_back("tq_pT"); // strong correlation with ZpT
-  // thevarlist_ttZ.push_back("tq_eta");
-  // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
-  // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
-  // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
+    //thevarlist_ttZ.push_back("tZq_mass");
+    // thevarlist_ttZ.push_back("LeadJetEta");
+    // thevarlist_ttZ.push_back("dPhiAddLepB");
+    // thevarlist_ttZ.push_back("dPhiAddLepQ");
+    // thevarlist_ttZ.push_back("leadingLeptonPT");
+    // thevarlist_ttZ.push_back("dPhiZMET");
+    //thevarlist_ttZ.push_back("dRAddLepBFromTop");
+    //thevarlist_ttZ.push_back("tZq_eta");
+    //thevarlist_ttZ.push_back("tq_mass");
+    //thevarlist_ttZ.push_back("tq_pT"); // strong correlation with ZpT
+    // thevarlist_ttZ.push_back("tq_eta");
+    // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
+    // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
+    // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
 
 //-------------------
+
+
+
+
+//---------------------------------------------------------------------------
+//  #######  ######## ##     ## ######## ########       ##     ##    ###    ########   ######
+// ##     ##    ##    ##     ## ##       ##     ##      ##     ##   ## ##   ##     ## ##    ##
+// ##     ##    ##    ##     ## ##       ##     ##      ##     ##  ##   ##  ##     ## ##
+// ##     ##    ##    ######### ######   ########       ##     ## ##     ## ########   ######
+// ##     ##    ##    ##     ## ##       ##   ##         ##   ##  ######### ##   ##         ##
+// ##     ##    ##    ##     ## ##       ##    ##         ## ##   ##     ## ##    ##  ##    ##
+//  #######     ##    ##     ## ######## ##     ##         ###    ##     ## ##     ##  ######
+//---------------------------------------------------------------------------
+
+//Can add additionnal vars which are NOT used in TMVA NOR for cuts, only for CR plots
+    vector<TString> v_add_var_names;
+    v_add_var_names.push_back("mTW");
+    // v_add_var_names.push_back("METpt"); //NB : need to include it in interfacing code
 
 
 
@@ -361,7 +380,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         std::vector<TString > thevarlist_tmp;
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
         else       thevarlist_tmp = thevarlist;
-        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, nofbin_templates, isttZ, isWZ, format); if(MVAtool->stop_program) {return 1;}
+        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
         //#############################################
@@ -375,7 +394,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
             if(!isWZ)
             {
-                MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type, use_ttZMad_training);
+                // MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type, use_ttZMad_training);
             }
         }
 
@@ -403,8 +422,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
         // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
-
-        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots); //NOTE : very long ! You should only activate necessary syst./var. !
+        // //
+        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
 
         // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
@@ -412,21 +431,24 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  DRAW PLOTS
         //#############################################
         bool draw_plots = true; //Draw Control & Template plots
+        bool postfit = false; //Decide if want prefit OR combine postfit plots of input vars (NB : different files)
 
         if(draw_plots)
         {
-            for(int i=0; i<thechannellist.size(); i++)
+            for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
             {
-                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, fakes_summed_channels, false); //Draw plots for the BDT CR
-                // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
+                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
                 // MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
                 // MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
+                // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
             }
 
-            MVAtool->Draw_Control_Plots("", fakes_from_data, fakes_summed_channels, true);
-            // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
+            // --- ALL CHANNELS
+
+            MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
             // MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
             // MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
+            // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
         }
     }
 
@@ -560,7 +582,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
     			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, false, true, format); if(MVAtool_WZ->stop_program) {return 1;}
+    			theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, false, true, format); if(MVAtool_WZ->stop_program) {return 1;}
     			MVAtool_WZ->Set_Luminosity(set_luminosity);
 
     			TString template_name_WZ = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
@@ -599,7 +621,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
     			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist_ttZ, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, true, false, format); if(MVAtool_ttZ->stop_program) {return 1;}
+    			theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist_ttZ, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, true, false, format); if(MVAtool_ttZ->stop_program) {return 1;}
     			MVAtool_ttZ->Set_Luminosity(set_luminosity);
 
                 TString bdt_type_ttZ = "BDTttZ"; //'BDT' or 'BDTttZ'
@@ -643,7 +665,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
     			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, nofbin_templates, false, false, format); if(MVAtool_tZq->stop_program) {return 1;}
+    			theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, false, false, format); if(MVAtool_tZq->stop_program) {return 1;}
     			MVAtool_tZq->Set_Luminosity(set_luminosity);
 
                 TString bdt_type_tZq = "BDT"; //'BDT' or 'BDTttZ'

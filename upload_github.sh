@@ -3,7 +3,7 @@ cp ../*.h .
 cp ../*.cxx .
 cp ../*.C .
 cp ../Makefile .
-cp ../README.md .
+cp ../README.txt .
 
 cp -r ../COMBINE/ .
 

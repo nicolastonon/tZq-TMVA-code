@@ -60,7 +60,7 @@ class theMVAtool
 	public :
 
 //Methods
-	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, int, bool, bool, TString);
+	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString);
 	~theMVAtool(){delete reader;};
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
@@ -69,7 +69,7 @@ class theMVAtool
 	int Read(TString, bool, bool, bool, bool = false, double = -99); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
-	void Create_Control_Histograms(bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
+	void Create_Control_Histograms(bool, bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
 	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
 	int Generate_PseudoData_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
 	int Draw_Control_Plots(TString, bool, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
@@ -82,14 +82,14 @@ class theMVAtool
 //Members
 	TMVA::Reader *reader;
 
+	std::vector<TString> var_list; std::vector<float> var_list_floats; //TMVA variables
+	std::vector<TString> v_add_var_names; vector<float> v_add_var_floats; //Additional vars only for CR plots
+	std::vector<TString> v_cut_name; std::vector<TString> v_cut_def; std::vector<float> v_cut_float; std::vector<bool> v_cut_IsUsedForBDT; //Variables for region cuts (e.g. NJets, ...)
 	std::vector<TString> sample_list;
-	std::vector<TString> data_list;
-	std::vector<TString> var_list; std::vector<float> vec_variables; //Contains as many floats as there are variables in var_list
 	std::vector<TString> syst_list;
 	std::vector<TString> channel_list;
-	std::vector<TString> v_cut_name; std::vector<TString> v_cut_def; std::vector<float> v_cut_float; std::vector<bool> v_cut_IsUsedForBDT;
 
-  	std::vector<float> theWeights_PDF;
+ //  	std::vector<float> theWeights_PDF;
 	std::vector<int> colorVector;
 
 	int nbin; //Control number of bins in BDT histogram

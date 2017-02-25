@@ -112,7 +112,7 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
   hdata->Draw("Ep");
   result->Draw("same");
 
-  // c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
+  c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
   delete c1;
 
   double fraction_fakes = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
@@ -145,6 +145,8 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
 
 int Scale_Fake_Histograms(TString file_to_rescale_name)
 {
+  TH1::SetDefaultSumw2();
+
   int rebin = 1;
 
   TFile * file_to_rescale = 0;
@@ -252,18 +254,13 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
 
   //output file
   TString output_name = file_to_rescale_name ;
-  int index = output_name.Index(".root"); //Find index of substring
+  int index = 0;
+  if(output_name.Contains("noScale") ) index = output_name.Index("_noScale.root"); //Find index of substring
+  else index = output_name.Index(".root"); //Find index of substring
   output_name.Remove(index); //Remove substring
   output_name+= "_ScaledFakes.root"; //Add desired suffix
 
   TFile * outfile_post  = new TFile( output_name.Data(), "RECREATE");
-
-  //Fake channels names
-  const char *   elelel = "FakeElElEl";
-  const char *   elelmu = "FakeElElMu";
-  const char *   mumuel = "FakeMuMuEl";
-  const char *   mumumu = "FakeMuMuMu";
-
 
 
 //--- RESCALE FAKES HISTOGRAMS
@@ -275,6 +272,8 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   // Loop over channels
   for(int ichan=0; ichan<channel_list.size(); ichan++)
   {
+    cout<<"Channel : "<<channel_list[ichan]<<endl;
+
     // Loop over samples
     for(unsigned int isample = 0; isample < sample_list.size(); isample++)
     {
@@ -293,16 +292,16 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
           histo = (TH1F*)file_to_rescale->Get( histo_name );
 
           //RE-SCALE ONLY FAKE HISTOS
-          if(sample_list[isample] == elelel)       { histo->Scale(factor_eee); }
-          else if(sample_list[isample] == elelmu)  { histo->Scale(factor_eeu); }
-          else if(sample_list[isample] == mumuel)  { histo->Scale(factor_uue); }
-          else if(sample_list[isample] == mumumu)  { histo->Scale(factor_uuu); }
+          if(sample_list[isample] == "FakeElElEl")       { histo->Scale(factor_eee); }
+          else if(sample_list[isample] == "FakeElElMu")  { histo->Scale(factor_eeu); }
+          else if(sample_list[isample] == "FakeMuMuEl")  { histo->Scale(factor_uue); }
+          else if(sample_list[isample] == "FakeMuMuMu")  { histo->Scale(factor_uuu); }
 
           //WRITE ALL HISTOS
-          histo->SetName( histo_name );
+          // histo->SetName( histo_name );
           outfile_post->cd();
           histo->Rebin(rebin);
-          histo->Write();
+          histo->Write(histo_name, TObject::kOverwrite);
         } // end syst loop
       } // end var loop
     } //end sample loop
@@ -318,15 +317,26 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
 
 
 //DEFINE THE PATHS OF THE FILE WHERE THE HISTOGRAMS TO RESCALE ARE
-int main()
+int main(int argc, char **argv)
 {
-  TString file_to_rescale = "";
+  if(argc == 2)
+  {
+    Scale_Fake_Histograms(argv[1]);
+  }
 
-  // TString file_to_rescale = "outputs/Combine_Input_noScale.root";
-  // Scale_Fake_Histograms(file_to_rescale);
+  else if(argc==1)
+  {
+    TString file_to_rescale = "";
 
-  file_to_rescale = "outputs/Control_Histograms_NJetsMin0_NBJetsEq0.root";
-  Scale_Fake_Histograms(file_to_rescale);
+    file_to_rescale = "outputs/Combine_Input_noScale.root";
+    Scale_Fake_Histograms(file_to_rescale);
+
+    file_to_rescale = "outputs/Control_Histograms_NJetsMin0_NBJetsEq0.root";
+    Scale_Fake_Histograms(file_to_rescale);
+  }
+
+  else {cout<<"Wrong number of arguments !"<<endl; return 1;}
+
 
   return 0;
 }

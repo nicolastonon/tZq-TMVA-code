@@ -2,48 +2,59 @@
 ### README FILE W/ MOST BASIC STEPS TO RUN COMBINE ###
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Combine Twiki : https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideHiggsAnalysisCombinedLimit
+- A few remarks on Combine / datacards at end of README
 
+-----------------------------------
 *** INSTALLATION
 
-- Follow instructions here :
+- Follow instructions here (HiggsAnalysis + CombineHarvester):
 http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 
 
 -----------------------------------
 *** SETUP
 
-1) Go to your Combine dir (e.g. : .../login/CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis)
+1) Once you have installed both HiggsAnalysis & CombineHarvester, move to where you want to put the Combine codes (NB : it must be in a subdir. of CMSSW_7_4_7/src (e.g. CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis/)
 
-2) Create directories 'datacards' & 'templates'
+2) Perform a 'sparse checkout' to download only the COMBINE/ dir. from the git repository :
+# git init .
+# git remote add -f origin https://github.com/nicolastonon/tZq-TMVA-code
+# git config core.sparseCheckout true
+# echo "COMBINE/" >> .git/info/sparse-checkout
+# git pull origin master
 
-3) From /afs/cern.ch/user/n/ntonon/public/forJeremy/COMBINE/datacards/ :
---> Copy 'datacards_ttZ', 'datacards_tZq', 'datacards_WZ' to your 'datacards' dir. ; each contains 4 datacards (1/channel)
-NB : Basically, we have 1 datacard / per region & channel (3*4=12 in total). Each contains the names of processes, systematics which apply to each of them, etc. We also give the name of the rootfile containing all the templates to fit.
+- /!\ NB : The 'templates' dir. should contain a file name 'Combine_Input_ScaledFakes.root', for which Combine is going to look for. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file.
 
-3) From /afs/cern.ch/user/n/ntonon/public/forJeremy/ :
---> Copy 'Combine_Input_ScaledFakes.root' (that's the input file for the fit, w/ all templates in 3 regions) to 'templates' dir.
 
-4) Go to dir. 'datacards'
+3) Move to 'datacards' dir. This directory contains all the datacards + some others codes. It is from here that we will run the Combine commands.
+
+
+4) Use script 'generateCombinedDatacard.sh'. This uses the model 'datacard_template.txt' & the python script 'generateDatacards.py' to automatically generate the 12 datacards & combine them into the single 'COMBINED_datacard.txt' file :
+# ./generateCombinedDatacard.sh
+
+- NB : the basic command to combine 2 datacards describing 2 channels 'var1_uuu'/'var2_uuu' is :
+# $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py var1_uuu=datacard1.txt var2_uuu=datacard2.txt  > COMBINED_datacard.txt
+
+- NB : can also use directly the 'generateDatacards.py' script to generate manually the datacard you want :
+# python generateDatacards.py CHANNEL VARIABLE FILE_CONTAINING_HISTOS
+
 
 -----------------------------------
 *** COMMANDS
 
-5) First, combine all the datacards together :
-# python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py BDT_eee=datacards_tZq/datacard_eee.txt BDT_uuu=datacards_tZq/datacard_uuu.txt BDT_eeu=datacards_tZq/datacard_eeu.txt BDT_uue=datacards_tZq/datacard_uue.txt BDTttZ_eee=datacards_ttZ/datacard_eee.txt BDTttZ_uuu=datacards_ttZ/datacard_uuu.txt BDTttZ_eeu=datacards_ttZ/datacard_eeu.txt BDTttZ_uue=datacards_ttZ/datacard_uue.txt mTW_eee=datacards_WZ/datacard_eee.txt mTW_uuu=datacards_WZ/datacard_uuu.txt mTW_eeu=datacards_WZ/datacard_eeu.txt mTW_uue=datacards_WZ/datacard_uue.txt > COMBINED_datacard.txt
 
-6) Compute the a-priori expected significance w/ a Profile Likelihood :
+5) Compute the a-priori expected significance w/ a Profile Likelihood :
 # combine -M ProfileLikelihood --significance COMBINED_datacard.txt -t -1 --expectSignal=1 -v 4
 NB : option -v X (with X>=2) for verbose mode. With X=4, can access postfit POI values & get warning/error messages !
 NB : "-t -1" ==> Use Asimov Dataset ; to use toys instead, use "-t N", with N number of toys
 NB : for a-posteriori expected signif (uses data & MC), add --toysFreq
 
-7) Perform a Maximum Likelihood Fit (to get access to postfit templates, postfit nuisances, ...) :
-NB : /!\ uses real data !
+6) Perform a Maximum Likelihood Fit (to get access to postfit templates, postfit nuisances, ...) :
 NB : if segfault, try again once or twice (... !)
 # combine -M MaxLikelihoodFit --skipBOnlyFit --saveShapes --saveWithUncertainties --plot --out outputs COMBINED_datacard.txt
 
-- With Asimov dataset (doesn't use data but also gives no info... only useful to try if everything runs ?):
-# combine -M MaxLikelihoodFit --saveShapes --plot --out outputs --expectSignal=1 -t -1 COMBINED_datacard.txt
+((- With Asimov dataset (useless?) :
+# combine -M MaxLikelihoodFit --saveShapes --plot --out outputs --expectSignal=1 -t -1 COMBINED_datacard.txt))
 
 ==> This should create a 'output' dir. containing .png plots & a 'mlfit.root' file containing prefit/postfit histos, etc.
 
@@ -51,10 +62,26 @@ NB : if segfault, try again once or twice (... !)
 8) If you want to plot the pull distributions of the nuisance parameters (to see how they changed postfit), go to the dir. containing the mlfit.root file, & use the Combine script :
 # python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py -g output.root mlfit.root
 
-==> This will create a 'output.root' file containing all the necessary info on the npoints
+==> This will create a 'output.root' file containing all the necessary info on the NPs
 
-9) To save the plots of these pull distributions, you can copy the 'drawCanvas.C' macro (still from /afs/cern.ch/user/n/ntonon/public/forJeremy) into the dir. containing the 'output.root' file.
-Executing it should create 2 .png plots containing the useful info on NPs.
+9) To save the plots of these pull distributions, you can copy the 'drawCanvas.C' macro (from 'datacards' dir.) into the dir. containing the 'output.root' file.
+--> Executing it should create 2 .png plots containing the useful info on NPs.
+
+
+
+-----------------------------------
+*** COMBINE HARVESTER
+(Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit). )
+
+- addBinbyBin.py : Add bin by bin statistical MC error to histograms. It uses 'COMBINED_datacard.txt' to  create new datacards taking these errors into account, and also a rootfile :
+# python addBinbyBin
+
+-
+
+
+
+
+
 
 -----------------------------------
 -----------------------------------
@@ -67,28 +94,13 @@ combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 datacar
 
 
 
------------------------------------
------------------------------------
-*** COMBINE HARVESTER
-Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit).
-
-- From /afs/cern.ch/user/n/ntonon/public/forJeremy/COMBINE/ :
---> Copy 'addBinbyBin.py', 'generateDatacards.py', 'generateCombinedDatacard.sh', 'datacard_template.txt' to your 'datacards' dir.
-
-- generateDatacards.py : uses 'datacard_template.txt' to generate the desired datacard. Use it like this :
-# python generateDatacards.py CHANNEL VARIABLE FILE_HISTO_NAME
-
-- 
-
-
-
-
-
-
 
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 *** NOTES ON COMBINE/DATACARDS/...
 
 - A shape analysis relies not only on the expected event yields for the signals and backgrounds, but also on the distribution of those events in some discriminating variable. This approach is often convenient with respect to a counting experiment, especially when the background cannot be predicted reliably a-priori, since the information from the shape allows a better discrimination between a signal-like and a background-like excess, and provides an in-situ normalization of the background.
