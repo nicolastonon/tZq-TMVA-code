@@ -1,7 +1,7 @@
 cp ../*.cc .
 cp ../*.h .
-cp ../*.cxx .
-cp ../*.C .
+#cp ../*.cxx .
+#cp ../*.C .
 cp ../Makefile .
 cp ../README.txt .
 
