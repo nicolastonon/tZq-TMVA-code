@@ -1,0 +1,41 @@
+imax    1   number of observables
+jmax    *   number of backgrounds
+kmax    *   number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes * var_chan filetoread $CHANNEL__$PROCESS $CHANNEL__$PROCESS__$SYSTEMATIC
+----------------------------------------------------------------------------------------------------------------------------------
+bin             var_chan
+observation     -1
+----------------------------------------------------------------------------------------------------------------------------------
+bin                 var_chan      var_chan     var_chan     var_chan     var_chan     var_chan     var_chan
+process             tZq             WZjets       ZZ           ttZ           ttW	        ttH        FakeLLL
+process                0              1          2             3            4           5          FLLL_chNumb
+rate                  -1             -1          -1            -1          -1          -1            -1
+---------------------------------------------------------------------------------------------------------------------
+lumi        lnN	      1.062       1.062         1.062       1.062       1.062          1.062          -
+
+tZq_rate    lnN       1.3        	 -            -           -           -	    		-             -
+WZ_rate     lnN       -          	1.3           -           -           -	    		-             -
+ZZ_rate     lnN       -	         	 -           1.3          -           -            	-             -
+ttZ_rate    lnN       -	         	 -            -          1.3          -            	-             -
+ttW_rate    lnN       -	         	 -            -           -          1.3           	-             -
+ttH_rate    lnN       -          	 -            -           -           -            1.3            -
+#SingleTop    lnN      -          	 -            -           -           -             -             -
+
+FakeRate_type lnN     -		  	 	 -	   		  -	    	  -           -	     		-             5.0
+FakeBgd_rate  lnN     -	         	 -            -	    	  -           -	     		-             1.3
+
+Q2 			 shape    1 			 1 		      1 		  1 			1 			1 			   -
+pdf			 shape    1 			 1 		      1 		  1 			1 			1 			   -
+PU 			 shape    1 			 1 		      1 		  1 			1 			1 			   -
+MuEff		 shape    1 			 1 		      1 		  1 			1 			1 			   -
+EleEff		 shape    1 			 1 		      1 		  1 			1 			1 			   -
+LFcont		 shape    1 			 1 		      1 		  1 			1 			1 			   -
+HFstats1	 shape    1 			 1 		      1 		  1 			1 			1 			   -
+HFstats2	 shape    1 			 1 		      1 		  1 			1 			1 			   -
+CFerr1		 shape    1 			 1 		      1 		  1 			1 			1 			   -
+CFerr2		 shape    1 			 1 		      1 		  1 			1 			1 			   -
+HFcont		 shape    1 			 1 		      1 		  1 			1 			1 			   -
+LFstats1	 shape    1 			 1 		      1 		  1 			1 			1 			   -
+LFstats2	 shape    1 			 1 		      1 		  1 			1 			1 			   -
+#Fakes		 shape    - 			 - 		      - 		  - 			-			- 			   1

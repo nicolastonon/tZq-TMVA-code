@@ -355,7 +355,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:BoostType=AdaBoost:AdaBoostBeta=0.4:PruneMethod=CostComplexity:PruneStrength=7:SeparationType=CrossEntropy:MaxDepth=3:nCuts=40:NodePurityLimit=0.5:NTrees=1000:MinNodeSize=1%:NegWeightTreatment=InverseBoostNegWeights" );
 
 	//Gradient -- a bit better cf. ROC ?
-	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
+	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
 
 
 

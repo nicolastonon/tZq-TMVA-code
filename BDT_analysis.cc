@@ -421,16 +421,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
 
         if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-        // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
-        // //
-        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
+        MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
+        //
+        MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
 
         // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
         //#############################################
         //  DRAW PLOTS
         //#############################################
-        bool draw_plots = true; //Draw Control & Template plots
+        bool draw_plots = false; //Draw Control & Template plots
         bool postfit = false; //Decide if want prefit OR combine postfit plots of input vars (NB : different files)
 
         if(draw_plots)
