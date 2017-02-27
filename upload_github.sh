@@ -1,9 +1,10 @@
 cp ../*.cc .
+cp ../*.sh .
 cp ../*.h .
 #cp ../*.cxx .
 #cp ../*.C .
 cp ../Makefile .
-cp ../README.txt .
+cp ../*.txt .
 
 cp -r ../COMBINE/ .
 

@@ -2,7 +2,7 @@
 ### README FILE W/ MOST BASIC STEPS TO RUN COMBINE ###
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Combine Twiki : https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideHiggsAnalysisCombinedLimit
-- A few remarks on Combine / datacards at end of README
+- A few remarks on Combine / datacards at the end of this README
 
 -----------------------------------
 *** INSTALLATION
@@ -16,26 +16,30 @@ http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 
 1) Once you have installed both HiggsAnalysis & CombineHarvester, move to where you want to put the Combine codes (NB : it must be in a subdir. of CMSSW_7_4_7/src (e.g. CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis/)
 
-2) Perform a 'sparse checkout' to download only the COMBINE/ dir. from the git repository :
+2) Copy the necessary codes & files from GitHub (https://github.com/nicolastonon/tZq-TMVA-code). You can either clone the entire repository (containing TMVA code, COMBINE folder, + a few codes which are not needed) ; or, if you just want to get the COMBINE directory (e.g. because you already have the TMVA code in some other location), perform a 'sparse checkout' to download only this dir. :
 # git init .
 # git remote add -f origin https://github.com/nicolastonon/tZq-TMVA-code
 # git config core.sparseCheckout true
 # echo "COMBINE/" >> .git/info/sparse-checkout
 # git pull origin master
 
-- /!\ NB : The 'templates' dir. should contain a file name 'Combine_Input_ScaledFakes.root', for which Combine is going to look for. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file.
+- /!\ NB : The 'templates' dir. should contain a file name 'Combine_Input_ScaledFakes.root', for which Combine is going to look for. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file. (read the other README.txt to know how to create the templates)
 
 
-3) Move to 'datacards' dir. This directory contains all the datacards + some others codes. It is from here that we will run the Combine commands.
+3) Move to 'datacards' dir. This directory contains codes for generating/combining all needed datacards. It is from here that we will run the Combine commands.
 
 
-4) Use script 'generateCombinedDatacard.sh'. This uses the model 'datacard_template.txt' & the python script 'generateDatacards.py' to automatically generate the 12 datacards & combine them into the single 'COMBINED_datacard.txt' file :
-# ./generateCombinedDatacard.sh
+4) In 'Create_Script_Datacard_Generation.cc' :
+- Choose mode b/w 'Template_Datacard_allSyst.txt' & 'Template_Datacard_noSyst.txt', depending on whether you want to include systematics or not in the fit ;
+- In the main(), call the appropriate function, depending on whether you want to generate datacards for the Template Fit, or to obtain postfit distributions of the BDT variables.
+- Compile code & execute it :
+# g++ Create_Script_Datacard_Generation.cc -o Create_Script_Datacard_Generation.exe `root-config --cflags --glibs`
 
-- NB : the basic command to combine 2 datacards describing 2 channels 'var1_uuu'/'var2_uuu' is :
-# $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py var1_uuu=datacard1.txt var2_uuu=datacard2.txt  > COMBINED_datacard.txt
 
-- NB : can also use directly the 'generateDatacards.py' script to generate manually the datacard you want :
+5) The created script 'Create_Script_Datacard_Generation.exe' automatically generates the appropriate datacards (can be modified in Create_Script_Datacard_Generation.cc) & combines them into 'COMBINED_datacard_suffix' :
+# ./Create_Script_Datacard_Generation.exe
+
+- NB : can also use directly the 'Generate_Datacards.py' script to generate manually the datacard you want, with this syntax :
 # python generateDatacards.py CHANNEL VARIABLE FILE_CONTAINING_HISTOS
 
 
@@ -111,6 +115,10 @@ combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 datacar
 
 
 --- ABOUT DATACARDS :
+
+- NB : the basic command to combine 2 datacards describing 2 channels 'var1_uuu'/'var2_uuu' is :
+# $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py var1_uuu=datacard1.txt var2_uuu=datacard2.txt  > COMBINED_datacard.txt
+
 
 -   imax defines the number of final states analyzed (one in this case, but datacards can also contain multiple channels)
     jmax defines the number of independent physical processes whose yields are provided to the code, minus one (i.e. if you have 2 signal processes and 5 background processes, you should put 6)

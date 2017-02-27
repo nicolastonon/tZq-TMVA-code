@@ -7,8 +7,10 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(TString filename)
+void Script_Datacards_InputVars()
 {
+	TString file_histos = "../templates/Control_Histograms_NJetsMin0_NBJetsEq0_ScaledFakes.root";
+
 	ofstream file_out("Generate_Datacards_InputVars.sh");
 
 	vector<TString> var_list;
@@ -48,7 +50,7 @@ void Script_Datacards_InputVars(TString filename)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + filename<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos<<endl;
 		}
 
 		file_out<<endl;
@@ -58,17 +60,15 @@ void Script_Datacards_InputVars(TString filename)
 
 	file_out <<"mkdir datacards_inputVars"<<endl;
 
-	file_out<<"mv datacard_*.txt datacards_inputVars/";
-
 	file_out<<endl<<endl<<endl;
 
-	file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py "<<endl;
+	file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py ";
 
 	for(int ivar=0; ivar<var_list.size(); ivar++)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<var_list[ivar] + "_" + chan_list[ichan] + "=datacards_inputVars/datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
+			file_out<<var_list[ivar] + "_" + chan_list[ichan] + "=datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
 		}
 	}
 
@@ -76,14 +76,18 @@ void Script_Datacards_InputVars(TString filename)
 
 	system("chmod 755 Generate_Datacards_InputVars.sh");
 
+	file_out<<"mv datacard_*.txt datacards_inputVars/";
+
 	return;
 }
 
 
 
 
-void Script_Datacards_TemplateFit(TString filename)
+void Script_Datacards_TemplateFit()
 {
+	TString file_histos = "../templates/Combine_Input_ScaledFakes.root";
+
 	ofstream file_out("Generate_Datacards_TemplateFit.sh");
 
 	vector<TString> var_list;
@@ -102,7 +106,7 @@ void Script_Datacards_TemplateFit(TString filename)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + filename<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos<<endl;
 		}
 
 		file_out<<endl;
@@ -112,23 +116,23 @@ void Script_Datacards_TemplateFit(TString filename)
 
 	file_out <<"mkdir datacards_TemplateFit"<<endl;
 
-	file_out<<"mv datacard_*.txt datacards_TemplateFit/";
-
 	file_out<<endl<<endl<<endl;
 
-	file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py "<<endl;
+	file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py ";
 
 	for(int ivar=0; ivar<var_list.size(); ivar++)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<var_list[ivar] + "_" + chan_list[ichan] + "=datacards_TemplateFit/datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
+			file_out<<var_list[ivar] + "_" + chan_list[ichan] + "=datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
 		}
 	}
 
 	file_out<<"> COMBINED_datacard_TemplateFit.txt"<<endl;
 
 	system("chmod 755 Generate_Datacards_TemplateFit.sh");
+
+	file_out<<"mv datacard_*.txt datacards_TemplateFit/";
 
 	return;
 }
@@ -140,11 +144,9 @@ void Script_Datacards_TemplateFit(TString filename)
 
 int main()
 {
-	TString file_histos_inputVars = "Control_Histograms_NJetsMin0_NBJetsEq0_ScaledFakes.root";
+	Script_Datacards_TemplateFit();
 
-	// Script_Datacards_TemplateFit(file_histos_inputVars);
-
-	Script_Datacards_InputVars(file_histos_inputVars);
+	Script_Datacards_InputVars();
 
 	return 0;
 }

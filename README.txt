@@ -81,9 +81,9 @@ NOTE 2 : move this script to your 'outputs' dir. for it to work !
 
 * 'scaleFakes.cc' is used to re-scale the data-driven fakes to a reasonable initial value, using TFractionFitter. You can either choose manually the file containing the histos to rescale, or at execution (e.g. ./scaleFakes.exe file.root). This will create an output file with the extention '_ScaledFakes.root'.
 
-((* 'Interface_ntuples_TMVA.cc' is used to interface Ntuples containing Matrix Element Method (MEM) vars for the TMVA code, and is not described/needed here.
+* Func_other.h can be used to store secondary/helper functions.
 
-* Func_other.h can be used to store secondary/helper functions.))
+((* Other codes are not described/used here))
 
 
 
