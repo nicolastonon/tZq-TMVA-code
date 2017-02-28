@@ -24,8 +24,6 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
-#include <TH2F.h>
-#include <TH2.h>
 #include <TH1F.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -35,8 +33,24 @@
 #include "TSystem.h"
 #include "TString.h"
 #include "TColor.h"
-#include "TStopwatch.h"
 #include "TCut.h"
+
+#include "TLegend.h"
+#include "TLine.h"
+#include "THStack.h"
+#include "TString.h"
+#include "TLegend.h"
+#include "TRandom.h"
+#include "TLatex.h"
+#include "TGraphErrors.h"
+#include "TGraphAsymmErrors.h"
+#include "TObject.h"
+#include "TRandom3.h"
+#include "TRandom1.h"
+#include "TObjArray.h"
+#include "TF1.h"
+#include "TGaxis.h"
+#include "TLeaf.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -65,7 +79,7 @@ class theMVAtool
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
-	float Compute_Fake_Ratio(TString, bool); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read()
+	float Compute_Fake_Ratio(TString, bool); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read() -- obsolete
 	int Read(TString, bool, bool, bool, bool = false, double = -99); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts

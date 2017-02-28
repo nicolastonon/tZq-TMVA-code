@@ -157,6 +157,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed);
     thesamplelist.push_back("ttH");             v_color.push_back(kRed);
+    // thesamplelist.push_back("SingleTop");             v_color.push_back(kBlack);
 
     //FAKES
     thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
@@ -166,7 +167,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
     // thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
     // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
-    // thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack); //MC -- not taken into account in code
 
 //-------------------
 
@@ -301,18 +301,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesystlist.push_back(""); //Nominal -- KEEP this line
 
 
-//THETA CONVENTION NAMING -- USE IT ONLY TO WORK DIRECTLY ON MARA'S NTUPLE
+//THETA NAMES -- USE IT ONLY TO WORK DIRECTLY ON MARA'S NTUPLE
 // --> Can't use systs in Combine !!
 //-------------------
     if(i_systematics_choice==1)
     {
     //Affect the variable distributions
-    thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
-    thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
-    thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
-    //Affect the event weight
-    // thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
+    // thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
+    // thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
+    // thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
 
+    //Affect the event weight
+    thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
     thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
     thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
     thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
@@ -328,31 +328,31 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     }
 
 
-//COMBINE CONVENTION -- USE THIS TO WORK ON INTERFACED NTUPLES (FOR MEM, ...)
+//COMBINE NAMES -- USE THIS TO WORK ON INTERFACED NTUPLES (FOR MEM, ...)
 //-------------------
     else if(i_systematics_choice==2)
     {
     //Affect the variable distributions -- NOTE : not available yet
-    thesystlist.push_back("JERUp"); thesystlist.push_back("JERDown");
-    thesystlist.push_back("JESUp"); thesystlist.push_back("JESDown");
-    thesystlist.push_back("FakesUp"); thesystlist.push_back("FakesDown");
-    //Affect the event weight
-    // thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down"); //BUG for now
+    // thesystlist.push_back("JERUp"); thesystlist.push_back("JERDown");
+    // thesystlist.push_back("JESUp"); thesystlist.push_back("JESDown");
+    // thesystlist.push_back("FakesUp"); thesystlist.push_back("FakesDown");
 
-    thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
-    thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
-    thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
-    thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
-    thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
+    //Affect the event weight
+    thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down");
+    // thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
+    // thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
+    // thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
+    // thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
+    // thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
     thesystlist.push_back("HFstats1Up"); thesystlist.push_back("HFstats1Down");
     thesystlist.push_back("HFstats2Up"); thesystlist.push_back("HFstats2Down");
-    thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
-    thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
-    thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
-    thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
-    thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
+    // thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
+    // thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
+    // thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
+    // thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
+    // thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
     }
-    else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 2;}
+    else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 1;}
 //-------------------
 
 
@@ -421,8 +421,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
 
         if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-        MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
-        //
+        // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
+        // //
         MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
 
         // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
@@ -437,7 +437,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
             {
-                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
+                // MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
                 // MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
                 // MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
                 // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
@@ -445,7 +445,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
             // --- ALL CHANNELS
 
-            MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
+            // MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
             // MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
             // MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
             // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);

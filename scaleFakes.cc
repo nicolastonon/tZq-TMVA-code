@@ -164,20 +164,20 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   // syst_list.push_back("JERUp")  ;       syst_list.push_back("JERDown")  ;
   // syst_list.push_back("JESUp")  ;       syst_list.push_back("JESDown")  ;
   // syst_list.push_back("FakesUp");       syst_list.push_back("FakesDown");
-  // syst_list.push_back("Q2Up")      ;    syst_list.push_back("Q2Down");
 
-  // syst_list.push_back("PUUp")      ;    syst_list.push_back("PUDown");
-  // syst_list.push_back("MuEffUp")   ;    syst_list.push_back("MuEffDown");
-  // syst_list.push_back("EleEffUp")  ;    syst_list.push_back("EleEffDown");
-  // syst_list.push_back("pdfUp")     ;    syst_list.push_back("pdfDown");
-  // syst_list.push_back("LFcontUp")  ;    syst_list.push_back("LFcontDown");
-  // syst_list.push_back("HFstats1Up");    syst_list.push_back("HFstats1Down");
-  // syst_list.push_back("HFstats2Up");    syst_list.push_back("HFstats2Down");
-  // syst_list.push_back("CFerr1Up")  ;    syst_list.push_back("CFerr1Down");
-  // syst_list.push_back("CFerr2Up")  ;    syst_list.push_back("CFerr2Down");
-  // syst_list.push_back("HFcontUp")  ;    syst_list.push_back("HFcontDown");
-  // syst_list.push_back("LFstats1Up");    syst_list.push_back("LFstats1Down");
-  // syst_list.push_back("LFstats2Up");    syst_list.push_back("LFstats2Down");
+  syst_list.push_back("Q2Up")      ;    syst_list.push_back("Q2Down");
+  syst_list.push_back("PUUp")      ;    syst_list.push_back("PUDown");
+  syst_list.push_back("MuEffUp")   ;    syst_list.push_back("MuEffDown");
+  syst_list.push_back("EleEffUp")  ;    syst_list.push_back("EleEffDown");
+  syst_list.push_back("pdfUp")     ;    syst_list.push_back("pdfDown");
+  syst_list.push_back("LFcontUp")  ;    syst_list.push_back("LFcontDown");
+  syst_list.push_back("HFstats1Up");    syst_list.push_back("HFstats1Down");
+  syst_list.push_back("HFstats2Up");    syst_list.push_back("HFstats2Down");
+  syst_list.push_back("CFerr1Up")  ;    syst_list.push_back("CFerr1Down");
+  syst_list.push_back("CFerr2Up")  ;    syst_list.push_back("CFerr2Down");
+  syst_list.push_back("HFcontUp")  ;    syst_list.push_back("HFcontDown");
+  syst_list.push_back("LFstats1Up");    syst_list.push_back("LFstats1Down");
+  syst_list.push_back("LFstats2Up");    syst_list.push_back("LFstats2Down");
 
 
   std::vector<TString> sample_list;

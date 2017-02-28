@@ -14,31 +14,25 @@ void Script_Datacards_InputVars()
 	ofstream file_out("Generate_Datacards_InputVars.sh");
 
 	vector<TString> var_list;
-	var_list.push_back("Channel");
 	var_list.push_back("NJets");
 	var_list.push_back("NBJets");
+	var_list.push_back("mTW");
 
 	var_list.push_back("btagDiscri");
 	var_list.push_back("dRAddLepQ");
 	var_list.push_back("dRAddLepClosestJet");
-	var_list.push_back("dPhiAddLepB");
 	var_list.push_back("ZEta");
 	var_list.push_back("Zpt");
 	var_list.push_back("mtop");
 	var_list.push_back("AddLepAsym");
 	var_list.push_back("etaQ");
 	var_list.push_back("AddLepETA");
-	var_list.push_back("LeadJetEta");
 	var_list.push_back("dPhiZAddLep");
 	var_list.push_back("dRZAddLep"); // --> little discrim --> to be included
 	var_list.push_back("dRjj");
 	var_list.push_back("ptQ"); // --> little discrim
 	var_list.push_back("tZq_pT");
-	var_list.push_back("dRAddLepB");
-	var_list.push_back("TopPT"); // low discri power
-	var_list.push_back("m3l");
-	var_list.push_back("mTW");
-	var_list.push_back("dRZTop");
+
 
 	vector<TString> chan_list;
 	chan_list.push_back("uuu");
@@ -58,7 +52,7 @@ void Script_Datacards_InputVars()
 
 	file_out<<endl<<endl;
 
-	file_out <<"mkdir datacards_inputVars"<<endl;
+	file_out <<"mkdir datacards_InputVars"<<endl;
 
 	file_out<<endl<<endl<<endl;
 
@@ -72,11 +66,11 @@ void Script_Datacards_InputVars()
 		}
 	}
 
-	file_out<<"> COMBINED_datacard_inputVars.txt"<<endl;
+	file_out<<"> COMBINED_datacard_InputVars.txt"<<endl;
 
 	system("chmod 755 Generate_Datacards_InputVars.sh");
 
-	file_out<<"mv datacard_*.txt datacards_inputVars/";
+	file_out<<"mv datacard_*.txt datacards_InputVars/";
 
 	return;
 }
