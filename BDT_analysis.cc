@@ -1,4 +1,4 @@
-#include "theMVAtool.h"
+D#include "theMVAtool.h"
 
 using namespace std;
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool fakes_from_data = true;
     //Templates
     int nofbin_templates = 10; //NOTE : to be optimized --- Binning to be used for *template* production
-    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.! //NOTE : only available for templates (not for plots)
+    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.!
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
     bool use_ttZMad_training = false; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
 
@@ -150,14 +150,14 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Signal --- must be placed before backgrounds
     thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
-
-    //BKG
+    //
+    // //BKG
     thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed);
     thesamplelist.push_back("ttH");             v_color.push_back(kRed);
-    // thesamplelist.push_back("SingleTop");             v_color.push_back(kBlack);
+    // thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack);
 
     //FAKES
     thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
@@ -294,9 +294,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##    ##    ##    ##    ##    ##    ##       ##     ## ##     ##    ##     ##  ##    ## ##    ##
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
-
+//
     //0 = no syst, 1 = theta, 2 = combine !
-    int i_systematics_choice = 0;
+    int i_systematics_choice = 2;
 
     thesystlist.push_back(""); //Nominal -- KEEP this line
 
@@ -339,18 +339,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Affect the event weight
     thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down");
-    // thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
-    // thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
-    // thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
-    // thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
-    // thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
+    thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
+    thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
+    thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
+    thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
+    thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
     thesystlist.push_back("HFstats1Up"); thesystlist.push_back("HFstats1Down");
     thesystlist.push_back("HFstats2Up"); thesystlist.push_back("HFstats2Down");
-    // thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
-    // thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
-    // thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
-    // thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
-    // thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
+    thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
+    thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
+    thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
+    thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
+    thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
     }
     else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 1;}
 //-------------------
@@ -419,11 +419,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool use_pseudodata_CR_plots = false;
         bool cut_on_BDT = false;
         if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
-
         if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+
         // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
-        // //
-        MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
+
+        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
 
         // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
@@ -437,17 +437,21 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
             {
-                // MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
-                // MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
-                // MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
+                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
+
+                // if(!postfit) MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
+                // else MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
+
                 // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
             }
 
             // --- ALL CHANNELS
 
-            // MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
-            // MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
-            // MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
+            MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
+
+            // if(!postfit) MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
+            // else MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
+
             // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
         }
     }

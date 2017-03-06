@@ -68,16 +68,16 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	//Input
 	TString input_filename;
 
-	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
+	// FIXME -- Use "withMEM" ntuples in ttZ/tZq regions
+	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
 
-	//FIXME -- Change Here if want to use "readyForMEM" (no MEM) rather than "withMEM" ntuples in ttZ/tZq regions
-	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
+	// FIXME -- Use "readyForMEM" (no MEM) in ttZ/tZq regions
+	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
 
 	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
 
 	TFile* f_input = 0;
-	f_input = TFile::Open(input_filename);
-	if(!f_input) {cout<<input_filename<<" not found ! -- Exit !"<<endl; delete f_input; return;}
+  	f_input = new TFile(input_filename.Data()); if(!f_input || f_input->IsZombie() ) {cout<<"Can't find input file !"<<endl; return;}
 
 	//Output
 	mkdir("input_ntuples/ntuples_MEM",0755);
@@ -150,10 +150,11 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	}
 
 
-	cout<<"--- Creating new Ntuple from "<<input_filename.Data()<<endl;
+	cout<<endl<<endl<<"--- Creating new Ntuple from "<<input_filename.Data()<<endl;
 
 	//Set Branch Addresses
-	TTree* t_input = (TTree*) f_input->Get("Tree");
+	TTree* t_input = 0;
+	t_input = (TTree*) f_input->Get("Tree"); if(!t_input) {cout<<"Tree not found !"<<endl; return;}
 	for(int ivar=0; ivar<thevarlist.size(); ivar++)
 	{
 		t_input->SetBranchAddress(thevarlist[ivar].Data(), &v_floats[ivar]);
@@ -238,17 +239,19 @@ int main()
 	sample_list.push_back("ttH");
 	sample_list.push_back("Fakes");
 	sample_list.push_back("ZZ");
+	sample_list.push_back("SingleTop");
 
-	// sample_list.push_back("SingleTop");
 	// sample_list.push_back("STtWll")	;
 	// sample_list.push_back("");
 
 
+//--- Variables
 	vector<TString> thevarlist;
 	thevarlist.push_back("Weight");
 	thevarlist.push_back("Channel");
 	thevarlist.push_back("NJets");
 	thevarlist.push_back("NBJets");
+	thevarlist.push_back("mTW");
 
 	thevarlist.push_back("btagDiscri");
 	thevarlist.push_back("dRAddLepQ");
@@ -269,7 +272,6 @@ int main()
 	thevarlist.push_back("dRAddLepB");
 	thevarlist.push_back("TopPT"); // low discri power
 	thevarlist.push_back("m3l");
-	thevarlist.push_back("mTW");
 	thevarlist.push_back("dRZTop");
 
 	vector<TString> MEMvarlist;
@@ -286,7 +288,7 @@ int main()
 	// thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
 	// thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
 	//--- Affect the event weight
-	thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus"); //NOTE : not included in ttZMad --> Use ttZ Madgraph for training, amcatnlo for the rest
+	thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
 	thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
 	thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
 	thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");

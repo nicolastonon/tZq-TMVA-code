@@ -80,7 +80,7 @@ class theMVAtool
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
 	float Compute_Fake_Ratio(TString, bool); //Computes ratio of fakes in MC compared to data, to re-scale mTW template of fakes from data in Read() -- obsolete
-	int Read(TString, bool, bool, bool, bool = false, double = -99); //Produce templates of BDT or mTW
+	int Read(TString, bool, bool, bool, bool = false, double = 999); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool, bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file

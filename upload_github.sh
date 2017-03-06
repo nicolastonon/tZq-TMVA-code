@@ -8,6 +8,7 @@ cp ../*.txt .
 
 cp -r ../COMBINE/ .
 
+cp /home/nico/Bureau/these/tZq/MEM_Interfacing/MEM_NtupleMaker.* .
 
 git add .
 git commit -m "update"

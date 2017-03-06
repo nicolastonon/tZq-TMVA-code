@@ -32,21 +32,21 @@ class MEM_NtupleMaker
 {
 	public :
 
-		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, TString);
+		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, TString);
 		~MEM_NtupleMaker();
 
 		void Init();
-		void Prepare_Tree(TString);
+		void Prepare_Tree(TString, TTree*, TString);
 		void SelectBjets(vector<ciemat::Jet>*, string, int&, int&, bool);
 		void OrderLeptons(TString, vector<ciemat::Muon>*, vector<ciemat::Electron>*);
 		void OrderJets(vector<ciemat::Jet>*, const int, const int, int&, int&, int&, int&, int&, int&);
 		void NtupleMaker(TString);
 
-
 		TString MEM_or_WZ;
 
+		TString output_dir;
 		TFile* f_output;
-		TTree* tree_output;
+		// TTree* tree_output;
 
 	    vector<ciemat::Muon>*     vSelectedMuons;
 	    vector<ciemat::Electron>* vSelectedElectrons;
@@ -112,6 +112,7 @@ class MEM_NtupleMaker
 
 		//Systematics
 		vector<TString> v_syst_name;
+		vector<TString> v_syst_tree;
 		vector<Float_t> v_syst_float;
 
 };

@@ -22,7 +22,7 @@
 using namespace std;
 
 //Overloaded constructor (default)
-MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> thesystlist, TString region_choice)
+MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice)
 {
   if(region_choice != "MEM" && region_choice != "WZ") {cout<<endl<<BOLD( FRED("ERROR : choose WZ or (tZq+ttZ) region !") )<<endl;}
   MEM_or_WZ = region_choice;
@@ -30,16 +30,16 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   mkdir("output_ntuples/ntuples_readyForMEM",0755);
   mkdir("output_ntuples/ntuples_WZ",0755);
 
-  TString output_dir = "";
   if(MEM_or_WZ == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/";
   else if(MEM_or_WZ == "WZ")  output_dir = "output_ntuples/ntuples_WZ/";
+  else {return;}
 
   //Initialize member vectors
-  for(int isyst=0; isyst<thesystlist.size(); isyst++)
+  for(int isyst=0; isyst<weight_syst_list.size(); isyst++)
   {
     if(samplename=="Data" || samplename=="Fakes") {break;} //No syst. for data
 
-    v_syst_name.push_back(thesystlist[isyst]);
+    v_syst_name.push_back(weight_syst_list[isyst]);
     v_syst_float.push_back(0);
   }
   for(int ivar=0; ivar<BDT_variables.size(); ivar++)
@@ -47,6 +47,11 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
     BDTvar_list.push_back(BDT_variables[ivar]);
     BDTvar_floats.push_back(-999);
   }
+  for(int itree=0; itree<tree_syst_list.size(); itree++)
+  {
+    v_syst_tree.push_back(tree_syst_list[itree]);
+  }
+
 
   Init();
   //Need to initialize ptrs passed as branch addresses
@@ -56,12 +61,11 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   METCollection = 0;
 
   TString filename = output_dir + "FCNCNTuple_" + samplename+".root";
-  if(samplename=="STtWll") {filename = output_dir + "FCNCNTuple_SingleTop.root";}
 
   f_output = new TFile(filename.Data(), "RECREATE");
-  f_output->cd();
-  tree_output = new TTree("Tree", "Tree in MEM input format"); //NOTE : Call it 'Tree' to comply w/ MEM implementation
-  Prepare_Tree(samplename);
+  // f_output->cd();
+  // tree_output = new TTree("Tree", "Tree in MEM input format"); //NOTE : Call it 'Tree' to comply w/ MEM implementation
+  // Prepare_Tree(samplename);
 
   cout<<endl<<"Initialization & Tree preparation --- Done !"<<endl;
 }
@@ -71,7 +75,7 @@ MEM_NtupleMaker::~MEM_NtupleMaker()
 {
   delete vSelectedElectrons; delete vSelectedMuons; delete vSelectedJets;
 
-  tree_output->Delete();
+  // tree_output->Delete();
   f_output->Close();
   f_output->Delete();
 }
@@ -178,7 +182,7 @@ O : [the letter o, not a zero] a boolean (Bool_t)
 /**
  * Prepare output Tree (creates branches & set addresses)
  */
-void MEM_NtupleMaker::Prepare_Tree(TString samplename)
+void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TString tree_name)
 {
   tree_output->Branch("Weight",&Weight,"Weight/F");
   tree_output->Branch("Channel",&Channel,"Channel/F");
@@ -314,10 +318,15 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename)
   }
 
   //Systematics
-  for(int isyst=0; isyst<v_syst_name.size(); isyst++)
+  if(tree_name == "Tree") //Not for JES/JER/...
   {
-    tree_output->Branch(v_syst_name[isyst].Data(),&v_syst_float[isyst],(v_syst_name[isyst]+"/F").Data() );
+    for(int isyst=0; isyst<v_syst_name.size(); isyst++)
+    {
+      tree_output->Branch(v_syst_name[isyst].Data(),&v_syst_float[isyst],(v_syst_name[isyst]+"/F").Data() );
+    }
   }
+
+  return;
 }
 
 
@@ -340,7 +349,7 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename)
  * @param ibsel2            Return bjet index 2
  * @param doSelectOnlyBjets True if consider only bjets in vector
  */
-void MEM_NtupleMaker::SelectBjets(std::vector<ciemat::Jet>* vSelectedJets, std::string BjetSel, int &ibsel1, int &ibsel2, bool doSelectOnlyBjets)
+void MEM_NtupleMaker::SelectBjets(std::vector<ciemat::Jet>* vSelectedJets, std::string BjetSel, int &ibsel1, int &ibsel2, bool doSelectOnlyBjets=true)
 {
   int ib1=-1, ib2=-1;
 
@@ -349,8 +358,8 @@ void MEM_NtupleMaker::SelectBjets(std::vector<ciemat::Jet>* vSelectedJets, std::
     Float_t btag_max=-9999, btag_max2=-9999;
     for (int ib=0; ib<vSelectedJets->size(); ib++)
     {
-      //if (doSelectOnlyBjets && vSelectedJets->at(ib).btagCSV<0.460 ) continue; //Mara doesn't ask for eta <2.4!
-      if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV<0.460 || fabs(vSelectedJets->at(ib).eta) > 2.4) ) {continue;}
+      if (doSelectOnlyBjets && vSelectedJets->at(ib).btagCSV<0.5426 ) continue; //Mara doesn't ask for eta <2.4!
+      // if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV<0.5426 || fabs(vSelectedJets->at(ib).eta) > 2.4) ) {continue;} //FIXME -- make sure bjet def is correct
 
       if (vSelectedJets->at(ib).btagCSV>btag_max)
       {
@@ -589,187 +598,244 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   // TString filepath = "/opt/sbg/scratch1/cms/TTH/ntuplesMEM_JES_newBTag/FCNCNTuple_" +samplename+ ".root"; //FOR EXECUTION ON SBGUI6 SERVER
 
   TFile* f_input = 0;
-  f_input = new TFile(filepath.Data()); if(f_input == 0) {cout<<"Can't find input file !"<<endl;}
-  TTree* t_MEM_input = 0; TTree* t_default = 0;
-  t_MEM_input = (TTree*) f_input->Get("MEMInfo"); if(t_MEM_input == 0) {cout<<"Can't find tree 'MEMCollection' !"<<endl;}
-  t_default = (TTree*) f_input->Get("Default"); if(t_default == 0) {cout<<"Can't find tree 'Default' !"<<endl;}
+  f_input = new TFile(filepath.Data());
+  if(!f_input || f_input->IsZombie()) {cout<<"Can't find input file !"<<endl; remove( (output_dir + "FCNCNTuple_" + samplename+".root").Data() ); return;} //Erase output file if bug
 
-//--------------------
-//MEMCollection Tree
-  t_MEM_input->SetBranchAddress("SelectedElectron", &vSelectedElectrons);
-  t_MEM_input->SetBranchAddress("SelectedMuon",     &vSelectedMuons);
-  t_MEM_input->SetBranchAddress("SelectedJet",      &vSelectedJets);
-  t_MEM_input->SetBranchAddress("METCollection",    &METCollection);
 
-//Default Tree
-  //---Other //NB : fill branches NJets & NBJets manually (Mara may have different definitions)
-  t_default->SetBranchAddress("Weight", &Weight);
-  t_default->SetBranchAddress("Channel", &Channel);
-  t_default->SetBranchAddress("mTW", &mTW);
-   //---BDT
-  for(int ivar=0; ivar<BDTvar_list.size(); ivar++)
+  for(int itreesyst=0; itreesyst<v_syst_tree.size(); itreesyst++) //Loop on 'tree' systematics (Default, JER, JES)
   {
-    t_default->SetBranchAddress(BDTvar_list[ivar].Data(), &BDTvar_floats[ivar]);
-  }
-  //---Systematics
-  for(int isyst=0; isyst<v_syst_name.size(); isyst++)
-  {
-    t_default->SetBranchAddress(v_syst_name[isyst].Data(), &v_syst_float[isyst]);
-  }
+    cout<<FGRN("SYSTEMATIC TREE NAME : ")<<v_syst_tree[itreesyst]<<endl;
 
-//--------------------
-//--- EVENT LOOP
+//--- Input Trees
+    TTree* t_MEM_input = 0; //Tree containing all info necessary for MEM (Jets, leptons, MET, etc.)
+    t_MEM_input = (TTree*) f_input->Get("MEMInfo"); if(t_MEM_input == 0) {cout<<"Can't find tree 'MEMCollection' !"<<endl; return;}
 
-  int nentries = t_MEM_input->GetEntries();
-  if(t_default->GetEntries() != nentries) {cout<<"ERROR : different nof events in trees -- Abort"<<endl; return;}
+    TTree* t_vars_input = 0; //Tree containing all the BDT vars and more
+    t_vars_input = (TTree*) f_input->Get( v_syst_tree[itreesyst] ); if(t_vars_input == 0) {cout<<"Can't find tree '"<<v_syst_tree[itreesyst]<<"' !"<<endl; return;}
 
-  //FIXME
-  cout<<"BDTvar_list[0] = "<<BDTvar_list[0]<<endl;
+//--- Output Trees
+    f_output->cd(); TString output_tree_name = "";
+    if(v_syst_tree[itreesyst] == "Default") output_tree_name = "Tree";
+    else if(v_syst_tree[itreesyst] == "JER__plus") output_tree_name = "JERUp";
+    else if(v_syst_tree[itreesyst] == "JER__minus") output_tree_name = "JERDown";
+    else if(v_syst_tree[itreesyst] == "JES__plus") output_tree_name = "JESUp";
+    else if(v_syst_tree[itreesyst] == "JES__minus") output_tree_name = "JESDown";
+    else {cout<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
+    TTree* tree_output = new TTree(output_tree_name.Data(), "");
+    Prepare_Tree(samplename, tree_output, output_tree_name);
 
-  for(int ientry=0; ientry<nentries; ientry++)
-  {
-    if(ientry%10000==0) {cout << "Number of processed events : " << ientry << "/" << nentries<< std::endl;}
+  //--------------------
+  //MEMCollection Tree
+    t_MEM_input->SetBranchAddress("SelectedElectron", &vSelectedElectrons);
+    t_MEM_input->SetBranchAddress("SelectedMuon",     &vSelectedMuons);
 
-    Init(); //Re-initialize values of all variables
+    if(v_syst_tree[itreesyst] == "Default") {t_MEM_input->SetBranchAddress("SelectedJet",      &vSelectedJets);}
+    else if(v_syst_tree[itreesyst] == "JER__plus") {t_MEM_input->SetBranchAddress("SelectedJetResUp",      &vSelectedJets);}
+    else if(v_syst_tree[itreesyst] == "JER__minus") {t_MEM_input->SetBranchAddress("SelectedJetResDw",      &vSelectedJets);}
+    else if(v_syst_tree[itreesyst] == "JES__plus") {t_MEM_input->SetBranchAddress("SelectedJetJesUp",      &vSelectedJets);}
+    else if(v_syst_tree[itreesyst] == "JES__minus") {t_MEM_input->SetBranchAddress("SelectedJetJesDw",      &vSelectedJets);}
+    else {cout<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
 
-    t_MEM_input->GetEntry(ientry);
-    t_default->GetEntry(ientry);
+    t_MEM_input->SetBranchAddress("METCollection",    &METCollection);
 
-    //FIXME -- check btagDiscri !!
-    if( isnan(BDTvar_floats[0]) ) {cout<<"IsNAN !!"<<endl; return;}
-    if( !(BDTvar_floats[0]>0) && !(BDTvar_floats[0]<0) ) {cout<<"IsNAN !!"<<endl; return;}
-    if( isinf(BDTvar_floats[0]) ) {cout<<"IsINF !!"<<endl; return;}
+    if(v_syst_tree[itreesyst] == "Default")          {t_MEM_input->SetBranchAddress("METCollection",    &METCollection);}
+    else if(v_syst_tree[itreesyst] == "JER__plus")   {t_MEM_input->SetBranchAddress("METCollectionResUp",    &METCollection);}
+    else if(v_syst_tree[itreesyst] == "JER__minus")  {t_MEM_input->SetBranchAddress("METCollectionResDw",    &METCollection);}
+    else if(v_syst_tree[itreesyst] == "JES__plus")   {t_MEM_input->SetBranchAddress("METCollectionJesUp",    &METCollection);}
+    else if(v_syst_tree[itreesyst] == "JES__minus")  {t_MEM_input->SetBranchAddress("METCollectionJesDw",    &METCollection);}
+    else {cout<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
 
-    if(BDTvar_floats[0] != -10 && BDTvar_floats[0] != -100 && !(BDTvar_floats[0]>0 && BDTvar_floats[0]<1) )
+  //Default Tree
+    //---Other
+    t_vars_input->SetBranchAddress("Weight", &Weight);
+    t_vars_input->SetBranchAddress("Channel", &Channel);
+    t_vars_input->SetBranchAddress("mTW", &mTW);
+    t_vars_input->SetBranchAddress("NJets", &NJets);
+    t_vars_input->SetBranchAddress("NBJets", &NBJets);
+
+    //---BDT
+    for(int ivar=0; ivar<BDTvar_list.size(); ivar++)
     {
-      cout<<BDTvar_floats[0]<<endl;
+      t_vars_input->SetBranchAddress(BDTvar_list[ivar].Data(), &BDTvar_floats[ivar]);
     }
-
-    //Works if set -10 --> 0, but not -10 --> -100 !!!
-    if( BDTvar_floats[0] == -10) {BDTvar_floats[0] = -100;}
-
-
-//---------------------------
-    //Translate channel in TString (easier to debug)
-    TString thechannel = "";
-    if(Channel == 0) {thechannel="uuu";}
-    else if(Channel == 1) {thechannel="uue";}
-    else if(Channel == 2) {thechannel="eeu";}
-    else if(Channel == 3) {thechannel="eee";}
-    else {cout<<endl<<BOLD( FRED("Wrong channel value !") )<<endl; continue;}
-
-//---------------------------
-    //Count nbr of jets & bjets ---> Fill member variables manually
-    NJets=vSelectedJets->size(); NBJets = 0; //NB : NJets contains both btag and non-btag
-    for(int i=0; i<vSelectedJets->size(); i++)
+    //---Systematics
+    if(v_syst_tree[itreesyst] == "Default")
     {
-      if( fabs(vSelectedJets->at(i).eta) <= 2.4 && vSelectedJets->at(i).btagCSV >= 0.460) {NBJets++;}
-    }
-
-//---------------------------
-    //Check Jets numbers
-    if( NBJets == 1 && (NJets == 2 || NJets == 3) ) {is_3l_TZQ_SR = true;}
-    else if( NBJets >= 2 && NJets >= 2 ) {is_3l_TTZ_CR = true;}
-    else if( NBJets == 0 && NJets >= 0 ) {is_3l_WZ_CR = true;}
-
-    if(MEM_or_WZ=="MEM" && !is_3l_TZQ_SR && !is_3l_TTZ_CR) {continue;}
-    else if(MEM_or_WZ=="WZ" && !is_3l_WZ_CR) {continue;}
-
-//---------------------------
-    //Order leptons by highest Pt & Fill TLorentzVectors
-    OrderLeptons(thechannel, vSelectedMuons, vSelectedElectrons);
-
-//---------------------------
-
-    std::vector<Float_t> vSelectedJets_CSV; std::vector<Int_t> vSelectedJets_id; //Easier storage of jet Ids and CSVs
-    for(int i=0; i<vSelectedJets->size(); i++)
-    {
-      vSelectedJets_CSV.push_back(vSelectedJets->at(i).btagCSV);
-    }
-    for(int i=0; i<vSelectedJets->size(); i++)
-    {
-      vSelectedJets_id.push_back(vSelectedJets->at(i).hadronFlavour);
-    }
-
-    //--- Choosing 2 b-jets
-    bool doSelectOnlyBjets = true; //Ask CSV>0.46 & eta<=2.4
-    int ib1=-1, ib2=-1; //index of bjets
-
-    SelectBjets(vSelectedJets, "HighestBtagDiscrim", ib1, ib2, doSelectOnlyBjets);
-
-    //Fill TLorentzVector
-    if (ib1!=-1) {multilepton_Bjet1_Id = vSelectedJets_id[ib1] ; multilepton_Bjet1_CSV = vSelectedJets_CSV[ib1]; multilepton_Bjet1_P4.SetPtEtaPhiE(vSelectedJets->at(ib1).pt, vSelectedJets->at(ib1).eta, vSelectedJets->at(ib1).phi, vSelectedJets->at(ib1).energy);}
-    if (ib2!=-1) {multilepton_Bjet2_Id = vSelectedJets_id[ib2]; multilepton_Bjet2_CSV = vSelectedJets_CSV[ib2]; multilepton_Bjet2_P4.SetPtEtaPhiE(vSelectedJets->at(ib2).pt, vSelectedJets->at(ib2).eta, vSelectedJets->at(ib2).phi, vSelectedJets->at(ib2).energy);}
-
-    //--- Choosing Highet Pt, 2nd Highest Pt, Highest Eta jets, & dijet pair w/ mass closest to W mass
-    int ij1=-1, ij2=-1, ik1=-1, ik2=-1, ie1=-1, ie2=-1;
-    OrderJets(vSelectedJets, ib1, ib2, ij1, ij2, ik1, ik2, ie1, ie2);
-    //Fill TLorentzVector
-    if(ij1!=-1 && ij2==-1) //1jet
-    {
-      multilepton_JetHighestPt1_Id = vSelectedJets_id[ij1]; multilepton_JetHighestPt1_CSV = vSelectedJets_CSV[ij1]; multilepton_JetHighestPt1_P4.SetPtEtaPhiE(vSelectedJets->at(ij1).pt, vSelectedJets->at(ij1).eta, vSelectedJets->at(ij1).phi, vSelectedJets->at(ij1).energy);
-    }
-    else if(ij1!=-1 && ij2!=-1) //2jets
-    {
-      multilepton_JetHighestPt1_Id = vSelectedJets_id[ij1]; multilepton_JetHighestPt1_CSV = vSelectedJets_CSV[ij1]; multilepton_JetHighestPt1_P4.SetPtEtaPhiE(vSelectedJets->at(ij1).pt, vSelectedJets->at(ij1).eta, vSelectedJets->at(ij1).phi, vSelectedJets->at(ij1).energy);
-      multilepton_JetHighestPt2_Id = vSelectedJets_id[ij2]; multilepton_JetHighestPt2_CSV = vSelectedJets_CSV[ij2]; multilepton_JetHighestPt2_P4.SetPtEtaPhiE(vSelectedJets->at(ij2).pt, vSelectedJets->at(ij2).eta, vSelectedJets->at(ij2).phi, vSelectedJets->at(ij2).energy);
-    }
-
-    if(ie1!=-1 && ie2==-1) //1jets
-    {
-      multilepton_JetHighestEta1_Id = vSelectedJets_id[ie1]; multilepton_JetHighestEta1_CSV = vSelectedJets_CSV[ie1]; multilepton_JetHighestEta1_P4.SetPtEtaPhiE(vSelectedJets->at(ie1).pt, vSelectedJets->at(ie1).eta, vSelectedJets->at(ie1).phi, vSelectedJets->at(ie1).energy);
-    }
-    else if(ie1!=-1 && ie2!=-1) //2jets
-    {
-      multilepton_JetHighestEta1_Id = vSelectedJets_id[ie1]; multilepton_JetHighestEta1_CSV = vSelectedJets_CSV[ie1]; multilepton_JetHighestEta1_P4.SetPtEtaPhiE(vSelectedJets->at(ie1).pt, vSelectedJets->at(ie1).eta, vSelectedJets->at(ie1).phi, vSelectedJets->at(ie1).energy);
-      multilepton_JetHighestEta2_Id = vSelectedJets_id[ie2]; multilepton_JetHighestEta2_CSV = vSelectedJets_CSV[ie2]; multilepton_JetHighestEta2_P4.SetPtEtaPhiE(vSelectedJets->at(ie2).pt, vSelectedJets->at(ie2).eta, vSelectedJets->at(ie2).phi, vSelectedJets->at(ie2).energy);
-    }
-
-    if(ik1!=-1 && ik2!=-1) //2jets (pair)
-    {
-      multilepton_JetClosestMw1_Id = vSelectedJets_id[ik1]; multilepton_JetClosestMw1_CSV = vSelectedJets_CSV[ik1]; multilepton_JetClosestMw1_P4.SetPtEtaPhiE(vSelectedJets->at(ik1).pt, vSelectedJets->at(ik1).eta, vSelectedJets->at(ik1).phi, vSelectedJets->at(ik1).energy);
-      multilepton_JetClosestMw2_Id = vSelectedJets_id[ik2]; multilepton_JetClosestMw2_CSV = vSelectedJets_CSV[ik2]; multilepton_JetClosestMw2_P4.SetPtEtaPhiE(vSelectedJets->at(ik2).pt, vSelectedJets->at(ik2).eta, vSelectedJets->at(ik2).phi, vSelectedJets->at(ik2).energy);
-    }
-
-//---------------------------
-    //OTHER VARIABLES
-
-    //--- catJets (3l)
-    if      (ib1!=-1 && ib2!=-1 && vSelectedJets->size()-2>=2) catJets = kCat_3l_2b_2j; //0
-    else if (ib1!=-1 && ib2==-1 && vSelectedJets->size()-1>=2) catJets = kCat_3l_1b_2j; //1
-    else if (ib1!=-1 && ib2!=-1 && vSelectedJets->size()-2==1) catJets = kCat_3l_2b_1j; //2
-    else if (ib1!=-1 && ib2==-1 && vSelectedJets->size()-1==1) catJets = kCat_3l_1b_1j; //3
-    else if (ib1!=-1 && ib2!=-1 && vSelectedJets->size()-2==0) catJets = kCat_3l_2b_0j; //4
-    else catJets = -1;
-
-//--------------------------------
-    multilepton_mET.SetPtEtaPhiE(METCollection[0].met, 0, METCollection[0].phi, METCollection[0].met);
-    multilepton_mHT = METCollection[0].sumEt;
-
-//-------------------
-
-    if (multilepton_Lepton1_Id!=-999 && multilepton_Lepton2_Id!=-999 && multilepton_Lepton3_Id!=-999)
-    {
-      if (multilepton_Lepton1_Id*multilepton_Lepton2_Id>0 && multilepton_Lepton2_Id*multilepton_Lepton3_Id>0) {mc_ttZhypAllowed =-1;}
-      else if ( (multilepton_Lepton1_Id==-multilepton_Lepton2_Id)
-      || (multilepton_Lepton1_Id==-multilepton_Lepton3_Id)
-      || (multilepton_Lepton2_Id==-multilepton_Lepton3_Id) )
+      for(int isyst=0; isyst<v_syst_name.size(); isyst++)
       {
-        mc_ttZhypAllowed = 1;
+        t_vars_input->SetBranchAddress(v_syst_name[isyst].Data(), &v_syst_float[isyst]);
       }
     }
 
-//-------------------
-
-    tree_output->Fill();
-  }
 
 
-  f_output->cd();
-  tree_output->Write();
+  //--------------------
+  //--- EVENT LOOP
 
-  t_MEM_input->Delete();
+    int nentries = t_MEM_input->GetEntries();
+    if(t_vars_input->GetEntries() != nentries) {cout<<"ERROR : different nof events in trees -- Abort"<<endl; return;}
+
+    for(int ientry=0; ientry<nentries; ientry++)
+    {
+      if(ientry%10000==0) {cout << "Number of processed events : " << ientry << "/" << nentries<< std::endl;}
+
+      Init(); //Re-initialize values of all variables
+
+      t_MEM_input->GetEntry(ientry);
+      t_vars_input->GetEntry(ientry);
+
+  //---------------------------
+      //Translate channel in TString (easier to debug)
+      TString thechannel = "";
+      if(Channel == 0) {thechannel="uuu";}
+      else if(Channel == 1) {thechannel="uue";}
+      else if(Channel == 2) {thechannel="eeu";}
+      else if(Channel == 3) {thechannel="eee";}
+      else {cout<<endl<<BOLD( FRED("Wrong channel value !") )<<endl; continue;}
+
+  //---------------------------
+      //NOTE : Compare njets values -- make sure I use the same def. as Mara
+      int NJets_tmp=vSelectedJets->size();
+      int NBJets_tmp = 0; //NB : NJets contains both btag and non-btag
+      for(int i=0; i<vSelectedJets->size(); i++)
+      {
+        // if( fabs(vSelectedJets->at(i).eta) <= 2.4 && vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;}
+        if( vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //Mara doesn't cut on eta
+      }
+
+      if(NJets_tmp != NJets || NBJets_tmp != NBJets)
+      {
+        // cout<<"Disagreement b/w NJets definitions"<<endl;
+        // cout<<"NJets "<<NJets<<" NJets_tmp "<<NJets_tmp<<" vSelectedJets "<<vSelectedJets->size()<<endl;
+        // cout<<"NBJets "<<NBJets<<" NBJets_tmp "<<NBJets_tmp<<endl;
+        // for(int ijet=0; ijet<vSelectedJets->size(); ijet++)
+        // {
+        //   cout<<vSelectedJets->at(ijet).eta<<" "<<vSelectedJets->at(ijet).btagCSV<<endl;
+        // }      cout<<endl<<endl<<endl;
+
+        cout<<"--- WRONG BJET DEF ! ABORT"<<endl; return;
+      }
+
+
+
+  //---------------------------
+      //Check Jets numbers
+      if( NBJets == 1 && NJets > 1 && NJets < 4 ) {is_3l_TZQ_SR = true;}
+      else if( NBJets > 1 && NJets > 1 ) {is_3l_TTZ_CR = true;}
+      else if( NBJets == 0 && NJets > 0 ) {is_3l_WZ_CR = true;}
+
+      if(MEM_or_WZ=="MEM" && !is_3l_TZQ_SR && !is_3l_TTZ_CR) {continue;}
+      else if(MEM_or_WZ=="WZ" && !is_3l_WZ_CR) {continue;}
+
+
+  //---------------------------
+      //Order leptons by highest Pt & Fill TLorentzVectors
+      OrderLeptons(thechannel, vSelectedMuons, vSelectedElectrons);
+
+  //---------------------------
+
+      std::vector<Float_t> vSelectedJets_CSV; std::vector<Int_t> vSelectedJets_id; //Easier storage of jet Ids and CSVs
+      for(int i=0; i<vSelectedJets->size(); i++)
+      {
+        vSelectedJets_CSV.push_back(vSelectedJets->at(i).btagCSV);
+      }
+      for(int i=0; i<vSelectedJets->size(); i++)
+      {
+        vSelectedJets_id.push_back(vSelectedJets->at(i).hadronFlavour);
+      }
+
+      //--- Choosing 2 b-jets
+      bool doSelectOnlyBjets = true; //Ask CSV>0.46 & eta<=2.4
+      int ib1=-1, ib2=-1; //index of bjets
+
+      SelectBjets(vSelectedJets, "HighestBtagDiscrim", ib1, ib2, doSelectOnlyBjets);
+
+
+      //CHANGED :
+      // if(ib1!=-1 && ib2!=-1 && NBJets < 2) {cout<<ib1<<" "<<ib2<<" "<<NBJets<<endl;}
+      // if( ( (ib1==-1 && ib2!=-1) || (ib1!=-1 && ib2==-1) ) && NBJets != 1) {cout<<ib1<<" "<<ib2<<" "<<NBJets<<endl;}
+      // if(ib1==-1 && ib2==-1 && NBJets != 0) {cout<<ib1<<" "<<ib2<<" "<<NBJets<<endl;}
+
+
+
+      //Fill TLorentzVector
+      if (ib1!=-1) {multilepton_Bjet1_Id = vSelectedJets_id[ib1] ; multilepton_Bjet1_CSV = vSelectedJets_CSV[ib1]; multilepton_Bjet1_P4.SetPtEtaPhiE(vSelectedJets->at(ib1).pt, vSelectedJets->at(ib1).eta, vSelectedJets->at(ib1).phi, vSelectedJets->at(ib1).energy);}
+      if (ib2!=-1) {multilepton_Bjet2_Id = vSelectedJets_id[ib2]; multilepton_Bjet2_CSV = vSelectedJets_CSV[ib2]; multilepton_Bjet2_P4.SetPtEtaPhiE(vSelectedJets->at(ib2).pt, vSelectedJets->at(ib2).eta, vSelectedJets->at(ib2).phi, vSelectedJets->at(ib2).energy);}
+
+      //--- Choosing Highet Pt, 2nd Highest Pt, Highest Eta jets, & dijet pair w/ mass closest to W mass
+      int ij1=-1, ij2=-1, ik1=-1, ik2=-1, ie1=-1, ie2=-1;
+      OrderJets(vSelectedJets, ib1, ib2, ij1, ij2, ik1, ik2, ie1, ie2);
+      //Fill TLorentzVector
+      if(ij1!=-1 && ij2==-1) //1jet
+      {
+        multilepton_JetHighestPt1_Id = vSelectedJets_id[ij1]; multilepton_JetHighestPt1_CSV = vSelectedJets_CSV[ij1]; multilepton_JetHighestPt1_P4.SetPtEtaPhiE(vSelectedJets->at(ij1).pt, vSelectedJets->at(ij1).eta, vSelectedJets->at(ij1).phi, vSelectedJets->at(ij1).energy);
+      }
+      else if(ij1!=-1 && ij2!=-1) //2jets
+      {
+        multilepton_JetHighestPt1_Id = vSelectedJets_id[ij1]; multilepton_JetHighestPt1_CSV = vSelectedJets_CSV[ij1]; multilepton_JetHighestPt1_P4.SetPtEtaPhiE(vSelectedJets->at(ij1).pt, vSelectedJets->at(ij1).eta, vSelectedJets->at(ij1).phi, vSelectedJets->at(ij1).energy);
+        multilepton_JetHighestPt2_Id = vSelectedJets_id[ij2]; multilepton_JetHighestPt2_CSV = vSelectedJets_CSV[ij2]; multilepton_JetHighestPt2_P4.SetPtEtaPhiE(vSelectedJets->at(ij2).pt, vSelectedJets->at(ij2).eta, vSelectedJets->at(ij2).phi, vSelectedJets->at(ij2).energy);
+      }
+
+      if(ie1!=-1 && ie2==-1) //1jets
+      {
+        multilepton_JetHighestEta1_Id = vSelectedJets_id[ie1]; multilepton_JetHighestEta1_CSV = vSelectedJets_CSV[ie1]; multilepton_JetHighestEta1_P4.SetPtEtaPhiE(vSelectedJets->at(ie1).pt, vSelectedJets->at(ie1).eta, vSelectedJets->at(ie1).phi, vSelectedJets->at(ie1).energy);
+      }
+      else if(ie1!=-1 && ie2!=-1) //2jets
+      {
+        multilepton_JetHighestEta1_Id = vSelectedJets_id[ie1]; multilepton_JetHighestEta1_CSV = vSelectedJets_CSV[ie1]; multilepton_JetHighestEta1_P4.SetPtEtaPhiE(vSelectedJets->at(ie1).pt, vSelectedJets->at(ie1).eta, vSelectedJets->at(ie1).phi, vSelectedJets->at(ie1).energy);
+        multilepton_JetHighestEta2_Id = vSelectedJets_id[ie2]; multilepton_JetHighestEta2_CSV = vSelectedJets_CSV[ie2]; multilepton_JetHighestEta2_P4.SetPtEtaPhiE(vSelectedJets->at(ie2).pt, vSelectedJets->at(ie2).eta, vSelectedJets->at(ie2).phi, vSelectedJets->at(ie2).energy);
+      }
+
+      if(ik1!=-1 && ik2!=-1) //2jets (pair)
+      {
+        multilepton_JetClosestMw1_Id = vSelectedJets_id[ik1]; multilepton_JetClosestMw1_CSV = vSelectedJets_CSV[ik1]; multilepton_JetClosestMw1_P4.SetPtEtaPhiE(vSelectedJets->at(ik1).pt, vSelectedJets->at(ik1).eta, vSelectedJets->at(ik1).phi, vSelectedJets->at(ik1).energy);
+        multilepton_JetClosestMw2_Id = vSelectedJets_id[ik2]; multilepton_JetClosestMw2_CSV = vSelectedJets_CSV[ik2]; multilepton_JetClosestMw2_P4.SetPtEtaPhiE(vSelectedJets->at(ik2).pt, vSelectedJets->at(ik2).eta, vSelectedJets->at(ik2).phi, vSelectedJets->at(ik2).energy);
+      }
+
+  //---------------------------
+      //OTHER VARIABLES
+
+      //--- catJets (3l)
+      if      (ib1!=-1 && ib2!=-1 && vSelectedJets->size()-2>=2) catJets = kCat_3l_2b_2j; //0
+      else if (ib1!=-1 && ib2==-1 && vSelectedJets->size()-1>=2) catJets = kCat_3l_1b_2j; //1
+      else if (ib1!=-1 && ib2!=-1 && vSelectedJets->size()-2==1) catJets = kCat_3l_2b_1j; //2
+      else if (ib1!=-1 && ib2==-1 && vSelectedJets->size()-1==1) catJets = kCat_3l_1b_1j; //3
+      else if (ib1!=-1 && ib2!=-1 && vSelectedJets->size()-2==0) catJets = kCat_3l_2b_0j; //4
+      else catJets = -1;
+
+  //--------------------------------
+      multilepton_mET.SetPtEtaPhiE( METCollection[0].met, 0, METCollection[0].phi, METCollection[0].met);
+      multilepton_mHT = METCollection[0].sumEt;
+
+  //-------------------
+
+      if (multilepton_Lepton1_Id!=-999 && multilepton_Lepton2_Id!=-999 && multilepton_Lepton3_Id!=-999)
+      {
+        if (multilepton_Lepton1_Id*multilepton_Lepton2_Id>0 && multilepton_Lepton2_Id*multilepton_Lepton3_Id>0) {mc_ttZhypAllowed =-1;}
+        else if ( (multilepton_Lepton1_Id==-multilepton_Lepton2_Id)
+        || (multilepton_Lepton1_Id==-multilepton_Lepton3_Id)
+        || (multilepton_Lepton2_Id==-multilepton_Lepton3_Id) )
+        {
+          mc_ttZhypAllowed = 1;
+        }
+      }
+
+  //-------------------
+
+      tree_output->Fill();
+    }
+
+
+    f_output->cd();
+    tree_output->Write();
+
+    t_MEM_input->Delete(); t_vars_input->Delete(); tree_output->Delete();
+  }//end tree_syst Loop
+
+
   f_input->Close(); f_input->Delete();
+
+  return ;
 }
 
 
@@ -801,6 +867,9 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
 int main()
 {
+  cout<<endl<<"NOTE : Make sure CSV threshold is up-to-date (Current :  >= 0.5426) !"<<endl<<endl;
+
+
   //---------------------------------------------------------------------------
   //  ######     ###    ##     ## ########  ##       ########  ######
   // ##    ##   ## ##   ###   ### ##     ## ##       ##       ##    ##
@@ -816,11 +885,12 @@ int main()
   v_samplenames.push_back("ttZ");
   v_samplenames.push_back("WZjets");
   v_samplenames.push_back("ZZ");
-  // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("ttH");
-  // v_samplenames.push_back("ttW");
-  // v_samplenames.push_back("Fakes");
-  // v_samplenames.push_back("ttZMad");
+  v_samplenames.push_back("Data");
+  v_samplenames.push_back("ttH");
+  v_samplenames.push_back("ttW");
+  v_samplenames.push_back("Fakes");
+  v_samplenames.push_back("ttZMad");
+  v_samplenames.push_back("SingleTop");
 
   // v_samplenames.push_back("STtWll"); //Renamed to SingleTop in the code
   // v_samplenames.push_back("");
@@ -834,6 +904,7 @@ int main()
 // ##     ## ##     ##    ##            ## ##   ##     ## ##    ##  ##    ##
 // ########  ########     ##             ###    ##     ## ##     ##  ######
 //---------------------------------------------------------------------------
+//NOTE : Channel, Weight, mTW, NJets, NBJets are added manually in the code
 
   vector<TString> BDTvar_list;
   BDTvar_list.push_back("btagDiscri");
@@ -868,26 +939,32 @@ int main()
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-  vector<TString> thesystlist;
-/*
-  //These systematics are stored in different TTrees (not simple weights) --> don't use it for now
-  thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
-  thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");*/
+  vector<TString> tree_syst_list;
+  tree_syst_list.push_back("Default"); //NOTE -- KEEP THIS LINE
 
-  thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
-  thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
-  thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
-  thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
-  thesystlist.push_back("LFcont__plus"); thesystlist.push_back("LFcont__minus");
-  thesystlist.push_back("HFstats1__plus"); thesystlist.push_back("HFstats1__minus");
-  thesystlist.push_back("HFstats2__plus"); thesystlist.push_back("HFstats2__minus");
-  thesystlist.push_back("CFerr1__plus"); thesystlist.push_back("CFerr1__minus");
-  thesystlist.push_back("CFerr2__plus"); thesystlist.push_back("CFerr2__minus");
-  thesystlist.push_back("HFcont__plus"); thesystlist.push_back("HFcont__minus");
-  thesystlist.push_back("LFstats1__plus"); thesystlist.push_back("LFstats1__minus");
-  thesystlist.push_back("LFstats2__plus"); thesystlist.push_back("LFstats2__minus");
-  thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
-  thesystlist.push_back("Weight_noTag"); thesystlist.push_back("Weight_noPU");
+//These systematics are stored in different TTrees (not simple weights)
+  tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
+  tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
+  // tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
+
+
+
+//----------------
+  vector<TString> weight_syst_list;
+  weight_syst_list.push_back("Q2__plus"); weight_syst_list.push_back("Q2__minus");
+  weight_syst_list.push_back("PU__plus"); weight_syst_list.push_back("PU__minus");
+  weight_syst_list.push_back("MuEff__plus"); weight_syst_list.push_back("MuEff__minus");
+  weight_syst_list.push_back("EleEff__plus"); weight_syst_list.push_back("EleEff__minus");
+  weight_syst_list.push_back("LFcont__plus"); weight_syst_list.push_back("LFcont__minus");
+  weight_syst_list.push_back("HFstats1__plus"); weight_syst_list.push_back("HFstats1__minus");
+  weight_syst_list.push_back("HFstats2__plus"); weight_syst_list.push_back("HFstats2__minus");
+  weight_syst_list.push_back("CFerr1__plus"); weight_syst_list.push_back("CFerr1__minus");
+  weight_syst_list.push_back("CFerr2__plus"); weight_syst_list.push_back("CFerr2__minus");
+  weight_syst_list.push_back("HFcont__plus"); weight_syst_list.push_back("HFcont__minus");
+  weight_syst_list.push_back("LFstats1__plus"); weight_syst_list.push_back("LFstats1__minus");
+  weight_syst_list.push_back("LFstats2__plus"); weight_syst_list.push_back("LFstats2__minus");
+  weight_syst_list.push_back("pdf__plus"); weight_syst_list.push_back("pdf__minus");
+  weight_syst_list.push_back("Weight_noTag"); weight_syst_list.push_back("Weight_noPU");
 
 
 //---------------------------------------------------------------------------
@@ -903,34 +980,34 @@ int main()
   TString region_choice; //Choose if produce samples which are going to be used for MEM or for WZ CR
 
 //--- Produce ntuples for MEM (ttZ/tZq regions)
-  // region_choice = "MEM";
-  // for(int isample=0; isample<v_samplenames.size(); isample++)
-  // {
-  //   MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, thesystlist, region_choice);
-  //   theNtupleMaker->Init();
-  //   theNtupleMaker->NtupleMaker(v_samplenames[isample]);
-  //   theNtupleMaker->~MEM_NtupleMaker();
-  // }
+  region_choice = "MEM";
+  for(int isample=0; isample<v_samplenames.size(); isample++)
+  {
+    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice);
+    theNtupleMaker->Init();
+    theNtupleMaker->NtupleMaker(v_samplenames[isample]);
+    theNtupleMaker->~MEM_NtupleMaker();
+  }
 
 //--- Produce ntuples for WZ CR study (mTW template fit)
-  // region_choice = "WZ";
-  // for(int isample=0; isample<v_samplenames.size(); isample++)
-  // {
-  //   MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, thesystlist, region_choice);
-  //   theNtupleMaker->Init();
-  //   theNtupleMaker->NtupleMaker(v_samplenames[isample]);
-  //   theNtupleMaker->~MEM_NtupleMaker();
-  // }
+  region_choice = "WZ";
+  for(int isample=0; isample<v_samplenames.size(); isample++)
+  {
+    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice);
+    theNtupleMaker->Init();
+    theNtupleMaker->NtupleMaker(v_samplenames[isample]);
+    theNtupleMaker->~MEM_NtupleMaker();
+  }
 
 
 
 //--- Single Ntuple
-  region_choice = "MEM";
-  TString samplename = "WZjets";
-  MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, thesystlist, region_choice);
-  theNtupleMaker->Init();
-  theNtupleMaker->NtupleMaker(samplename);
-  theNtupleMaker->~MEM_NtupleMaker();
+  // region_choice = "MEM";
+  // TString samplename = "WZjets";
+  // MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, weight_syst_list, tree_syst_list, region_choice);
+  // theNtupleMaker->Init();
+  // theNtupleMaker->NtupleMaker(samplename);
+  // theNtupleMaker->~MEM_NtupleMaker();
 
 	return 0;
 }

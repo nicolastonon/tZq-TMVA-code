@@ -5,7 +5,7 @@ import CombineHarvester.CombineTools.ch as ch
 # Create a CombineHarvester instance and parse an existing datacard
 # Important to specify the mass, other metadata values like analysis and channel are optional
 cmb = ch.CombineHarvester()
-cmb.ParseDatacard('COMBINED_datacard.txt', mass='120', analysis='tZq', channel='all')
+cmb.ParseDatacard('COMBINED_datacard_TemplateFit.txt', mass='120', analysis='tZq', channel='all')
 
 bbb = ch.BinByBinFactory()
 bbb.SetVerbosity(1)
@@ -19,4 +19,4 @@ bbb.AddBinByBin(cmb.cp(), cmb)
 
 # Write the datacard back out. Note that the root file containing the histogram inputs is fully
 # recreated and will now contain all the Up/Down shapes for the bin-by-bin too
-cmb.WriteDatacard('datacard_with_binbybin.txt', 'datacard_with_binbybin.root')
+cmb.WriteDatacard('COMBINED_datacard_TemplateFit_StatError.txt', '../templates/Combine_Input_ScaledFakes_StatError.root')

@@ -9,7 +9,20 @@ using namespace std;
 
 void Script_Datacards_InputVars()
 {
-	TString file_histos = "../templates/Control_Histograms_NJetsMin0_NBJetsEq0_ScaledFakes.root";
+	TString file_histos = "";
+	TString region_choice = "";
+
+	while(region_choice != "WZ" && region_choice != "ttZ" && region_choice != "tZq")
+	{
+		cout<<"In what region do you wish to plot postfit variables ? (tZq/ttZ/WZ)"<<endl;
+		cin>>region_choice;
+	}
+
+	if(region_choice=="WZ") file_histos = "../templates/Control_Histograms_NJetsMin0_NBJetsEq0_ScaledFakes.root";
+	else if(region_choice=="tZq") file_histos = "../templates/Control_Histograms_NJetsMin1Max4_NBJetsEq1_ScaledFakes.root";
+	else if(region_choice=="ttZ") file_histos = "../templates/Control_Histograms_NJetsMin1_NBJetsMin1_ScaledFakes.root";
+
+	cout<<"---> Filepath in datacard : "<<file_histos<<endl<<endl;
 
 	ofstream file_out("Generate_Datacards_InputVars.sh");
 

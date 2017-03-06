@@ -112,7 +112,7 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
   hdata->Draw("Ep");
   result->Draw("same");
 
-  c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
+  // c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
   delete c1;
 
   double fraction_fakes = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes

@@ -54,8 +54,8 @@ NB : "-t -1" ==> Use Asimov Dataset ; to use toys instead, use "-t N", with N nu
 NB : for a-posteriori expected signif (uses data & MC), add --toysFreq
 
 6) Perform a Maximum Likelihood Fit (to get access to postfit templates, postfit nuisances, ...) :
-NB : if segfault, try again once or twice (... !)
-# combine -M MaxLikelihoodFit --skipBOnlyFit --saveShapes --saveWithUncertainties --plot --out outputs COMBINED_datacard.txt
+NB : need to create outputs dir. first to avoid segfault ;
+# combine -M MaxLikelihoodFit --saveShapes --saveWithUncertainties --plot --out outputs COMBINED_datacard.txt
 
 ((- With Asimov dataset (useless?) :
 # combine -M MaxLikelihoodFit --saveShapes --plot --out outputs --expectSignal=1 -t -1 COMBINED_datacard.txt))
@@ -64,9 +64,9 @@ NB : if segfault, try again once or twice (... !)
 
 
 8) If you want to plot the pull distributions of the nuisance parameters (to see how they changed postfit), go to the dir. containing the mlfit.root file, & use the Combine script :
-# python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py -g output.root mlfit.root
+# python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py -g nuisances.root mlfit.root
 
-==> This will create a 'output.root' file containing all the necessary info on the NPs
+==> This will create a 'nuisances.root' file containing all the necessary info on the NPs
 
 9) To save the plots of these pull distributions, you can copy the 'drawCanvas.C' macro (from 'datacards' dir.) into the dir. containing the 'output.root' file.
 --> Executing it should create 2 .png plots containing the useful info on NPs.
@@ -77,10 +77,11 @@ NB : if segfault, try again once or twice (... !)
 *** COMBINE HARVESTER
 (Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit). )
 
-- addBinbyBin.py : Add bin by bin statistical MC error to histograms. It uses 'COMBINED_datacard.txt' to  create new datacards taking these errors into account, and also a rootfile :
+- AddBinbyBin.py : Add bin by bin statistical MC error to histograms. It uses 'COMBINED_datacard.txt' to  create new datacards taking these errors into account, and also a rootfile :
 # python addBinbyBin
 
 -
+# PostFitShapes -d COMBINED_datacard_TemplateFit.txt -o PostfitInputVars.root -f outputs/mlfit.root:fit_s --postfit --sampling --print
 
 
 
