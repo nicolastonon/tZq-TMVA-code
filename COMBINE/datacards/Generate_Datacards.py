@@ -6,8 +6,8 @@ import string
 
 import os
 
-#fileToSearch = "Template_Datacard_allSyst.txt"
-fileToSearch = "Template_Datacard_noSyst.txt"
+fileToSearch = "Template_Datacard_allSyst.txt"
+#fileToSearch = "Template_Datacard_noSyst.txt"
 
 theFakeLLL = ""
 theFLLL_chNumb = "-1"

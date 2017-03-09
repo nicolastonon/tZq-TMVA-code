@@ -37,9 +37,9 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   //Initialize member vectors
   for(int isyst=0; isyst<weight_syst_list.size(); isyst++)
   {
-    if(samplename=="Data" || samplename=="Fakes") {break;} //No syst. for data
+    // if(samplename=="Data" || samplename=="Fakes") {break;} //No syst. for data
 
-    v_syst_name.push_back(weight_syst_list[isyst]);
+    v_syst_weight.push_back(weight_syst_list[isyst]);
     v_syst_float.push_back(0);
   }
   for(int ivar=0; ivar<BDT_variables.size(); ivar++)
@@ -61,11 +61,9 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   METCollection = 0;
 
   TString filename = output_dir + "FCNCNTuple_" + samplename+".root";
+  if(samplename == "STtWll") filename = output_dir + "FCNCNTuple_SingleTop.root";
 
   f_output = new TFile(filename.Data(), "RECREATE");
-  // f_output->cd();
-  // tree_output = new TTree("Tree", "Tree in MEM input format"); //NOTE : Call it 'Tree' to comply w/ MEM implementation
-  // Prepare_Tree(samplename);
 
   cout<<endl<<"Initialization & Tree preparation --- Done !"<<endl;
 }
@@ -318,11 +316,11 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TStri
   }
 
   //Systematics
-  if(tree_name == "Tree") //Not for JES/JER/...
+  if(!samplename.Contains("Data") && !samplename.Contains("Fakes") && tree_name == "Tree") //Not in Data/Fakes. Not for JES/JER/Fakes syst. trees
   {
-    for(int isyst=0; isyst<v_syst_name.size(); isyst++)
+    for(int isyst=0; isyst<v_syst_weight.size(); isyst++)
     {
-      tree_output->Branch(v_syst_name[isyst].Data(),&v_syst_float[isyst],(v_syst_name[isyst]+"/F").Data() );
+      tree_output->Branch(v_syst_weight[isyst].Data(),&v_syst_float[isyst],(v_syst_weight[isyst]+"/F").Data() );
     }
   }
 
@@ -604,7 +602,13 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
   for(int itreesyst=0; itreesyst<v_syst_tree.size(); itreesyst++) //Loop on 'tree' systematics (Default, JER, JES)
   {
+    //Only 'Default' tree for data and fakes (+'Fakes' syst tree for fakes)
+    if( (samplename.Contains("Data") && v_syst_tree[itreesyst] != "Default") || ( samplename.Contains("Fakes") && v_syst_tree[itreesyst] != "Default" && !v_syst_tree[itreesyst].Contains("Fakes") ) ) {continue;}
+    if( v_syst_tree[itreesyst].Contains("Fakes") && !samplename.Contains("Fakes") ) {continue;} //'Fakes' syst. tree only for Fakes sample
+
     cout<<FGRN("SYSTEMATIC TREE NAME : ")<<v_syst_tree[itreesyst]<<endl;
+
+
 
 //--- Input Trees
     TTree* t_MEM_input = 0; //Tree containing all info necessary for MEM (Jets, leptons, MET, etc.)
@@ -613,14 +617,18 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     TTree* t_vars_input = 0; //Tree containing all the BDT vars and more
     t_vars_input = (TTree*) f_input->Get( v_syst_tree[itreesyst] ); if(t_vars_input == 0) {cout<<"Can't find tree '"<<v_syst_tree[itreesyst]<<"' !"<<endl; return;}
 
+
+
 //--- Output Trees
     f_output->cd(); TString output_tree_name = "";
-    if(v_syst_tree[itreesyst] == "Default") output_tree_name = "Tree";
-    else if(v_syst_tree[itreesyst] == "JER__plus") output_tree_name = "JERUp";
-    else if(v_syst_tree[itreesyst] == "JER__minus") output_tree_name = "JERDown";
-    else if(v_syst_tree[itreesyst] == "JES__plus") output_tree_name = "JESUp";
-    else if(v_syst_tree[itreesyst] == "JES__minus") output_tree_name = "JESDown";
-    else {cout<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
+    if(v_syst_tree[itreesyst] == "Default")           output_tree_name = "Tree";
+    else if(v_syst_tree[itreesyst] == "JER__plus")    output_tree_name = "JERUp";
+    else if(v_syst_tree[itreesyst] == "JER__minus")   output_tree_name = "JERDown";
+    else if(v_syst_tree[itreesyst] == "JES__plus")    output_tree_name = "JESUp";
+    else if(v_syst_tree[itreesyst] == "JES__minus")   output_tree_name = "JESDown";
+    else if(v_syst_tree[itreesyst] == "Fakes__plus")  output_tree_name = "FakesUp";
+    else if(v_syst_tree[itreesyst] == "Fakes__minus") output_tree_name = "FakesDown";
+    else {cout<<__LINE__<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
     TTree* tree_output = new TTree(output_tree_name.Data(), "");
     Prepare_Tree(samplename, tree_output, output_tree_name);
 
@@ -629,16 +637,16 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     t_MEM_input->SetBranchAddress("SelectedElectron", &vSelectedElectrons);
     t_MEM_input->SetBranchAddress("SelectedMuon",     &vSelectedMuons);
 
-    if(v_syst_tree[itreesyst] == "Default") {t_MEM_input->SetBranchAddress("SelectedJet",      &vSelectedJets);}
+    if(v_syst_tree[itreesyst] == "Default" || v_syst_tree[itreesyst].Contains("Fakes") ) {t_MEM_input->SetBranchAddress("SelectedJet",      &vSelectedJets);}
     else if(v_syst_tree[itreesyst] == "JER__plus") {t_MEM_input->SetBranchAddress("SelectedJetResUp",      &vSelectedJets);}
     else if(v_syst_tree[itreesyst] == "JER__minus") {t_MEM_input->SetBranchAddress("SelectedJetResDw",      &vSelectedJets);}
     else if(v_syst_tree[itreesyst] == "JES__plus") {t_MEM_input->SetBranchAddress("SelectedJetJesUp",      &vSelectedJets);}
     else if(v_syst_tree[itreesyst] == "JES__minus") {t_MEM_input->SetBranchAddress("SelectedJetJesDw",      &vSelectedJets);}
-    else {cout<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
+    else {cout<<__LINE__<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
 
     t_MEM_input->SetBranchAddress("METCollection",    &METCollection);
 
-    if(v_syst_tree[itreesyst] == "Default")          {t_MEM_input->SetBranchAddress("METCollection",    &METCollection);}
+    if(v_syst_tree[itreesyst] == "Default" || v_syst_tree[itreesyst].Contains("Fakes") ) {t_MEM_input->SetBranchAddress("METCollection",    &METCollection);}
     else if(v_syst_tree[itreesyst] == "JER__plus")   {t_MEM_input->SetBranchAddress("METCollectionResUp",    &METCollection);}
     else if(v_syst_tree[itreesyst] == "JER__minus")  {t_MEM_input->SetBranchAddress("METCollectionResDw",    &METCollection);}
     else if(v_syst_tree[itreesyst] == "JES__plus")   {t_MEM_input->SetBranchAddress("METCollectionJesUp",    &METCollection);}
@@ -661,9 +669,9 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     //---Systematics
     if(v_syst_tree[itreesyst] == "Default")
     {
-      for(int isyst=0; isyst<v_syst_name.size(); isyst++)
+      for(int isyst=0; isyst<v_syst_weight.size(); isyst++)
       {
-        t_vars_input->SetBranchAddress(v_syst_name[isyst].Data(), &v_syst_float[isyst]);
+        t_vars_input->SetBranchAddress(v_syst_weight[isyst].Data(), &v_syst_float[isyst]);
       }
     }
 
@@ -673,6 +681,11 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   //--- EVENT LOOP
 
     int nentries = t_MEM_input->GetEntries();
+
+    cout<<"t MEM : "<<nentries<<endl;
+    cout<<"t vars : "<<t_vars_input->GetEntries()<<endl;
+
+
     if(t_vars_input->GetEntries() != nentries) {cout<<"ERROR : different nof events in trees -- Abort"<<endl; return;}
 
     for(int ientry=0; ientry<nentries; ientry++)
@@ -881,18 +894,18 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("tZq");
-  v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("WZjets");
-  v_samplenames.push_back("ZZ");
-  v_samplenames.push_back("Data");
-  v_samplenames.push_back("ttH");
-  v_samplenames.push_back("ttW");
+  // v_samplenames.push_back("tZq");
+  // v_samplenames.push_back("ttZ");
+  // v_samplenames.push_back("ttZMad");
+  // v_samplenames.push_back("WZjets");
+  // v_samplenames.push_back("ZZ");
+  // v_samplenames.push_back("Data");
+  // v_samplenames.push_back("ttH");
+  // v_samplenames.push_back("ttW");
   v_samplenames.push_back("Fakes");
-  v_samplenames.push_back("ttZMad");
-  v_samplenames.push_back("SingleTop");
+  v_samplenames.push_back("STtWll"); //Renamed to SingleTop in the code
 
-  // v_samplenames.push_back("STtWll"); //Renamed to SingleTop in the code
+  // v_samplenames.push_back("SingleTop");
   // v_samplenames.push_back("");
 
 //---------------------------------------------------------------------------
@@ -927,6 +940,8 @@ int main()
   BDTvar_list.push_back("dRZTop");
   BDTvar_list.push_back("TopPT");
   BDTvar_list.push_back("m3l");
+
+  BDTvar_list.push_back("METpt");
 
 
 //---------------------------------------------------------------------------

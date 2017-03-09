@@ -36,6 +36,8 @@ using namespace std;
  */
 theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, vector<TString> v_add_vars, int nofbin_templates = 5, bool in_isttZ = false, bool in_isWZ = false, TString extension_format = ".pdf")
 {
+	cout<<endl<<endl;
+
 	if(extension_format==".png" || extension_format==".pdf") {this->format = extension_format;}
 	else {cout<<"ERROR : WRONG OUTPUT FORMAT ! EXIT !"<<endl; stop_program = true;}
 
@@ -46,17 +48,46 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	{
 		channel_list.push_back(thechanlist[i]);
 	}
-	for(int i=0; i<thevarlist.size(); i++) //TMVA vars
-	{
-		var_list.push_back(thevarlist[i]);
-		var_list_floats.push_back(-999);
-	}
+
 	for(int i=0; i<set_v_cut_name.size(); i++) //Region cuts vars (e.g. NJets)
 	{
 		v_cut_name.push_back(set_v_cut_name[i]);
 		v_cut_def.push_back(set_v_cut_def[i]);
 		v_cut_IsUsedForBDT.push_back(set_v_cut_IsUsedForBDT[i]);
 		v_cut_float.push_back(-999);
+
+		//NOTE : it is a problem if a variable is present in different list, because it will cause SetBranchAddress conflicts (only the last SetBranchAddress to a branch will work)
+		//---> If a variable is present in 2 lists, erase it from other lists !
+		for(int ivar=0; ivar<thevarlist.size(); ivar++)
+		{
+			if(thevarlist[ivar] == set_v_cut_name[i])
+			{
+				cout<<FGRN("** Constructor")<<" : erased variable "<<thevarlist[ivar]<<" from vector thevarlist (possible conflict) !"<<endl;
+				thevarlist.erase(thevarlist.begin() + ivar);
+			}
+		}
+		for(int ivar=0; ivar<v_add_vars.size(); ivar++)
+		{
+			if(v_add_vars[ivar] == set_v_cut_name[i])
+			{
+				cout<<FGRN("** Constructor")<<" : erased variable "<<v_add_vars[ivar]<<" from vector v_add_vars (possible conflict) !"<<endl;
+				v_add_vars.erase(v_add_vars.begin() + ivar);
+			}
+		}
+	}
+	for(int i=0; i<thevarlist.size(); i++) //TMVA vars
+	{
+		var_list.push_back(thevarlist[i]);
+		var_list_floats.push_back(-999);
+
+		for(int ivar=0; ivar<v_add_vars.size(); ivar++)
+		{
+			if(v_add_vars[ivar] == thevarlist[i])
+			{
+				cout<<FGRN("** Constructor")<<" : erased variable "<<v_add_vars[ivar]<<" from vector v_add_vars (possible conflict) !"<<endl;
+				v_add_vars.erase(v_add_vars.begin() + ivar);
+			}
+		}
 	}
 	for(int i=0; i<v_add_vars.size(); i++) //Additional vars, only for CR plots
 	{
@@ -139,6 +170,8 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	t_name = "Tree";
 
 	luminosity_rescale = 1;
+
+	cout<<endl<<endl;
 }
 
 
@@ -180,7 +213,6 @@ void theMVAtool::Set_Luminosity(double desired_luminosity = 12.9)
 //    ##       ##     ##    ##     ##    ####    ##    ##    ####    ##    ##     ######
 //---------------------------------------------------------------------------
 
-
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 /**
@@ -188,6 +220,8 @@ void theMVAtool::Set_Luminosity(double desired_luminosity = 12.9)
  * @param channel              Channel name (if single)
  * @param bdt_type             Differentiate BDT & BDTttZ (SR & ttZ CR)
  */
+
+
 void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", bool use_ttZMad=true)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
@@ -240,10 +274,10 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	for(int isample=0; isample<sample_list.size(); isample++)
     {
 
-		//FIXME -- backgrounds
-		// if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes") ) {cout<<"Train only on MC without fakes -- ignore sample : "<<sample_list[isample]<<endl; continue;} //Train only on MC
+		//FIXME -- old backgrounds
+		if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes") ) {cout<<"Train only on MC without fakes -- ignore sample : "<<sample_list[isample]<<endl; continue;} //Train only on MC
 
-		if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
+		// if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
 
         // Read training and test data
         // --- Register the training and test trees
@@ -270,11 +304,11 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 
         // You can add an arbitrary number of signal or background trees
 		//FIXME : can use abs(weights) instead
-		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-        // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+		if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+        else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
 
-		if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
-        else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+        // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
     }
 
 	cout<<"////////WARNING : TAKE *ABSOLUTE* VALUES OF WEIGHTS////////"<<endl;
@@ -338,8 +372,8 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	//Boosted Decision Trees -- FIXME : choose right method !
 
 	//--- Adaptive Boost (old method)
-	// if(isttZ) factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=15:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
-	// else factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
+	if(isttZ) factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=15:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
+	else factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
 
 	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
 
@@ -355,8 +389,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:BoostType=AdaBoost:AdaBoostBeta=0.4:PruneMethod=CostComplexity:PruneStrength=7:SeparationType=CrossEntropy:MaxDepth=3:nCuts=40:NodePurityLimit=0.5:NTrees=1000:MinNodeSize=1%:NegWeightTreatment=InverseBoostNegWeights" );
 
 	//NOTE : to be used for now
-	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
-
+	// factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
 
 
 	output_file->cd();
@@ -384,6 +417,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
     // Launch the GUI for the root macros    //NB : write interactively in the ROOT environment --> TMVA::TMVAGui("output.root")
     //TMVA::TMVAGui(output_file_name);
 }
+
 
 
 
@@ -751,29 +785,31 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
 			{
-				if (dbgMode ) {cout << "check input file " << file_input << endl; file_input->ls();}
 				tree = (TTree*) file_input->Get(syst_list[isyst].Data());
-				if (dbgMode ) cout << " fakes tree check  "  << tree << "  " << syst_list[isyst] << endl;
 			}
 			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
 //--- Prepare the event tree -- Set Branch Addresses
+//WARNING : the last SetBranchAddress overrides the previous ones !! Be careful not to associate branches twice !
+
+			for(int i=0; i<v_add_var_names.size(); i++)
+			{
+				tree->SetBranchAddress(v_add_var_names[i].Data(), &v_add_var_floats[i]);
+			}
 			for(int i=0; i<var_list.size(); i++)
 			{
+				cout<<__LINE__<<endl;
 				tree->SetBranchAddress(var_list[i].Data(), &var_list_floats[i]);
+				cout<<__LINE__<<endl;
 			}
 			for(int i=0; i<v_cut_name.size(); i++)
 			{
 				tree->SetBranchAddress(v_cut_name[i].Data(), &v_cut_float[i]);
 			}
-			for(int i=0; i<v_add_var_names.size(); i++)
-			{
-				tree->SetBranchAddress(v_add_var_names[i].Data(), &v_add_var_floats[i]);
-			}
 
 			float mTW = -666; tree->SetBranchAddress("mTW", &mTW);
-
 			float i_channel = 9; tree->SetBranchAddress("Channel", &i_channel);
+
 
 			float weight;
 			//For all other systematics, only the events weights change
@@ -785,6 +821,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 //------------------------------------------------------------
 // --- START EVENT LOOP ---
+
 			int n_entries = tree->GetEntries();
 			for(int ievt=0; ievt<n_entries; ievt++)
 			{
@@ -794,11 +831,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 				weight = 0; i_channel = 9; mTW=-666;
 
-				if (dbgMode && syst_list[isyst].Contains("Fakes"))   cout << __LINE__ << endl;
-
 				tree->GetEntry(ievt);
-
-				if (dbgMode && syst_list[isyst].Contains("Fakes"))   cout << __LINE__ << endl;
 
         		bool isChannelToKeep = false;
 
@@ -814,18 +847,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 		          	if(i_channel == 2 && channel_list[ichan] == "eeu")  isChannelToKeep = true;
 		          	if(i_channel == 3 && channel_list[ichan] == "eee")  isChannelToKeep = true;
 				}
-		       //cout << "-------------"<< i_channel << "  "  << isChannelToKeep << endl;
-
-				if( dbgMode && syst_list[isyst].Contains("Fakes"))
-				{
-					cout << __LINE__ << endl;
-					cout << "i_channel " << i_channel << endl;
-					cout << channel_list[0] << endl;
-					cout << channel_list[1] << endl;
-					cout << channel_list[2] << endl;
-					cout << channel_list[3] << endl;
-					cout << "isChannelToKeep  " << isChannelToKeep  << endl;
-	     		}
 
 				if(!isChannelToKeep) continue;
 
@@ -834,13 +855,22 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 //---- APPLY CUTS HERE  ----
 				float cut_tmp = 0; bool pass_all_cuts = true;
 
+
 				for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 				{
-
 					// NOTE : DO NOT APPLY Additional Lepton ISO CUTS ON FAKES
 					if ( sample_list[isample].Contains("Fakes") &&  (v_cut_name[ivar] == "AdditionalMuonIso" || v_cut_name[ivar] == "AdditionalEleIso" ) ) {continue;}
 
 					if(v_cut_def[ivar] == "") {continue;}
+
+					//CHANGED : can't set Branch address of same branch to 2 different variables (only last one will be filled)
+					//Since I define myself a 'mTW' variable, it is a problem if one of the cuts is on mTW (because the associated float won't be filled)
+					//---> If v_cut_name[i] == "mTW", need to make sure that we use the variable which is filled !
+					if(v_cut_name[ivar] == "mTW") {v_cut_float[ivar] = mTW;}
+					//Idem for channel value
+					if(v_cut_name[ivar] == "Channel") {v_cut_float[ivar] = i_channel;}
+
+					// cout<<v_cut_name[ivar]<<" "<<v_cut_float[ivar]<<endl;
 
 					if(!v_cut_def[ivar].Contains("&&")) //If cut contains only 1 condition
 					{
@@ -871,11 +901,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 				}
 
-				if (dbgMode )  if(syst_list[isyst].Contains("Fakes"))   cout << __LINE__ << endl;
 
 				if(!pass_all_cuts) {continue;}
-
-				if (dbgMode )  if(syst_list[isyst].Contains("Fakes"))   cout << __LINE__ << endl;
 
 				if(cut_on_BDT && reader->EvaluateMVA("BDT_" + channel_list[i_channel] + this->filename_suffix + " method") > BDT_cut_value) {continue;} //Cut on BDT value
 
@@ -2194,11 +2221,12 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					//CHANGED
 					// histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample] + "_" + syst_list[isyst];
-					TString histo_name_tmp = histo_name + "__"+syst_list[isyst];
 
-					if(!f->GetListOfKeys()->Contains(histo_name_tmp.Data())) {cout<<histo_name_tmp<<" : not found !"<<endl; continue;}
+					histo_name+= "__"+syst_list[isyst];
 
-					histo_syst = (TH1F*) f->Get(histo_name_tmp.Data())->Clone();
+					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+
+					histo_syst = (TH1F*) f->Get(histo_name.Data())->Clone();
 
 					//Add up here the different errors (quadratically), for each bin separately
 					for(int ibin=0; ibin<nofbins; ibin++)
@@ -2363,7 +2391,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			//cout << "MC integral " << histo_total_MC->Integral() << endl;
 			histo_ratio_data->Divide(histo_total_MC); //Ratio
 
-			//if(total_var_list[ivar] == "METpt")   histo_ratio_data->GetXaxis()->SetTitle(title_MET.Data());
 			histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
 
 			histo_ratio_data->SetMinimum(0.0);

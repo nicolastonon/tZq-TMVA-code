@@ -12,14 +12,14 @@ process             tZq             WZjets       ZZ           ttZ           ttW	
 process                0              1          2             3            4           5          FLLL_chNumb
 rate                  -1             -1          -1            -1          -1          -1            -1
 ---------------------------------------------------------------------------------------------------------------------
-lumi        lnN	      1.062       1.062         1.062       1.062       1.062       1.062          -
+lumi          lnN	      1.062     1.062       1.062       1.062       1.062          1.062          -
 
-WZ_rate     lnN       -           1.3           -           -           -	    	 -             -
-ZZ_rate     lnN       -	           -           1.3          -           -            -             -
-ttZ_rate    lnN       -	           -            -          1.3          -            -             -
-ttW_rate    lnN       -	           -            -           -          1.3           -             -
-ttH_rate    lnN       -            -            -           -           -           1.3            -
-#SingleTop    lnN      -            -            -           -           -            -             -
+WZ_rate       lnN       -          	1.3           -           -           -	    		-             -
+ZZ_rate       lnN       -	         -           1.3          -           -            	-             -
+ttZ_rate      lnN       -	         -            -          1.3          -            	-             -
+ttW_rate      lnN       -	         -            -           -          1.3           	-             -
+ttH_rate	  lnN       -          	 -            -           -           -            1.3            -
+#SingleTop    lnN      -          	 -            -           -           -             -             -
 
-FakeRate_type lnN     -		  	   -	        -	    	-           -	     	-             5.0
-FakeBgd_rate  lnN     -	           -            -	    	-           -	     	-             1.3
+FakeRate_type lnN     -		  	 	 -	   		  -	    	  -           -	     		-             5.0
+FakeBgd_rate  lnN     -	         	 -            -	    	  -           -	     		-             1.3

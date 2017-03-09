@@ -111,7 +111,7 @@ class MEM_NtupleMaker
 		Float_t mTW;
 
 		//Systematics
-		vector<TString> v_syst_name;
+		vector<TString> v_syst_weight;
 		vector<TString> v_syst_tree;
 		vector<Float_t> v_syst_float;
 

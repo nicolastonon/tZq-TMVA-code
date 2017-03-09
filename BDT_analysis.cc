@@ -1,4 +1,4 @@
-D#include "theMVAtool.h"
+#include "theMVAtool.h"
 
 using namespace std;
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     int nofbin_templates = 10; //NOTE : to be optimized --- Binning to be used for *template* production
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.!
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
-    bool use_ttZMad_training = false; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
+    bool use_ttZMad_training = true; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
 
     TString format = ".png"; //.png or .pdf only
 
@@ -60,17 +60,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##     ## ########  ######   ####  #######  ##    ##        ####  ##        ######   #######     ##     ######
 //-----------------------------------------------------------------------------------------
 
-//Specify here the cuts that you wish to apply (propagated to training, reading, ...). To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
-//--- ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
-
 //-------------------
-    //set_v_cut_name.push_back("mTW");                    set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false); //code fix - don't need it anymore
-    //set_v_cut_name.push_back("METpt");                  set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    //set_v_cut_name.push_back("AddLepPT");               set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(true);
+//------Specify here the cuts that you wish to apply to all 3 regions.
+//To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
+//ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
+
     //NOTE : can only use "< X" for iso (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
     //set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     //set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
+
 
 // CAN CHOOSE REGION EITHER HERE IN CODE, OR AT EXECUTION !
 
@@ -78,6 +77,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool tZq_region = false;
     bool ttZ_region = false;
     bool WZ_region = false;
+
+
 
     //Manual region selection is overwritten if arguments are given during execution
     if(argc==2)
@@ -87,30 +88,37 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         else if(!strcmp(argv[1],"ttZ")) {tZq_region = false; WZ_region = false; ttZ_region = true;}
     }
 
-
-
     if( (!tZq_region && !WZ_region && !ttZ_region) || (tZq_region && WZ_region) || (tZq_region && ttZ_region) || (WZ_region && ttZ_region) ) {cout<<__LINE__<<" BDT_analysis : Problem : wrong region ! Exit"<<endl; return 0;}
 
-//--- DON'T CHANGE THIS : Region choice automatized from here !
+    //--- DON'T CHANGE THIS : Region choice automatized from here !
     bool isttZ = false; bool isWZ = false;
     if(WZ_region) {isWZ = true;}
     else if(ttZ_region) {isttZ = true;}
 
+
+
+//--- DON'T CHANGE Jets cuts here (define the 3 different regions)
+//But you can add some cuts which are region-dependant !
     if(!isWZ && !isttZ) //Default selection is Signal Region : 1<NJets<4 && NBJets == 1
     {
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant
+        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(true); //NB : cst -> not actually used in BDT
+
+        set_v_cut_name.push_back("mTW");        set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
+        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
     if(isWZ) //WZ CR Region : NJets > 0 && NBJets == 0
     {
-        //set_v_cut_name.push_back("NJets");    set_v_cut_def.push_back(">1");      set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NJets");      set_v_cut_def.push_back(">0");      set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");     set_v_cut_def.push_back("== 0");   set_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant
+        set_v_cut_name.push_back("NJets");      set_v_cut_def.push_back(">0");          set_v_cut_IsUsedForBDT.push_back(true);
+        set_v_cut_name.push_back("NBJets");     set_v_cut_def.push_back("== 0");        set_v_cut_IsUsedForBDT.push_back(true); //NB : cst -> not actually used in BDT
     }
     if(isttZ) //ttZ CR Region : NJets>1 && NBJets>1
     {
-        set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1");     set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");     set_v_cut_IsUsedForBDT.push_back(true);
+        set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
+        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
+
+        set_v_cut_name.push_back("mTW");       set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
+        set_v_cut_name.push_back("METpt");     set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
 //---------------------
 
@@ -157,7 +165,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed);
     thesamplelist.push_back("ttH");             v_color.push_back(kRed);
-    // thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack);
+    thesamplelist.push_back("SingleTop");       v_color.push_back(kBlack);
 
     //FAKES
     thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
@@ -279,9 +287,14 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
 
 //Can add additionnal vars which are NOT used in TMVA NOR for cuts, only for CR plots
+//NOTE : having the same variable in more than one variable vectors (thevarlist, set_v_cut_name & v_add_var_names) can cause problem later, because address of branch can be linked to only *one* variable via SetBranchAddress
+
+//This is supposed to be taken care of in the constructor of the class (remove variable in other vectors if found multiple times), but be careful !
+//NOTE : not tested yet !!
+
     vector<TString> v_add_var_names;
     v_add_var_names.push_back("mTW");
-    // v_add_var_names.push_back("METpt"); //NB : need to include it in interfacing code
+    v_add_var_names.push_back("METpt");
 
 
 
@@ -297,7 +310,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //
     //0 = no syst, 1 = theta, 2 = combine !
     int i_systematics_choice = 2;
-
     thesystlist.push_back(""); //Nominal -- KEEP this line
 
 
@@ -306,25 +318,25 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //-------------------
     if(i_systematics_choice==1)
     {
-    //Affect the variable distributions
-    // thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
-    // thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
-    // thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
+        //Affect the variable distributions
+        thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
+        thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
+        // thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
 
-    //Affect the event weight
-    thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
-    thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
-    thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
-    thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
-    thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
-    thesystlist.push_back("LFcont__plus"); thesystlist.push_back("LFcont__minus");
-    thesystlist.push_back("HFstats1__plus"); thesystlist.push_back("HFstats1__minus");
-    thesystlist.push_back("HFstats2__plus"); thesystlist.push_back("HFstats2__minus");
-    thesystlist.push_back("CFerr1__plus"); thesystlist.push_back("CFerr1__minus");
-    thesystlist.push_back("CFerr2__plus"); thesystlist.push_back("CFerr2__minus");
-    thesystlist.push_back("HFcont__plus"); thesystlist.push_back("HFcont__minus");
-    thesystlist.push_back("LFstats1__plus"); thesystlist.push_back("LFstats1__minus");
-    thesystlist.push_back("LFstats2__plus"); thesystlist.push_back("LFstats2__minus");
+        //Affect the event weight
+        thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
+        thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
+        thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
+        thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
+        thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
+        thesystlist.push_back("LFcont__plus"); thesystlist.push_back("LFcont__minus");
+        thesystlist.push_back("HFstats1__plus"); thesystlist.push_back("HFstats1__minus");
+        thesystlist.push_back("HFstats2__plus"); thesystlist.push_back("HFstats2__minus");
+        thesystlist.push_back("CFerr1__plus"); thesystlist.push_back("CFerr1__minus");
+        thesystlist.push_back("CFerr2__plus"); thesystlist.push_back("CFerr2__minus");
+        thesystlist.push_back("HFcont__plus"); thesystlist.push_back("HFcont__minus");
+        thesystlist.push_back("LFstats1__plus"); thesystlist.push_back("LFstats1__minus");
+        thesystlist.push_back("LFstats2__plus"); thesystlist.push_back("LFstats2__minus");
     }
 
 
@@ -332,28 +344,28 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //-------------------
     else if(i_systematics_choice==2)
     {
-    //Affect the variable distributions -- NOTE : not available yet
-    // thesystlist.push_back("JERUp"); thesystlist.push_back("JERDown");
-    // thesystlist.push_back("JESUp"); thesystlist.push_back("JESDown");
-    // thesystlist.push_back("FakesUp"); thesystlist.push_back("FakesDown");
+        //Affect the variable distributions -- NOTE : not available yet
+        thesystlist.push_back("JERUp"); thesystlist.push_back("JERDown");
+        thesystlist.push_back("JESUp"); thesystlist.push_back("JESDown");
+        // thesystlist.push_back("FakesUp"); thesystlist.push_back("FakesDown");
 
-    //Affect the event weight
-    thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down");
-    thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
-    thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
-    thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
-    thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
-    thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
-    thesystlist.push_back("HFstats1Up"); thesystlist.push_back("HFstats1Down");
-    thesystlist.push_back("HFstats2Up"); thesystlist.push_back("HFstats2Down");
-    thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
-    thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
-    thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
-    thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
-    thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
+        //Affect the event weight
+        thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down");
+        thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
+        thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
+        thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
+        thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
+        thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
+        thesystlist.push_back("HFstats1Up"); thesystlist.push_back("HFstats1Down");
+        thesystlist.push_back("HFstats2Up"); thesystlist.push_back("HFstats2Down");
+        thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
+        thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
+        thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
+        thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
+        thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
     }
-    else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 1;}
 //-------------------
+    else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 1;}
 
 
 
@@ -405,7 +417,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(isWZ)   template_name = "mTW";
         if(isttZ)  template_name = "BDTttZ";
 
-        // MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+        MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
 
         // if(!real_data_templates) {MVAtool->Generate_PseudoData_Templates(template_name);} //NOTE : GENERATE PSEUDODATA ON Combine_Input_ScaledFakes.root (fakes already re-scaled)
 
@@ -568,7 +580,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 		    {
     			std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
     			scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">0");     scan_v_cut_IsUsedForBDT.push_back(true);
-    			//scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1");     scan_v_cut_IsUsedForBDT.push_back(true);
     			scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back("==0");    scan_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant be used in BDT
 
 

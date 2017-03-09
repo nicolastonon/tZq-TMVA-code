@@ -73,36 +73,44 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
 
 
   f->cd();
-  char myHist[100];
+  // char myHist[100];
 
   TH1F * hdata, *hsum[listSum.size()], * hfake;
 
   //Treat Data / Fakes / Other samples separately
-  sprintf(myHist,"mTW_%s__data_obs",channelname[channel].Data());
-  if ( f ->GetListOfKeys()->Contains( myHist ) ) hdata = (TH1F*)f->Get( myHist) ;
-  else {printf(" HAAAAALT %s\n",myHist); return 0;}
+  TString myHist;
 
-  sprintf(myHist,"mTW_%s__%s",channelname[channel].Data(), channelfake[channel].Data());
-  if ( f ->GetListOfKeys()->Contains( myHist ) ) hfake = (TH1F*)f->Get( myHist) ;
-  else {printf(" HAAAAALT %s\n",myHist); return 0;}
+  myHist = "mTW_" + channelname[channel] + "__data_obs";
+  if ( f ->GetListOfKeys()->Contains( myHist.Data() ) ) {hdata = (TH1F*)f->Get( myHist) ;}
+  else {cout<<"PROBLEM : "<<myHist<<endl; return 0;}
+
+  myHist = "mTW_" + channelname[channel] + "__" + channelfake[channel];
+  if ( f ->GetListOfKeys()->Contains( myHist.Data() ) ) {hfake = (TH1F*)f->Get( myHist) ;}
+  else {cout<<"PROBLEM : "<<myHist<<endl; return 0;}
 
   for (int i = 0; i<listSum.size(); i++)
   {
-    sprintf(myHist,"mTW_%s__%s",channelname[channel].Data(), listSum[i].Data());
-
-    if ( f ->GetListOfKeys()->Contains( myHist ) ) hsum[i] = (TH1F*)f->Get( myHist) ;
-    else {printf(" HAAAAALT %s\n",myHist); continue;}
+    myHist = "mTW_" + channelname[channel] + "__" + listSum[i];
+    if ( f ->GetListOfKeys()->Contains( myHist.Data() ) ) {hsum[i] = (TH1F*)f->Get( myHist) ;}
+    else {cout<<"PROBLEM : "<<myHist<<endl; return 0;}
 
     if (i>0) hsum[0]->Add( hsum[i] );
   }
 
-  hfake->Print(); hsum[0]->Print(); hdata->Print();
+  // hfake->Print(); hsum[0]->Print(); hdata->Print();
 
-  TObjArray *mc = new TObjArray(2);
-  mc->Add(hfake);
-  mc->Add(hsum[0]);
+  TObjArray *mc = new TObjArray(2); //Create array of MC samples -- differentiate fakes from rest
+  mc->Add(hfake); //Param 0
+  mc->Add(hsum[0]); //Param 1
 
-  TFractionFitter* fit = new TFractionFitter(hdata, mc);
+  TFractionFitter* fit = new TFractionFitter(hdata, mc, "");
+
+  //CHANGED
+  double fracmc = hsum[0]->Integral()/hdata->Integral() ;
+
+  //NOTE : need to constrain parameters to get sensible prefit normalizations
+  fit->Constrain(0,0.,1.); //Constrain param 0 (fakes fraction) between 0 & 1
+  if(fracmc>0) fit->Constrain(1,fracmc*0.95,fracmc*1.05); //Constrain param 1 (other MC samples fraction) b/w +/- 5% of fracmc ==> ?
 
   TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
 
@@ -112,7 +120,7 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
   hdata->Draw("Ep");
   result->Draw("same");
 
-  // c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
+  c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
   delete c1;
 
   double fraction_fakes = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
@@ -161,8 +169,9 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   std::vector<TString> syst_list;
   syst_list.push_back(""); //KEEP this one -- nominal
 
-  // syst_list.push_back("JERUp")  ;       syst_list.push_back("JERDown")  ;
-  // syst_list.push_back("JESUp")  ;       syst_list.push_back("JESDown")  ;
+  syst_list.push_back("JESUp")  ;       syst_list.push_back("JESDown")  ;
+  syst_list.push_back("JERUp")  ;       syst_list.push_back("JERDown")  ;
+
   // syst_list.push_back("FakesUp");       syst_list.push_back("FakesDown");
 
   syst_list.push_back("Q2Up")      ;    syst_list.push_back("Q2Down");
@@ -243,6 +252,19 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   double factor_eeu = scaleFactor(inputfile_prefit,2, sample_list);
   double factor_eee = scaleFactor(inputfile_prefit,3, sample_list);
 
+  //FIXME -- try arbitrary values !
+  // double factor_uuu = 0.00328917;
+  // double factor_uue = scaleFactor(inputfile_prefit,1, sample_list);
+  // double factor_eeu = 0.0233086;
+  // double factor_eee = scaleFactor(inputfile_prefit,3, sample_list);
+
+/*  - Avec mon rescaling (sans contrainte) : Significance: 5.57154
+SCALE FACTORS VALUES :
+--- SF uuu = 0.00328917
+--- SF uue = 0.0642661
+--- SF eeu = 0.0233086
+--- SF eee = 0.011329*/
+
 
   // printf("\n\n ------- %f %f %f %f -----\n \n",factor_uuu,factor_uue,factor_eeu,factor_eee);
 
@@ -287,6 +309,7 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
           histo_name = var_list[ivar] + "_" + channel_list[ichan] + "__" + sample_list[isample];
           if(syst_list[isys] != "") histo_name+= "__" + syst_list[isys];
 
+          // if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {cout<<histo_name.Data()<<" not found !"<<endl; continue;}
           if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {continue;}
 
           histo = (TH1F*)file_to_rescale->Get( histo_name );
