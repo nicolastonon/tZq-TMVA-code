@@ -52,4 +52,4 @@ $(BDT_AN): BDT_analysis.o theMVAtool.o
 
 #Erase all objects and executable
 clean:
-	@rm -f *.o *.exe
+	@-rm -f *.o *.exe

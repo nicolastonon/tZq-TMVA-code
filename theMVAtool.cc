@@ -182,9 +182,10 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
  * Compute the luminosity re-scaling factor (MC),  to be used thoughout the code
  * @param desired_luminosity [Value of the desired lumi in fb-1]
  */
-void theMVAtool::Set_Luminosity(double desired_luminosity = 12.9)
+void theMVAtool::Set_Luminosity(double desired_luminosity)
 {
-	double current_luminosity = 12.9; //NOTE -- to be changed
+	// double current_luminosity = 12.9; //Summer 2016 lumi
+	double current_luminosity = 35.68; //Moriond 2017 //CHANGED
 	this->luminosity_rescale = desired_luminosity / current_luminosity;
 
 
@@ -275,9 +276,9 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
     {
 
 		//FIXME -- old backgrounds
-		if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes") ) {cout<<"Train only on MC without fakes -- ignore sample : "<<sample_list[isample]<<endl; continue;} //Train only on MC
+		// if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes") ) {cout<<"Train only on MC without fakes -- ignore sample : "<<sample_list[isample]<<endl; continue;} //Train only on MC
 
-		// if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
+		if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
 
         // Read training and test data
         // --- Register the training and test trees
@@ -304,11 +305,11 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 
         // You can add an arbitrary number of signal or background trees
 		//FIXME : can use abs(weights) instead
-		if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-        else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+        // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
 
-		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
-        // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+		if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+        else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
     }
 
 	cout<<"////////WARNING : TAKE *ABSOLUTE* VALUES OF WEIGHTS////////"<<endl;
@@ -372,8 +373,8 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	//Boosted Decision Trees -- FIXME : choose right method !
 
 	//--- Adaptive Boost (old method)
-	if(isttZ) factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=15:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
-	else factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
+	// if(isttZ) factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=15:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
+	// else factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
 
 	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:NTrees=100:MinNodeSize=20:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=10:PruneMethod=NoPruning:IgnoreNegWeightsInTraining=True" );
 
@@ -389,7 +390,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:BoostType=AdaBoost:AdaBoostBeta=0.4:PruneMethod=CostComplexity:PruneStrength=7:SeparationType=CrossEntropy:MaxDepth=3:nCuts=40:NodePurityLimit=0.5:NTrees=1000:MinNodeSize=1%:NegWeightTreatment=InverseBoostNegWeights" );
 
 	//NOTE : to be used for now
-	// factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
+	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
 
 
 	output_file->cd();
@@ -749,7 +750,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes"))   {continue;} //"Fakes" syst only in fakes samples
 
-			if(sample_list[isample] == "SingleTop" && syst_list[isyst].Contains("Q2") ) {continue;} //bug
+			if(sample_list[isample] == "SingleTop" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
 
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
@@ -798,9 +799,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 			for(int i=0; i<var_list.size(); i++)
 			{
-				cout<<__LINE__<<endl;
 				tree->SetBranchAddress(var_list[i].Data(), &var_list_floats[i]);
-				cout<<__LINE__<<endl;
 			}
 			for(int i=0; i<v_cut_name.size(); i++)
 			{
@@ -1349,7 +1348,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
 			else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
 
-			if(sample_list[isample] == "SingleTop" && syst_list[isyst].Contains("Q2") ) {continue;} //bug
+			if(sample_list[isample] == "SingleTop" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 			TFile* file_input = 0;
@@ -1610,7 +1609,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					if( (sample_list[isample] == "Data" && syst_list[isyst]!="")
 						|| ( sample_list[isample].Contains("Fakes") && syst_list[isyst]!="" && !syst_list[isyst].Contains("Fakes") ) ) {continue;} //Data = no syst. -- Fakes = only fake syst.
 
-					if(sample_list[isample] == "SingleTop" && syst_list[isyst].Contains("Q2") ) {continue;} //bug
+						if(sample_list[isample] == "SingleTop" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
 					if(i_hist_created%100==0) {cout<<"--- "<<i_hist_created<<"/"<<nof_histos_to_create<<endl;}
 
@@ -2080,6 +2079,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		//NOTE -- How to use GetListOfKeys when histos are in a directory ?
 		// if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<__LINE__<<" : "<<histo_name<<" : not found ! Continue !"<<endl; continue;}
+
 		h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
 		if(!h_tmp) continue;
 
@@ -2213,7 +2213,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					if(isData || (sample_list[isample].Contains("Fakes") && !syst_list[isyst].Contains("Fakes")) ) {continue;}
 					if(syst_list[isyst] == "") {continue;} //Already done
 
-					if(sample_list[isample] == "SingleTop" && syst_list[isyst].Contains("Q2") ) {continue;} //bug
+					if(sample_list[isample] == "SingleTop" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
 					if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
 
@@ -2348,7 +2348,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		latex2->SetTextSize(0.04);
 		latex2->SetTextAlign(31);
 		//------------------
-		float lumi = 12.9 * luminosity_rescale;
+		// float lumi = 12.9 * luminosity_rescale;
+		float lumi = 35.68 * luminosity_rescale; //CHANGED
 		TString lumi_ts = Convert_Number_To_TString(lumi);
 		lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 		latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -2440,13 +2441,22 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		mkdir("plots/inputVars",0777);
 		mkdir( ("plots/inputVars/"+region_name).Data(), 0777);
-		if(postfit) mkdir( ("plots/inputVars/"+region_name+"/postfit").Data(), 0777);
-		else mkdir(("plots/inputVars/"+region_name+"/prefit").Data(), 0777);
+		if(postfit)
+		{
+			mkdir( ("plots/inputVars/"+region_name+"/postfit").Data(), 0777);
+			mkdir( ("plots/inputVars/"+region_name+"/postfit/allchans").Data(), 0777);
+		}
+		else
+		{
+			mkdir(("plots/inputVars/"+region_name+"/prefit").Data(), 0777);
+			mkdir(("plots/inputVars/"+region_name+"/prefit/allchans").Data(), 0777);
+		}
 
 		//Image name
 		TString outputname = "plots/inputVars/"+ region_name + "/";
 		if(postfit) outputname+= "postfit/";
 		else outputname+= "prefit/";
+		if(channel == "" || allchannels) {outputname+= "allchans/";}
 		outputname+= total_var_list[ivar]+"_"+channel;
 		if(channel == "" || allchannels) {outputname+= "all";}
 		if(postfit) outputname+= "_postfit";
@@ -2687,7 +2697,8 @@ int theMVAtool::Plot_Templates(TString channel, TString template_name, bool allc
 	latex2->SetTextSize(0.04);
 	latex2->SetTextAlign(31);
 	//------------------
-	float lumi = 12.9 * luminosity_rescale;
+	// float lumi = 12.9 * luminosity_rescale;
+	float lumi = 35.68 * luminosity_rescale; //CHANGED
 	TString lumi_ts = Convert_Number_To_TString(lumi);
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -2999,7 +3010,8 @@ int theMVAtool::Plot_Templates_from_Combine(TString channel, TString template_na
 	latex2->SetTextSize(0.04);
 	latex2->SetTextAlign(31);
 	//------------------
-	float lumi = 12.9 * luminosity_rescale;
+	// float lumi = 12.9 * luminosity_rescale;
+	float lumi = 35.68 * luminosity_rescale; //CHANGED
 	TString lumi_ts = Convert_Number_To_TString(lumi);
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -3231,6 +3243,121 @@ int theMVAtool::Create_Fake_Templates_From_Fit(TString function, TString templat
 
 
 
+//-----------------------------------------------------------------------------------------
+//  ######   #######  ##    ## ##     ## ######## ########  ########    ######## ##     ## ######## ########    ###
+// ##    ## ##     ## ###   ## ##     ## ##       ##     ##    ##          ##    ##     ## ##          ##      ## ##
+// ##       ##     ## ####  ## ##     ## ##       ##     ##    ##          ##    ##     ## ##          ##     ##   ##
+// ##       ##     ## ## ## ## ##     ## ######   ########     ##          ##    ######### ######      ##    ##     ##
+// ##       ##     ## ##  ####  ##   ##  ##       ##   ##      ##          ##    ##     ## ##          ##    #########
+// ##    ## ##     ## ##   ###   ## ##   ##       ##    ##     ##          ##    ##     ## ##          ##    ##     ##
+//  ######   #######  ##    ##    ###    ######## ##     ##    ##          ##    ##     ## ########    ##    ##     ##
+//-----------------------------------------------------------------------------------------
+
+/**
+ * [Takes a Reader file from dir. 'outputs/'(containing templates with Combine namings) as input, and creates a file with the same templates but Theta namings]
+ */
+void theMVAtool::Convert_Templates_Theta()
+{
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	cout<<FYEL("--- Convert Templates for THETA ---")<<endl;
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+
+	TString template_name;
+	if(!isWZ && !isttZ) {template_name = "BDT";}
+	else if(isttZ) {template_name = "BDTttZ";}
+	else if(isWZ) {template_name = "mTW";}
+	else {cout<<"Error !"<<endl; return;}
+
+
+	TFile* f_input = 0; TFile* f_output = 0;
+	TString input_file_name = "outputs/Reader_" + template_name + this->filename_suffix + ".root"; //Input = original template (Combine namings)
+	f_input = TFile::Open( input_file_name ); if(!f_input) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+	TString output_file_name = "outputs/Reader_" + template_name + this->filename_suffix + "_THETA.root"; //Output = templates with THETA namings
+	f_output = TFile::Open( output_file_name, "RECREATE" );
+
+
+	TH1F* h_tmp = 0;
+
+	for(int ichan=0; ichan<channel_list.size(); ichan++)
+	{
+		for(int isample=0; isample<sample_list.size(); isample++)
+		{
+			for(int isyst=0; isyst<syst_list.size(); isyst++)
+			{
+				h_tmp = 0;
+
+				if(sample_list[isample].Contains("Data") && syst_list[isyst] != "" ) {continue;}
+				if(sample_list[isample].Contains("Fakes") && syst_list[isyst] != "" && !syst_list[isyst].Contains("Fake") ) {continue;}
+				if(sample_list[isample] == "SingleTop" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf")) ) {continue;}
+
+				TString histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
+				if(sample_list[isample].Contains("Data") ) {histo_name = template_name + "_" + channel_list[ichan] + "__data_obs";}
+				else if(sample_list[isample].Contains("Fakes") )
+				{
+					if(channel_list[ichan] == "uuu") {histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeMuMuMu";}
+					else if(channel_list[ichan] == "uue") {histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeMuMuEl";}
+					else if(channel_list[ichan] == "eeu") {histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeElElMu";}
+					else if(channel_list[ichan] == "eee") {histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeElElEl";}
+				}
+
+				if(syst_list[isyst] != "") {histo_name+= "__" + syst_list[isyst];}
+				if(!f_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+
+				h_tmp = (TH1F*) f_input->Get(histo_name.Data());
+
+				TString output_histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
+				if(sample_list[isample].Contains("Data") ) {output_histo_name = template_name + "_" + channel_list[ichan] + "__DATA";}
+				else if(sample_list[isample].Contains("Fakes") )
+				{
+					if(channel_list[ichan] == "uuu") {output_histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeMuMuMu";}
+					else if(channel_list[ichan] == "uue") {output_histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeMuMuEl";}
+					else if(channel_list[ichan] == "eeu") {output_histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeElElMu";}
+					else if(channel_list[ichan] == "eee") {output_histo_name = template_name + "_" + channel_list[ichan] + "__" + "FakeElElEl";}
+				}
+
+				if(syst_list[isyst] != "" && !syst_list[isyst].Contains("__") ) //If the systematic follows Combine naming convention
+				{
+					TString systname_tmp = syst_list[isyst]; //Copy systematic name & modify it for Theta
+					if(systname_tmp.Contains("Up"))
+					{
+						int i = systname_tmp.Index("Up"); //Find index of substring
+						systname_tmp.Remove(i); //Remove substring
+						systname_tmp+= "__plus"; //Add Theta syst. suffix
+					}
+					else if(systname_tmp.Contains("Down"))
+					{
+						int i = systname_tmp.Index("Down"); //Find index of substring
+						systname_tmp.Remove(i); //Remove substring
+						systname_tmp+= "__minus"; //Add Theta syst. suffix
+					}
+
+					output_histo_name+= "__" + systname_tmp;
+				}
+
+				f_output->cd();
+				h_tmp->Write(output_histo_name.Data());
+			}
+		}
+	}
+
+	delete h_tmp; f_input->Close(); f_output->Close();
+
+	return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3315,6 +3442,7 @@ int theMVAtool::Create_Fake_Templates_From_Fit(TString function, TString templat
  * @param  channel     [Channel name (for single channel plots)]
  * @param  allchannels [single or sum of 4 channels]
  */
+/*
 void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channel, bool allchannels)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
@@ -3350,7 +3478,10 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 	//3 main samples we want to check
 	vector<TString> samples;
 	samples.push_back("tZq");
-	samples.push_back("WZjets");
+	// samples.push_back("WZjets"); //CHANGED
+	samples.push_back("WZl");
+	samples.push_back("WZb");
+	samples.push_back("WZc");
 	samples.push_back("ttZ");
 
 	//Load Canvas definition
@@ -3469,3 +3600,4 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 
 	return;
 }
+*/

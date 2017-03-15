@@ -5,46 +5,71 @@
 - A few remarks on Combine / datacards at the end of this README
 
 -----------------------------------
-*** INSTALLATION
+#### ##    ##  ######  ########    ###    ##       ##          ###    ######## ####  #######  ##    ##
+ ##  ###   ## ##    ##    ##      ## ##   ##       ##         ## ##      ##     ##  ##     ## ###   ##
+ ##  ####  ## ##          ##     ##   ##  ##       ##        ##   ##     ##     ##  ##     ## ####  ##
+ ##  ## ## ##  ######     ##    ##     ## ##       ##       ##     ##    ##     ##  ##     ## ## ## ##
+ ##  ##  ####       ##    ##    ######### ##       ##       #########    ##     ##  ##     ## ##  ####
+ ##  ##   ### ##    ##    ##    ##     ## ##       ##       ##     ##    ##     ##  ##     ## ##   ###
+#### ##    ##  ######     ##    ##     ## ######## ######## ##     ##    ##    ####  #######  ##    ##
 
 - Follow instructions here (HiggsAnalysis + CombineHarvester):
 http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 
 
+
 -----------------------------------
-*** SETUP
+ ######  ######## ######## ##     ## ########
+##    ## ##          ##    ##     ## ##     ##
+##       ##          ##    ##     ## ##     ##
+ ######  ######      ##    ##     ## ########
+      ## ##          ##    ##     ## ##
+##    ## ##          ##    ##     ## ##
+ ######  ########    ##     #######  ##
 
 1) Once you have installed both HiggsAnalysis & CombineHarvester, move to where you want to put the Combine codes (NB : it must be in a subdir. of CMSSW_7_4_7/src (e.g. CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis/)
 
-2) Copy the necessary codes & files from GitHub (https://github.com/nicolastonon/tZq-TMVA-code). You can either clone the entire repository (containing TMVA code, COMBINE folder, + a few codes which are not needed) ; or, if you just want to get the COMBINE directory (e.g. because you already have the TMVA code in some other location), perform a 'sparse checkout' to download only this dir. :
+2) Copy the necessary codes & files from GitHub (https://github.com/nicolastonon/tZq-TMVA-code).
+/!\ You can either clone the entire repository (containing TMVA code, COMBINE folder, + a few codes which are not needed) ; or, if you just want to get the COMBINE directory (e.g. because you already have the TMVA code in some other location), perform a 'sparse checkout' to download only this dir. :
 # git init .
 # git remote add -f origin https://github.com/nicolastonon/tZq-TMVA-code
 # git config core.sparseCheckout true
 # echo "COMBINE/" >> .git/info/sparse-checkout
 # git pull origin master
 
-- /!\ NB : The 'templates' dir. should contain a file name 'Combine_Input_ScaledFakes.root', for which Combine is going to look for. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file. (read the other README.txt to know how to create the templates)
+- /!\ NB : The 'templates' dir. must contain a file named 'Combine_Input_ScaledFakes.root', to which the datacards are pointing to. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file. (read the other README.txt to know how to create the templates)
 
 
 3) Move to 'datacards' dir. This directory contains codes for generating/combining all needed datacards. It is from here that we will run the Combine commands.
 
 
 4) In 'Create_Script_Datacard_Generation.cc' :
-- Choose mode b/w 'Template_Datacard_allSyst.txt' & 'Template_Datacard_noSyst.txt', depending on whether you want to include systematics or not in the fit ;
-- In the main(), call the appropriate function, depending on whether you want to generate datacards for the Template Fit, or to obtain postfit distributions of the BDT variables.
+- This code generates the scripts to create datacards both for template fit & to obtain postfit distributions of all input variables.
+- In the code, you can change the path of the histogram file the datacards will point to.
+- Make sure the variable list is up-to-date.
 - Compile code & execute it :
 # g++ Create_Script_Datacard_Generation.cc -o Create_Script_Datacard_Generation.exe `root-config --cflags --glibs`
 
 
-5) The created script 'Create_Script_Datacard_Generation.exe' automatically generates the appropriate datacards (can be modified in Create_Script_Datacard_Generation.cc) & combines them into 'COMBINED_datacard_suffix' :
+5) The created script 'Create_Script_Datacard_Generation.exe' automatically generates the appropriate datacards & combines them into 'COMBINED_datacard_suffix' :
 # ./Create_Script_Datacard_Generation.exe
 
-- NB : can also use directly the 'Generate_Datacards.py' script to generate manually the datacard you want, with this syntax :
-# python generateDatacards.py CHANNEL VARIABLE FILE_CONTAINING_HISTOS
+6) The 2 created scripts 'Generate... .sh' generate combined datacards either for the template it or to get postfit distributions of input vars :
+# ./Generate... .exe
 
+
+- NB : could also use directly the 'Generate_Datacards.py' script to generate manually the single datacard you want, with this syntax :
+# python generateDatacards.py CHANNEL VARIABLE FILE_CONTAINING_HISTOS
+((the 'Generate... .sh' executables run this script for all channels & variables !))
 
 -----------------------------------
-*** COMMANDS
+ ######   #######  ##     ## ##     ##    ###    ##    ## ########   ######
+##    ## ##     ## ###   ### ###   ###   ## ##   ###   ## ##     ## ##    ##
+##       ##     ## #### #### #### ####  ##   ##  ####  ## ##     ## ##
+##       ##     ## ## ### ## ## ### ## ##     ## ## ## ## ##     ##  ######
+##       ##     ## ##     ## ##     ## ######### ##  #### ##     ##       ##
+##    ## ##     ## ##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
+ ######   #######  ##     ## ##     ## ##     ## ##    ## ########   ######
 
 
 5) Compute the a-priori expected significance w/ a Profile Likelihood :
@@ -74,13 +99,23 @@ NB : need to create outputs dir. first to avoid segfault ;
 
 
 -----------------------------------
-*** COMBINE HARVESTER
+ ######   #######  ##     ## ########         ##     ##    ###    ########  ##     ## ########  ######  ######## ######## ########
+##    ## ##     ## ###   ### ##     ##        ##     ##   ## ##   ##     ## ##     ## ##       ##    ##    ##    ##       ##     ##
+##       ##     ## #### #### ##     ##        ##     ##  ##   ##  ##     ## ##     ## ##       ##          ##    ##       ##     ##
+##       ##     ## ## ### ## ########         ######### ##     ## ########  ##     ## ######    ######     ##    ######   ########
+##       ##     ## ##     ## ##     ##        ##     ## ######### ##   ##    ##   ##  ##             ##    ##    ##       ##   ##
+##    ## ##     ## ##     ## ##     ## ###    ##     ## ##     ## ##    ##    ## ##   ##       ##    ##    ##    ##       ##    ##
+ ######   #######  ##     ## ########  ###    ##     ## ##     ## ##     ##    ###    ########  ######     ##    ######## ##     ##
+
+
 (Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit). )
 
 - AddBinbyBin.py : Add bin by bin statistical MC error to histograms. It uses 'COMBINED_datacard.txt' to  create new datacards taking these errors into account, and also a rootfile :
 # python addBinbyBin
+(BUG for now ?)
 
--
+-To produce the postfit histograms for any input variables, we need the file 'mlfit.root' produced by the Maximum Likelihood Fit, a datacard 'COMBINED_datacard_TemplateFit' created via the previous script 'Generate... .sh', and a file containing all the prefit templates of these input variables (just like the files produced via the function 'Create_Control_Histograms') !
+NOTE : you need to specify yourself the name of the template fit in 'Create_Script_Datacard_Generation.cc' (+ compile/execute it, then execute the created script --> Final datacard with correct file name)
 # PostFitShapes -d COMBINED_datacard_TemplateFit.txt -o PostfitInputVars.root -f outputs/mlfit.root:fit_s --postfit --sampling --print
 
 

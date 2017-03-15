@@ -91,7 +91,8 @@ class theMVAtool
 	int Plot_Templates_from_Combine(TString, TString, bool = false); //Plot postfit templates from Combine output
 	int Fit_Fake_Templates(TString, TString); //Fit the fake templates
 	int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
-	void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
+	void Convert_Templates_Theta();
+	// void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members
 	TMVA::Reader *reader;

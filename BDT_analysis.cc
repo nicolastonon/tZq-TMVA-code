@@ -26,14 +26,19 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_scan = false;
 
-    double set_luminosity = 12.9; //Used to re-scale every weights in the code by a lumi factor (in fb-1)
+
+    //Used to re-scale every weights in the code by a lumi factor (in fb-1) //NOTE -- W.R.T. MORIOND 2017 LUMI !!
+    // double set_luminosity = 12.9; //Summer 2016
+    double set_luminosity = 35.68; //Moriond 2017
+
+
     //Use MC fakes or data-driven fakes)
     bool fakes_from_data = true;
     //Templates
     int nofbin_templates = 10; //NOTE : to be optimized --- Binning to be used for *template* production
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.!
     bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
-    bool use_ttZMad_training = true; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
+    bool use_ttZMad_training = false; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
 
     TString format = ".png"; //.png or .pdf only
 
@@ -104,8 +109,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
         set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(true); //NB : cst -> not actually used in BDT
 
-        set_v_cut_name.push_back("mTW");        set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
-        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
+        // set_v_cut_name.push_back("mTW");        set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
     if(isWZ) //WZ CR Region : NJets > 0 && NBJets == 0
     {
@@ -117,8 +122,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
         set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
 
-        set_v_cut_name.push_back("mTW");       set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
-        set_v_cut_name.push_back("METpt");     set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
+        // set_v_cut_name.push_back("mTW");       set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
+        // set_v_cut_name.push_back("METpt");     set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
 //---------------------
 
@@ -160,7 +165,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
     //
     // //BKG
-    thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
+    // thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
+    thesamplelist.push_back("WZl");          v_color.push_back(920); //grey
+    thesamplelist.push_back("WZb");          v_color.push_back(921); //grey
+    thesamplelist.push_back("WZc");          v_color.push_back(922); //grey
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed);
@@ -293,7 +301,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : not tested yet !!
 
     vector<TString> v_add_var_names;
-    v_add_var_names.push_back("mTW");
+    v_add_var_names.push_back("mTW"); //FIXME -- bug CR plotting
     v_add_var_names.push_back("METpt");
 
 
@@ -307,65 +315,59 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##    ##    ##    ##    ##    ##    ##       ##     ## ##     ##    ##     ##  ##    ## ##    ##
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
-//
+
+//----------------
+//-- CHOOSE IF YOU WANT COMBINE/THETA/NO SYSTEMATICS !
     //0 = no syst, 1 = theta, 2 = combine !
-    int i_systematics_choice = 2;
+    int i_systematics_choice = 0;
+
+    //--- General names of systematics
+    vector<TString> systematics_names_tmp;
+    //--- Affect the variable distributions
+    systematics_names_tmp.push_back("JER");
+    systematics_names_tmp.push_back("JES");
+    // systematics_names_tmp.push_back("Fakes");
+
+    //--- Affect the event weight
+    systematics_names_tmp.push_back("Q2");
+    systematics_names_tmp.push_back("pdf");
+    systematics_names_tmp.push_back("PU");
+    systematics_names_tmp.push_back("MuEff");
+    systematics_names_tmp.push_back("EleEff");
+    systematics_names_tmp.push_back("LFcont");
+    systematics_names_tmp.push_back("HFstats1");
+    systematics_names_tmp.push_back("HFstats2");
+    systematics_names_tmp.push_back("CFerr1");
+    systematics_names_tmp.push_back("CFerr2");
+    systematics_names_tmp.push_back("HFcont");
+    systematics_names_tmp.push_back("LFstats1");
+    systematics_names_tmp.push_back("LFstats2");
+//----------------
+
+//--- AUTOMATIZED, don't change here
+    //Actual vector of systematic names we will use (NOTE : naming depends on framework to be used for template fit)
     thesystlist.push_back(""); //Nominal -- KEEP this line
 
-
-//THETA NAMES -- USE IT ONLY TO WORK DIRECTLY ON MARA'S NTUPLE
-// --> Can't use systs in Combine !!
-//-------------------
-    if(i_systematics_choice==1)
+    if(i_systematics_choice == 1)
     {
-        //Affect the variable distributions
-        thesystlist.push_back("JER__plus"); thesystlist.push_back("JER__minus");
-        thesystlist.push_back("JES__plus"); thesystlist.push_back("JES__minus");
-        // thesystlist.push_back("Fakes__plus"); thesystlist.push_back("Fakes__minus");
-
-        //Affect the event weight
-        thesystlist.push_back("Q2__plus"); thesystlist.push_back("Q2__minus");
-        thesystlist.push_back("pdf__plus"); thesystlist.push_back("pdf__minus");
-        thesystlist.push_back("PU__plus"); thesystlist.push_back("PU__minus");
-        thesystlist.push_back("MuEff__plus"); thesystlist.push_back("MuEff__minus");
-        thesystlist.push_back("EleEff__plus"); thesystlist.push_back("EleEff__minus");
-        thesystlist.push_back("LFcont__plus"); thesystlist.push_back("LFcont__minus");
-        thesystlist.push_back("HFstats1__plus"); thesystlist.push_back("HFstats1__minus");
-        thesystlist.push_back("HFstats2__plus"); thesystlist.push_back("HFstats2__minus");
-        thesystlist.push_back("CFerr1__plus"); thesystlist.push_back("CFerr1__minus");
-        thesystlist.push_back("CFerr2__plus"); thesystlist.push_back("CFerr2__minus");
-        thesystlist.push_back("HFcont__plus"); thesystlist.push_back("HFcont__minus");
-        thesystlist.push_back("LFstats1__plus"); thesystlist.push_back("LFstats1__minus");
-        thesystlist.push_back("LFstats2__plus"); thesystlist.push_back("LFstats2__minus");
+        for(int isyst=0; isyst<systematics_names_tmp.size(); isyst++)
+        {
+            thesystlist.push_back( systematics_names_tmp[isyst] + "__plus" );
+            thesystlist.push_back( systematics_names_tmp[isyst] + "__minus" );
+        }
     }
-
-
-//COMBINE NAMES -- USE THIS TO WORK ON INTERFACED NTUPLES (FOR MEM, ...)
-//-------------------
-    else if(i_systematics_choice==2)
+    else if(i_systematics_choice == 2)
     {
-        //Affect the variable distributions -- NOTE : not available yet
-        thesystlist.push_back("JERUp"); thesystlist.push_back("JERDown");
-        thesystlist.push_back("JESUp"); thesystlist.push_back("JESDown");
-        // thesystlist.push_back("FakesUp"); thesystlist.push_back("FakesDown");
-
-        //Affect the event weight
-        thesystlist.push_back("Q2Up"); thesystlist.push_back("Q2Down");
-        thesystlist.push_back("pdfUp"); thesystlist.push_back("pdfDown");
-        thesystlist.push_back("PUUp"); thesystlist.push_back("PUDown");
-        thesystlist.push_back("MuEffUp"); thesystlist.push_back("MuEffDown");
-        thesystlist.push_back("EleEffUp"); thesystlist.push_back("EleEffDown");
-        thesystlist.push_back("LFcontUp"); thesystlist.push_back("LFcontDown");
-        thesystlist.push_back("HFstats1Up"); thesystlist.push_back("HFstats1Down");
-        thesystlist.push_back("HFstats2Up"); thesystlist.push_back("HFstats2Down");
-        thesystlist.push_back("CFerr1Up"); thesystlist.push_back("CFerr1Down");
-        thesystlist.push_back("CFerr2Up"); thesystlist.push_back("CFerr2Down");
-        thesystlist.push_back("HFcontUp"); thesystlist.push_back("HFcontDown");
-        thesystlist.push_back("LFstats1Up"); thesystlist.push_back("LFstats1Down");
-        thesystlist.push_back("LFstats2Up"); thesystlist.push_back("LFstats2Down");
+        for(int isyst=0; isyst<systematics_names_tmp.size(); isyst++)
+        {
+            thesystlist.push_back( systematics_names_tmp[isyst] + "Up" );
+            thesystlist.push_back( systematics_names_tmp[isyst] + "Down" );
+        }
     }
-//-------------------
     else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 1;}
+
+
+
 
 
 
@@ -382,7 +384,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##        #######  ##    ##  ######     ##    ####  #######  ##    ##        ######  ##     ## ######## ########  ######
 //---------------------------------------------------------------------------
 
-    //(NOTE : Train_Test_Evaluate, Read, and Create_Control_Trees all need to be run on the full variable list)
 
     if(!do_optimization_scan)
     {
@@ -395,34 +396,30 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
+
+        TString template_name = "BDT"; //BDT in Signal Region
+        if(isttZ)  template_name = "BDTttZ"; //BDT in ttZ Control region
+        if(isWZ)   template_name = "mTW"; //Template for WZ Control region
+
+
         //#############################################
         // TRAINING
         //#############################################
         for(int i=0; i<thechannellist.size(); i++)
         {
-            //'BDT' or 'BDTttZ' depending on the region (for theta disambiguation)
-            TString bdt_type = "BDT";
-            if(isttZ) bdt_type = "BDTttZ";
 
             if(!isWZ)
             {
-                // MVAtool->Train_Test_Evaluate(thechannellist[i], bdt_type, use_ttZMad_training);
+                // MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZMad_training);
             }
         }
 
         //#############################################
-        //  READING --- TEMPLATES CREATION
+        //  TEMPLATES CREATION
         //#############################################
-        TString template_name = "BDT"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
-        if(isWZ)   template_name = "mTW";
-        if(isttZ)  template_name = "BDTttZ";
 
-        MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
+        // MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
 
-        // if(!real_data_templates) {MVAtool->Generate_PseudoData_Templates(template_name);} //NOTE : GENERATE PSEUDODATA ON Combine_Input_ScaledFakes.root (fakes already re-scaled)
-
-        //Fit templates to fill empty bins ('gaus' or 'landau')
-        //TString function = "gaus"; MVAtool->Fit_Fake_Templates(function, "BDT"); MVAtool->Create_Fake_Templates_From_Fit(function, "BDT");
 
         //#############################################
         //  CONTROL TREES & HISTOGRAMS
@@ -434,49 +431,51 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
 
         // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
+        //
+        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./vars !
 
-        // MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./var. !
-
-        // if(use_pseudodata_CR_plots) {MVAtool->Generate_PseudoData_Histograms_For_Control_Plots(fakes_from_data);}
 
         //#############################################
         //  DRAW PLOTS
         //#############################################
-        bool draw_plots = false; //Draw Control & Template plots
+        bool draw_input_vars = true;
+        bool draw_templates = false;
+
         bool postfit = false; //Decide if want prefit OR combine postfit plots of input vars (NB : different files)
 
-        if(draw_plots)
+//--------------- Automatized from booleans
+        for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
         {
-            for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
+            if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
+            if(draw_templates)
             {
-                MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
-
-                // if(!postfit) MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
-                // else MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
-
-                // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
+                if(!postfit) MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
+                else MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
             }
-
-            // --- ALL CHANNELS
-
-            MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
-
-            // if(!postfit) MVAtool->Plot_Templates("", template_name, true); //Plot the prefit templates
-            // else MVAtool->Plot_Templates_from_Combine("", template_name, true); //Postfit templates from Combine file
-
-            // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
+            // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
         }
+
+        // --- ALL CHANNELS
+
+        if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
+        if(draw_templates)
+        {
+            if(!postfit) MVAtool->Plot_Templates("all", template_name, true); //Plot the prefit templates
+            else MVAtool->Plot_Templates_from_Combine("all", template_name, true); //Postfit templates from Combine file
+        }
+        // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
+//-----------------
+
+
+        //#############################################
+        //  Convert Templates names for Theta
+        //#############################################
+
+        // MVAtool->Convert_Templates_Theta();
+
+
+        MVAtool->~theMVAtool(); //Delete object
     }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -527,189 +526,90 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  SET THE CUT DEFINITIONS ON WHICH YOU WANT TO LOOP
         //#############################################
 
-//For scan -- NOTE : different values for each region
-        //vector<TString> v_NJets_cut_values;
-        //vector<TString> v_NBJets_cut_values;
+        //For scan -- NOTE : different values for each region
 
-        vector<TString> v_METpt_cut_values;
-        v_METpt_cut_values.push_back(">10");
+        TString cut1_name = "METpt";
+        vector<TString> v_cut1_values;
+        v_cut1_values.push_back(">0");
+        v_cut1_values.push_back(">10");
 
-        vector<TString> v_mTW_cut_values;
-        v_mTW_cut_values.push_back(">10");
+        TString cut2_name = "mTW";
+        vector<TString> v_cut2_values;
+        v_cut2_values.push_back(">0");
+        v_cut2_values.push_back(">10");
 
-        vector<TString> v_isoMu_cut_values;
-        v_isoMu_cut_values.push_back("<0.075");
-        /*v_isoMu_cut_values.push_back("<0.125");
-        v_isoMu_cut_values.push_back("<0.100");
-        v_isoMu_cut_values.push_back("<0.075");
-        v_isoMu_cut_values.push_back("<0.050");
-        v_isoMu_cut_values.push_back("<0.025"); */
-
-        vector<TString> v_isoEl_cut_values;
-        v_isoEl_cut_values.push_back("");
-        /*v_isoEl_cut_values.push_back("<0.040");
-        v_isoEl_cut_values.push_back("<0.035");
-        v_isoEl_cut_values.push_back("<0.030");
-        v_isoEl_cut_values.push_back("<0.025");
-        v_isoEl_cut_values.push_back("<0.020");
-        v_isoEl_cut_values.push_back("<0.015");
-        v_isoEl_cut_values.push_back("<0.010");*/
 
         //#############################################
         //  LOOP ON THE 2 CUT VECTORS YOU WANT TO SCAN
         //#############################################
 
-//-- BE CAREFUL HERE !! CALL RELEVANT FUNCTIONS ONLY, AND MAKE SURE THE LOOP ITERATORS ARE ASSOCIATED TO THE CORRECT VECTORS !
-//------------------------------
-
         //SCAN LOOP
-        //NOTE : there should only be 2 scanned variables (2 loops) -- all the other cuts should be specified explicitely for each region
-        for(int h = 0; h < v_METpt_cut_values.size(); h++)
+        for(int icut1 = 0; icut1 < v_cut1_values.size(); icut1++)
         {
-	    for(int i = 0; i < v_mTW_cut_values.size(); i++)
-	    {
-	    for(int j = 0; j < v_isoMu_cut_values.size(); j++)
-		{
-		for(int k=0; k < v_isoEl_cut_values.size(); k++)
-		{
+    	    for(int icut2 = 0; icut2 < v_cut2_values.size(); icut2++)
+    	    {
+                //--- Add the default cuts which don't depend on the loop : regions definitions, etc. (defined at top of code)
+                vector<TString> set_v_cut_name_optim, set_v_cut_def_optim; vector<bool> set_v_cut_IsUsedForBDT_optim;
+                for(int icut=0; icut<set_v_cut_name.size(); icut++)
+                {
+                    set_v_cut_name_optim.push_back(set_v_cut_name[icut]);
+                    set_v_cut_def_optim.push_back(set_v_cut_def[icut]);
+                    set_v_cut_IsUsedForBDT_optim.push_back(set_v_cut_IsUsedForBDT[icut]);
+                }
 
-            //#############################################
-            //               WZ CR Templates
-            //#############################################
-            //Use scope delimiters so that I can re-use the exact same vectors names for each region (different scopes)
-		    {
-    			std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
-    			scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">0");     scan_v_cut_IsUsedForBDT.push_back(true);
-    			scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back("==0");    scan_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant be used in BDT
+                //--- Add the temporary cuts defined by the loop
+                //Cut 1
+                set_v_cut_name_optim.push_back(cut1_name);
+                set_v_cut_def_optim.push_back(v_cut1_values[icut1]);
+                set_v_cut_IsUsedForBDT_optim.push_back(false);
+                //Cut 2
+                set_v_cut_name_optim.push_back(cut2_name);
+                set_v_cut_def_optim.push_back(v_cut2_values[icut2]);
+                set_v_cut_IsUsedForBDT_optim.push_back(false);
 
 
-    			scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			//scan_v_cut_def.push_back(v_METpt_cut_values[h]);
-    			scan_v_cut_def.push_back("");
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+                std::vector<TString > thevarlist_tmp;
+                if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
+                else       thevarlist_tmp = thevarlist;
+                theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name_optim, set_v_cut_def_optim, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
 
-    			scan_v_cut_name.push_back("mTW"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			//scan_v_cut_def.push_back(v_mTW_cut_values[i]);
-    			scan_v_cut_def.push_back("");
 
-    			scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
+                TString template_name = "BDT"; //BDT in Signal Region
+                if(isttZ)  template_name = "BDTttZ"; //BDT in ttZ Control region
+                if(isWZ)   template_name = "mTW"; //Template for WZ Control region
 
-    			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
 
-    			theMVAtool* MVAtool_WZ = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, false, true, format); if(MVAtool_WZ->stop_program) {return 1;}
-    			MVAtool_WZ->Set_Luminosity(set_luminosity);
 
-    			TString template_name_WZ = "mTW"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
-    			MVAtool_WZ->Read(template_name_WZ, fakes_from_data, real_data_templates, fakes_summed_channels);
-    			if(!real_data_templates) {MVAtool_WZ->Generate_PseudoData_Templates(template_name_WZ);}
+                //#############################################
+                // TRAINING
+                //#############################################
+                for(int i=0; i<thechannellist.size(); i++)
+                {
 
-    			/** mmm
-    			   for(int i=0; i<thechannellist.size(); i++)
-    			   {
-    			   //MVAtool_WZ->Plot_Templates(thechannellist[i], template_name_WZ); //Plot the BDT distributions of MC & pseudo-data templates
-    			   }
-    			**/
+                    if(!isWZ)
+                    {
+                        // MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZMad_training);
+                    }
+                }
 
-    			MVAtool_WZ->~theMVAtool();
-		    }
+                //#############################################
+                //  READING --- TEMPLATES CREATION
+                //#############################################
 
-            //#############################################
-            //               ttZ CR Templates
-            //#############################################
-            {
-    			std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
-    			scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1"); scan_v_cut_IsUsedForBDT.push_back(true);
-    			scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back(">1");     scan_v_cut_IsUsedForBDT.push_back(true);
+                MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels);
 
-    			scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_METpt_cut_values[h]);
-    			//scan_v_cut_def.push_back("");
 
-    			scan_v_cut_name.push_back("mTW"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_mTW_cut_values[i]);
-    			//scan_v_cut_def.push_back("");
 
-    			scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
 
-    			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
-
-    			theMVAtool* MVAtool_ttZ = new theMVAtool(thevarlist_ttZ, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, true, false, format); if(MVAtool_ttZ->stop_program) {return 1;}
-    			MVAtool_ttZ->Set_Luminosity(set_luminosity);
-
-                TString bdt_type_ttZ = "BDTttZ"; //'BDT' or 'BDTttZ'
-    			for(int i=0; i<thechannellist.size(); i++)
-    			  {
-    			    MVAtool_ttZ->Train_Test_Evaluate(thechannellist[i], bdt_type_ttZ, use_ttZMad_training);
-    			  }
-
-    			TString template_name_ttZ = "BDTttZ"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
-    			MVAtool_ttZ->Read(template_name_ttZ, fakes_from_data, real_data_templates, fakes_summed_channels);
-    			if(!real_data_templates) {MVAtool_ttZ->Generate_PseudoData_Templates(template_name_ttZ);}
-
-    			/**
-    			   for(int i=0; i<thechannellist.size(); i++)
-    			   {
-    			   //MVAtool_ttZ->Plot_Templates(thechannellist[i], template_name_ttZ); //Plot the BDT distributions of MC & pseudo-data templates
-    			   }
-    			**/
-    			MVAtool_ttZ->~theMVAtool();
-		    }
-
-            //#############################################
-            //               tZq SR Templates
-            //#############################################
-            {
-    			std::vector<TString > scan_v_cut_name; std::vector<TString > scan_v_cut_def; std::vector<bool > scan_v_cut_IsUsedForBDT;
-    			scan_v_cut_name.push_back("NJets");     scan_v_cut_def.push_back(">1 && <4");     scan_v_cut_IsUsedForBDT.push_back(true);
-    			scan_v_cut_name.push_back("NBJets");    scan_v_cut_def.push_back("==1");    scan_v_cut_IsUsedForBDT.push_back(false); //Constant -> cant be used in BDT
-
-    			scan_v_cut_name.push_back("METpt"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_METpt_cut_values[h]);
-    			//scan_v_cut_def.push_back("");
-
-    			scan_v_cut_name.push_back("mTW"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_mTW_cut_values[i]);
-    			//scan_v_cut_def.push_back("");
-
-    			scan_v_cut_name.push_back("AdditionalMuonIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			scan_v_cut_def.push_back(v_isoMu_cut_values[j]);
-
-    			//scan_v_cut_name.push_back("AdditionalEleIso"); scan_v_cut_IsUsedForBDT.push_back(false);
-    			//scan_v_cut_def.push_back(v_isoEl_cut_values[k]);
-
-    			theMVAtool* MVAtool_tZq = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, scan_v_cut_name, scan_v_cut_def, scan_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, false, false, format); if(MVAtool_tZq->stop_program) {return 1;}
-    			MVAtool_tZq->Set_Luminosity(set_luminosity);
-
-                TString bdt_type_tZq = "BDT"; //'BDT' or 'BDTttZ'
-    			for(int i=0; i<thechannellist.size(); i++)
-    			  {
-    			    MVAtool_tZq->Train_Test_Evaluate(thechannellist[i], bdt_type_tZq, use_ttZMad_training);
-    			  }
-
-    			TString template_name_tZq = "BDT"; //Either 'BDT', 'BDTttZ', 'mTW' or 'm3l'
-    			MVAtool_tZq->Read(template_name_tZq, fakes_from_data, real_data_templates, fakes_summed_channels);
-    			if(!real_data_templates) {MVAtool_tZq->Generate_PseudoData_Templates(template_name_tZq);}
-
-    			/**  mmm
-    			   for(int i=0; i<thechannellist.size(); i++)
-    			   {
-    			   //MVAtool_tZq->Plot_Templates(thechannellist[i], template_name_tZq); //Plot the BDT distributions of MC & pseudo-data templates
-    			   }
-    			**/
-
-    			MVAtool_tZq->~theMVAtool();
-            }
-
-        } //end second scanned variable loop
+                MVAtool->~theMVAtool(); //Delete object
+            } //end second scanned variable loop
         } //end first scanned variable loop
-        }
-        }
+
     } //End optimization Scan
-
-
 
 
   return 0;

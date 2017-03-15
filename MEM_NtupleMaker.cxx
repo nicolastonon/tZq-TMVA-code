@@ -356,8 +356,8 @@ void MEM_NtupleMaker::SelectBjets(std::vector<ciemat::Jet>* vSelectedJets, std::
     Float_t btag_max=-9999, btag_max2=-9999;
     for (int ib=0; ib<vSelectedJets->size(); ib++)
     {
-      if (doSelectOnlyBjets && vSelectedJets->at(ib).btagCSV<0.5426 ) continue; //Mara doesn't ask for eta <2.4!
-      // if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV<0.5426 || fabs(vSelectedJets->at(ib).eta) > 2.4) ) {continue;} //FIXME -- make sure bjet def is correct
+      // if (doSelectOnlyBjets && vSelectedJets->at(ib).btagCSV<0.5426 ) continue; //Mara doesn't ask for eta <2.4!
+      if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV<0.5426 || fabs(vSelectedJets->at(ib).eta) > 2.4) ) {continue;} //FIXME -- make sure bjet def is correct
 
       if (vSelectedJets->at(ib).btagCSV>btag_max)
       {
@@ -682,10 +682,6 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
     int nentries = t_MEM_input->GetEntries();
 
-    cout<<"t MEM : "<<nentries<<endl;
-    cout<<"t vars : "<<t_vars_input->GetEntries()<<endl;
-
-
     if(t_vars_input->GetEntries() != nentries) {cout<<"ERROR : different nof events in trees -- Abort"<<endl; return;}
 
     for(int ientry=0; ientry<nentries; ientry++)
@@ -712,8 +708,8 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       int NBJets_tmp = 0; //NB : NJets contains both btag and non-btag
       for(int i=0; i<vSelectedJets->size(); i++)
       {
-        // if( fabs(vSelectedJets->at(i).eta) <= 2.4 && vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;}
-        if( vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //Mara doesn't cut on eta
+        if( fabs(vSelectedJets->at(i).eta) <= 2.4 && vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //FIXME updated def
+        // if( vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //No cut on eta
       }
 
       if(NJets_tmp != NJets || NBJets_tmp != NBJets)
@@ -894,17 +890,20 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  // v_samplenames.push_back("tZq");
-  // v_samplenames.push_back("ttZ");
-  // v_samplenames.push_back("ttZMad");
-  // v_samplenames.push_back("WZjets");
-  // v_samplenames.push_back("ZZ");
-  // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("ttH");
-  // v_samplenames.push_back("ttW");
+  v_samplenames.push_back("tZq");
+  v_samplenames.push_back("ttZ");
+  v_samplenames.push_back("ttZMad");
+  v_samplenames.push_back("WZl");
+  v_samplenames.push_back("WZb");
+  v_samplenames.push_back("WZc");
+  v_samplenames.push_back("ZZ");
+  v_samplenames.push_back("Data");
+  v_samplenames.push_back("ttH");
+  v_samplenames.push_back("ttW");
   v_samplenames.push_back("Fakes");
   v_samplenames.push_back("STtWll"); //Renamed to SingleTop in the code
 
+  // v_samplenames.push_back("WZjets");
   // v_samplenames.push_back("SingleTop");
   // v_samplenames.push_back("");
 
@@ -941,7 +940,43 @@ int main()
   BDTvar_list.push_back("TopPT");
   BDTvar_list.push_back("m3l");
 
+  //--- New vars
   BDTvar_list.push_back("METpt");
+  BDTvar_list.push_back("MAddLepB");
+  BDTvar_list.push_back("LeadJetPT");
+  BDTvar_list.push_back("dPhiZMET");
+  BDTvar_list.push_back("dPhiZTop");
+  BDTvar_list.push_back("dPhiAddLepQ");
+  BDTvar_list.push_back("TopEta");
+  BDTvar_list.push_back("tZq_mass");
+  BDTvar_list.push_back("tq_mass");
+  BDTvar_list.push_back("tq_pT");
+  BDTvar_list.push_back("tq_eta");
+  BDTvar_list.push_back("AdditionalMuonIso");
+  BDTvar_list.push_back("AdditionalEleIso");
+  BDTvar_list.push_back("FCNCTopMass");
+  BDTvar_list.push_back("CJetPT");
+  BDTvar_list.push_back("dRZCJet");
+  BDTvar_list.push_back("dRlWCJet");
+  BDTvar_list.push_back("dRSMtopFCNCTop");
+  BDTvar_list.push_back("dR_ZBJet");
+  BDTvar_list.push_back("dPhi_ZCJet");
+  BDTvar_list.push_back("dPhi_AddLepCJet");
+  BDTvar_list.push_back("dPhi_SMtopFCNCTop");
+  BDTvar_list.push_back("dPhi_ZBJet");
+  BDTvar_list.push_back("LeadElePT");
+  BDTvar_list.push_back("leadMuPT");
+  BDTvar_list.push_back("NMediumBjets");
+  BDTvar_list.push_back("LeadingJetCSV");
+  BDTvar_list.push_back("SecondJetCSV");
+  BDTvar_list.push_back("leadingLeptonPT");
+  BDTvar_list.push_back("leadingLeptonEta");
+  BDTvar_list.push_back("PV");
+  BDTvar_list.push_back("dupECALcl");
+  BDTvar_list.push_back("hitsNotRep");
+  BDTvar_list.push_back("badMuon");
+  BDTvar_list.push_back("duplMuon");
+
 
 
 //---------------------------------------------------------------------------
@@ -961,8 +996,6 @@ int main()
   tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
   tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
   // tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
-
-
 
 //----------------
   vector<TString> weight_syst_list;

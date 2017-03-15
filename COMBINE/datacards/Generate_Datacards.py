@@ -30,19 +30,19 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
 
 if channel=="uuu":
     theFakeLLL = "FakeMuMuMu"
-    theFLLL_chNumb = "6"
+    theFLLL_chNumb = "10"
     theFakeRate_type = "FakeRate_mu"
 if channel=="uue":
     theFakeLLL = "FakeMuMuEl"
-    theFLLL_chNumb = "7"
+    theFLLL_chNumb = "11"
     theFakeRate_type = "FakeRate_el"
 if channel=="eeu":
     theFakeLLL = "FakeElElMu"
-    theFLLL_chNumb = "8"
+    theFLLL_chNumb = "12"
     theFakeRate_type = "FakeRate_mu"
 if channel=="eee":
     theFakeLLL = "FakeElElEl"
-    theFLLL_chNumb= "9"
+    theFLLL_chNumb= "13"
     theFakeRate_type = "FakeRate_el"
 
 print 'creating datacard for channel '+channel+' and variable '+theVar

@@ -44,20 +44,27 @@ using namespace std;
 // ##    ## ##     ## ##     ## ##        ##     ##    ##    ##             ##    ## ### ##       ###
 //  ######   #######  ##     ## ##         #######     ##    ########        ######  ### ##       ###
 
-double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
+double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_list, TString Combine_or_Theta)
 {
+  if(fakeLep_flavour != "u" && fakeLep_flavour != "e") {cout<<"Wrong name for flavour of fake lepton ('e' or 'u') !"; return 0;}
 
-  std::vector<TString> channelname;
-  channelname.push_back("uuu");
-  channelname.push_back("uue");
-  channelname.push_back("eeu");
-  channelname.push_back("eee");
+  vector<TString> channels_same_flavour;
+  if(fakeLep_flavour == "u")
+  {
+    channels_same_flavour.push_back("uuu");
+    channels_same_flavour.push_back("eeu");
+  }
+  else if(fakeLep_flavour == "e")
+  {
+    channels_same_flavour.push_back("eee");
+    channels_same_flavour.push_back("uue");
+  }
+
 
   std::vector<TString> listSum;
-  cout<<endl<<endl;
   for(int isample=0; isample<sample_list.size(); isample++)
   {
-    if(sample_list[isample].Contains("data") || sample_list[isample].Contains("Fake")) {continue;}
+    if(sample_list[isample] == "data_obs" || sample_list[isample] == "DATA" || sample_list[isample].Contains("Fake") ) {continue;} //Treated separately
     TString name_tmp = "mTW_uuu__"+sample_list[isample];
     if(!f ->GetListOfKeys()->Contains( name_tmp.Data() ) ) {cout<<name_tmp.Data()<<" not found !"<<endl;  continue;}
 
@@ -65,52 +72,68 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
   }
   cout<<endl<<endl;
 
-  std::vector<TString> channelfake;
-  channelfake.push_back("FakeMuMuMu");
-  channelfake.push_back("FakeMuMuEl");
-  channelfake.push_back("FakeElElMu");
-  channelfake.push_back("FakeElElEl");
-
+  vector<TString> channelfake;
+  if(fakeLep_flavour == "u")
+  {
+    channelfake.push_back("FakeMuMuMu");
+    channelfake.push_back("FakeElElMu");
+  }
+  else if(fakeLep_flavour == "e")
+  {
+    channelfake.push_back("FakeElElEl");
+    channelfake.push_back("FakeMuMuEl");
+  }
 
   f->cd();
-  // char myHist[100];
-
-  TH1F * hdata, *hsum[listSum.size()], * hfake;
+  TH1F * hdata, *hsum, * hfake, *h_tmp;
 
   //Treat Data / Fakes / Other samples separately
   TString myHist;
-
-  myHist = "mTW_" + channelname[channel] + "__data_obs";
-  if ( f ->GetListOfKeys()->Contains( myHist.Data() ) ) {hdata = (TH1F*)f->Get( myHist) ;}
-  else {cout<<"PROBLEM : "<<myHist<<endl; return 0;}
-
-  myHist = "mTW_" + channelname[channel] + "__" + channelfake[channel];
-  if ( f ->GetListOfKeys()->Contains( myHist.Data() ) ) {hfake = (TH1F*)f->Get( myHist) ;}
-  else {cout<<"PROBLEM : "<<myHist<<endl; return 0;}
-
-  for (int i = 0; i<listSum.size(); i++)
+  for(int ichan=0; ichan<channels_same_flavour.size(); ichan++)
   {
-    myHist = "mTW_" + channelname[channel] + "__" + listSum[i];
-    if ( f ->GetListOfKeys()->Contains( myHist.Data() ) ) {hsum[i] = (TH1F*)f->Get( myHist) ;}
-    else {cout<<"PROBLEM : "<<myHist<<endl; return 0;}
+    //DATA
+    if(Combine_or_Theta == "combine") myHist = "mTW_" + channels_same_flavour[ichan] + "__data_obs";
+    else if(Combine_or_Theta == "theta") myHist = "mTW_" + channels_same_flavour[ichan] + "__DATA";
+    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+    h_tmp = (TH1F*)f->Get( myHist);
+    if(ichan==0) {hdata = (TH1F*) h_tmp->Clone();}
+    else {hdata->Add(h_tmp);}
 
-    if (i>0) hsum[0]->Add( hsum[i] );
+    //FAKES
+    myHist = "mTW_" + channels_same_flavour[ichan] + "__" + channelfake[ichan];
+    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) )  {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+    h_tmp = (TH1F*)f->Get( myHist);
+    if(ichan==0) {hfake = (TH1F*) h_tmp->Clone();}
+    else {hfake->Add(h_tmp);}
+
+    //MC
+    for (int i = 0; i<listSum.size(); i++)
+    {
+      myHist = "mTW_" + channels_same_flavour[ichan] + "__" + listSum[i];
+      if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+      h_tmp = (TH1F*)f->Get( myHist);
+      if(ichan==0 && i==0) {hsum = (TH1F*) h_tmp->Clone();}
+      else {hsum->Add(h_tmp);}
+    }
   }
 
-  // hfake->Print(); hsum[0]->Print(); hdata->Print();
+  // hfake->Print(); hsum->Print(); hdata->Print();
 
   TObjArray *mc = new TObjArray(2); //Create array of MC samples -- differentiate fakes from rest
   mc->Add(hfake); //Param 0
-  mc->Add(hsum[0]); //Param 1
+  mc->Add(hsum); //Param 1
 
-  TFractionFitter* fit = new TFractionFitter(hdata, mc, "");
+  TFractionFitter* fit = new TFractionFitter(hdata, mc, "Q"); //'Q' for quiet
 
-  //CHANGED
-  double fracmc = hsum[0]->Integral()/hdata->Integral() ;
+  //FIXME : constrain backgrounds which are not fake ? (NB : because we're only interested in fitting the fakes to the data here!)
+  // double fracmc = hsum->Integral()/hdata->Integral() ;
+  // fit->Constrain(0,0.,1.); //Constrain param 0 (fakes fraction) between 0 & 1
+  // if(fracmc>0) fit->Constrain(1,fracmc*0.95,fracmc*1.05); //Constrain param 1 (other MC samples fraction)
 
-  //NOTE : need to constrain parameters to get sensible prefit normalizations
-  fit->Constrain(0,0.,1.); //Constrain param 0 (fakes fraction) between 0 & 1
-  if(fracmc>0) fit->Constrain(1,fracmc*0.95,fracmc*1.05); //Constrain param 1 (other MC samples fraction) b/w +/- 5% of fracmc ==> ?
+  // double fracmc =
+  // fit->UnConstrain(1); //Unconstrain fakes Fraction
+  // if(fracmc>0) fit->Constrain(1,0,0); //Constrain param 1 (other MC samples fraction)
+
 
   TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
 
@@ -120,11 +143,11 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
   hdata->Draw("Ep");
   result->Draw("same");
 
-  c1->SaveAs(("plots/ScaleFakes_"+channelname[channel]+".png").Data()); //Save fit plot
+  c1->SaveAs(("plots/ScaleFakes_"+fakeLep_flavour+".png").Data()); //Save fit plot
   delete c1;
 
   double fraction_fakes = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
-  cout<<endl<<endl<<channelname[channel]<<" : Fraction of Fakes fitted from data = "<<fraction_fakes*100<<" %"<<endl;
+  cout<<endl<<endl<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fraction_fakes*100<<" %"<<endl;
 
   double integralQuotient = hdata->Integral()/hfake->Integral();
 
@@ -153,51 +176,87 @@ double scaleFactor(TFile * f, int channel, vector<TString> sample_list)
 
 int Scale_Fake_Histograms(TString file_to_rescale_name)
 {
-  TH1::SetDefaultSumw2();
+
+
+//CHOOSE HERE BETWEEN 'COMBINE' OR 'THETA' (depending on the naming conventions of the histograms to rescale)
+//-------------------------
+  TString Combine_or_Theta = "combine";
+  // TString Combine_or_Theta = "theta";
+//-------------------------
+
+
+  cout<<endl<<BOLD(FYEL("Creating re-scaled template file for : "<<Combine_or_Theta<<" !"))<<endl;
+
+  if(Combine_or_Theta != "combine" && Combine_or_Theta != "theta") {cout<<BOLD(FRED("Error ! Need to choose b/w 'combine' or 'theta' in code !"))<<endl; return 0;}
 
   int rebin = 1;
+  TH1::SetDefaultSumw2();
 
   TFile * file_to_rescale = 0;
   file_to_rescale = TFile::Open(file_to_rescale_name.Data()); //File containing the templates, from which can compute fake ratio
   if(!file_to_rescale) {cout<<FRED(<<file_to_rescale_name.Data()<<" not found! Which file do you want to Rescale ? -- Abort")<<endl; return 0;}
 
-  TString prefit_file_name = "outputs/Combine_Input_noScale.root";
+
+  TString prefit_file_name;
+  if(Combine_or_Theta == "combine") prefit_file_name = "outputs/Combine_Input_noScale.root"; //Combine templates
+  else if(Combine_or_Theta == "theta") prefit_file_name = "outputs/Theta_Input_noScale.root"; //Theta templates
+
   TFile * inputfile_prefit = 0;
   inputfile_prefit = TFile::Open(prefit_file_name.Data()); //File containing the templates, from which can compute fake ratio
   if(!inputfile_prefit) {cout<<FRED(<<prefit_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return 0;}
 
+
+  std::vector<TString> syst_names;
+  syst_names.push_back("JES")  ;
+  syst_names.push_back("JER")  ;
+  // syst_list.push_back("Fakes");
+  syst_names.push_back("Q2")      ;
+  syst_names.push_back("PU")      ;
+  syst_names.push_back("MuEff")   ;
+  syst_names.push_back("EleEff")  ;
+  syst_names.push_back("pdf")     ;
+  syst_names.push_back("LFcont")  ;
+  syst_names.push_back("HFstats1");
+  syst_names.push_back("HFstats2");
+  syst_names.push_back("CFerr1")  ;
+  syst_names.push_back("CFerr2")  ;
+  syst_names.push_back("HFcont")  ;
+  syst_names.push_back("LFstats1");
+  syst_names.push_back("LFstats2");
+
+//Use the vector 'syst_names' to create a new vector containing the actual systematics names
   std::vector<TString> syst_list;
   syst_list.push_back(""); //KEEP this one -- nominal
+  for(int isyst=0; isyst<syst_names.size(); isyst++)
+  {
+    if(Combine_or_Theta == "combine")
+    {
+      syst_list.push_back( (syst_names[isyst]+"Up") );
+      syst_list.push_back( (syst_names[isyst]+"Down") );
+    }
+    else if(Combine_or_Theta == "theta")
+    {
+      syst_list.push_back( (syst_names[isyst]+"__plus") );
+      syst_list.push_back( (syst_names[isyst]+"__minus") );
+    }
+  }
 
-  syst_list.push_back("JESUp")  ;       syst_list.push_back("JESDown")  ;
-  syst_list.push_back("JERUp")  ;       syst_list.push_back("JERDown")  ;
-
-  // syst_list.push_back("FakesUp");       syst_list.push_back("FakesDown");
-
-  syst_list.push_back("Q2Up")      ;    syst_list.push_back("Q2Down");
-  syst_list.push_back("PUUp")      ;    syst_list.push_back("PUDown");
-  syst_list.push_back("MuEffUp")   ;    syst_list.push_back("MuEffDown");
-  syst_list.push_back("EleEffUp")  ;    syst_list.push_back("EleEffDown");
-  syst_list.push_back("pdfUp")     ;    syst_list.push_back("pdfDown");
-  syst_list.push_back("LFcontUp")  ;    syst_list.push_back("LFcontDown");
-  syst_list.push_back("HFstats1Up");    syst_list.push_back("HFstats1Down");
-  syst_list.push_back("HFstats2Up");    syst_list.push_back("HFstats2Down");
-  syst_list.push_back("CFerr1Up")  ;    syst_list.push_back("CFerr1Down");
-  syst_list.push_back("CFerr2Up")  ;    syst_list.push_back("CFerr2Down");
-  syst_list.push_back("HFcontUp")  ;    syst_list.push_back("HFcontDown");
-  syst_list.push_back("LFstats1Up");    syst_list.push_back("LFstats1Down");
-  syst_list.push_back("LFstats2Up");    syst_list.push_back("LFstats2Down");
 
 
   std::vector<TString> sample_list;
+  if(Combine_or_Theta == "combine") sample_list.push_back("data_obs");
+  else if(Combine_or_Theta == "theta") sample_list.push_back("DATA");
   sample_list.push_back("data_obs");
   sample_list.push_back("ttZ");
   sample_list.push_back("ttW");
-  sample_list.push_back("WZjets");
+  // sample_list.push_back("WZjets");
+  sample_list.push_back("WZl");
+  sample_list.push_back("WZb");
+  sample_list.push_back("WZc");
   sample_list.push_back("tZq");
   sample_list.push_back("ttH");
   sample_list.push_back("ZZ");
-  // sample_list.push_back("SingleTop");
+  sample_list.push_back("SingleTop");
   sample_list.push_back("FakeElElEl");
   sample_list.push_back("FakeMuMuEl");
   sample_list.push_back("FakeElElMu");
@@ -247,16 +306,16 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
 
 
   //Get SF for each channel
-  double factor_uuu = scaleFactor(inputfile_prefit,0, sample_list);
-  double factor_uue = scaleFactor(inputfile_prefit,1, sample_list);
-  double factor_eeu = scaleFactor(inputfile_prefit,2, sample_list);
-  double factor_eee = scaleFactor(inputfile_prefit,3, sample_list);
+  double factor_uuu = scaleFactor(inputfile_prefit,"u", sample_list, Combine_or_Theta);
+  double factor_uue = scaleFactor(inputfile_prefit,"e", sample_list, Combine_or_Theta);
+  double factor_eeu = scaleFactor(inputfile_prefit,"u", sample_list, Combine_or_Theta);
+  double factor_eee = scaleFactor(inputfile_prefit,"e", sample_list, Combine_or_Theta);
 
   //FIXME -- try arbitrary values !
   // double factor_uuu = 0.00328917;
-  // double factor_uue = scaleFactor(inputfile_prefit,1, sample_list);
+  // double factor_uue = scaleFactor(inputfile_prefit,1, sample_list, Combine_or_Theta);
   // double factor_eeu = 0.0233086;
-  // double factor_eee = scaleFactor(inputfile_prefit,3, sample_list);
+  // double factor_eee = scaleFactor(inputfile_prefit,3, sample_list, Combine_or_Theta);
 
 /*  - Avec mon rescaling (sans contrainte) : Significance: 5.57154
 SCALE FACTORS VALUES :

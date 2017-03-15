@@ -251,17 +251,20 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	// sample_list.push_back("Data");
-	// sample_list.push_back("tZq");
-	// sample_list.push_back("WZjets");
-	// sample_list.push_back("ttZMad");
-	// sample_list.push_back("ttZ");
-	// sample_list.push_back("ttW");
-	// sample_list.push_back("ttH");
-	// sample_list.push_back("ZZ");
+	sample_list.push_back("Data");
+	sample_list.push_back("tZq");
+	sample_list.push_back("ttZMad");
+	sample_list.push_back("WZl");
+	sample_list.push_back("WZb");
+	sample_list.push_back("WZc");
+	sample_list.push_back("ttZ");
+	sample_list.push_back("ttW");
+	sample_list.push_back("ttH");
+	sample_list.push_back("ZZ");
 	sample_list.push_back("Fakes");
 	sample_list.push_back("SingleTop");
 
+	// sample_list.push_back("WZjets");
 	// sample_list.push_back("STtWll")	;
 	// sample_list.push_back("");
 
@@ -305,6 +308,43 @@ int main()
 	thevarlist.push_back("m3l");
 	thevarlist.push_back("dRZTop");
 
+	//--- New vars
+	thevarlist.push_back("MAddLepB");
+	thevarlist.push_back("LeadJetPT");
+	thevarlist.push_back("dPhiZMET");
+	thevarlist.push_back("dPhiZTop");
+	thevarlist.push_back("dPhiAddLepQ");
+	thevarlist.push_back("TopEta");
+	thevarlist.push_back("tZq_mass");
+	thevarlist.push_back("tq_mass");
+	thevarlist.push_back("tq_pT");
+	thevarlist.push_back("tq_eta");
+	thevarlist.push_back("AdditionalMuonIso");
+	thevarlist.push_back("AdditionalEleIso");
+	thevarlist.push_back("FCNCTopMass");
+	thevarlist.push_back("CJetPT");
+	thevarlist.push_back("dRZCJet");
+	thevarlist.push_back("dRlWCJet");
+	thevarlist.push_back("dRSMtopFCNCTop");
+	thevarlist.push_back("dR_ZBJet");
+	thevarlist.push_back("dPhi_ZCJet");
+	thevarlist.push_back("dPhi_AddLepCJet");
+	thevarlist.push_back("dPhi_SMtopFCNCTop");
+	thevarlist.push_back("dPhi_ZBJet");
+	thevarlist.push_back("LeadElePT");
+	thevarlist.push_back("leadMuPT");
+	thevarlist.push_back("NMediumBjets");
+	thevarlist.push_back("LeadingJetCSV");
+	thevarlist.push_back("SecondJetCSV");
+	thevarlist.push_back("leadingLeptonPT");
+	thevarlist.push_back("leadingLeptonEta");
+	thevarlist.push_back("PV");
+	thevarlist.push_back("dupECALcl");
+	thevarlist.push_back("hitsNotRep");
+	thevarlist.push_back("badMuon");
+	thevarlist.push_back("duplMuon");
+
+
 	vector<TString> MEMvarlist; //FIXME add new MEM vars
 	MEMvarlist.push_back("mc_mem_ttz_weight");
 	MEMvarlist.push_back("mc_mem_tllj_weight");
@@ -347,6 +387,7 @@ int main()
 	weight_syst_list.push_back("HFcont__plus"); weight_syst_list.push_back("HFcont__minus");
 	weight_syst_list.push_back("LFstats1__plus"); weight_syst_list.push_back("LFstats1__minus");
 	weight_syst_list.push_back("LFstats2__plus"); weight_syst_list.push_back("LFstats2__minus");
+	weight_syst_list.push_back("Weight_noTag"); weight_syst_list.push_back("Weight_noPU");
 
 
 
