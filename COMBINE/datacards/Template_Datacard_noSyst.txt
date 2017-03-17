@@ -7,19 +7,22 @@ shapes * var_chan filetoread $CHANNEL__$PROCESS $CHANNEL__$PROCESS__$SYSTEMATIC
 bin             var_chan
 observation     -1
 ----------------------------------------------------------------------------------------------------------------------------------
-bin                 var_chan      var_chan     var_chan     var_chan     var_chan     var_chan 		var_chan		var_chan
-process             tZq             WZjets       ZZ           ttZ          ttW	        ttH        	SingleTop		FakeLLL
-process                0              1          2             3            4           5          	  6				FLLL_chNumb
-rate                  -1             -1          -1            -1          -1          -1            -1 			   -1
----------------------------------------------------------------------------------------------------------------------
-lumi          lnN	      1.062     1.062       1.062       1.062       1.062          1.062          -					-
+bin                 var_chan        var_chan     var_chan     var_chan     var_chan 		var_chan		var_chan	var_chan	var_chan	var_chan
+process             tZq               ZZ           ttZ          ttW	        ttH        		STtWll			FakeLLL		  WZl		   WZb		  WZc
+process            tZq_chNumb         2           ttZ_chNumb     4           5          	  6				FLLL_chNumb	  7	    		 8	     9
+rate                  -1              -1            -1          -1          -1            	  -1 			   -1		  -1			-1		-1
+----------------------------------------------------------------------------------------------------------
+lumi          lnN	   1.062	        1.062       1.062       1.062          1.062          1.062				-		 1.062			1.062	1.062
 
-WZ_rate       lnN       -          	1.3           -           -           -	    		-             -					-
-ZZ_rate       lnN       -	         -           1.3          -           -            	-             -					-
-ttZ_rate      lnN       -	         -            -          1.3          -            	-             -					-
-ttW_rate      lnN       -	         -            -           -          1.3           	-             -					-
-ttH_rate	  lnN       -          	 -            -           -           -            1.3            -					-
-SingleTop     lnN       -          	 -            -           -           -             -             1.3				-
+tZq_rate        lnN     tZqsyst          -          -           -            	-             -					-			-			   -		-
+ZZ_rate        lnN      -	            1.3         -           -            	-             -					-			-			   -		-
+ttZ_rate       lnN      -	             -       ttZsyst        -            	-             -					-			-			   -		-
+ttW_rate       lnN      -	             -           -          1.3           	-             -					-			-			   -		-
+ttH_rate	   lnN      -                 -           -           -            1.3            -					-			-			   -		-
+STtWll     	   lnN      -                 -           -           -             -             1.3				-			-			   -		-
+WZl_rate       lnN     -                 -           -           -	    		-             -					-			1.3			   -		-
+WZb_rate       lnN     -                 -           -           -	    		-             -					-			-			   1.3		-
+WZc_rate       lnN     -                 -           -           -	    		-             -					-			-			   -		1.3
 
-FakeRate_type lnN     -		  	 	 -	   		  -	    	  -           -	     		-             -					5.0
-FakeBgd_rate  lnN     -	         	 -            -	    	  -           -	     		-             -					1.3
+FakeRate_type lnN      -		  	 	 -	    	  -           -	     		-             -					5.0			-			   -		-
+FakeBgd_rate  lnN      -	             -	    	  -           -	     		-             -					1.3			-			   -		-

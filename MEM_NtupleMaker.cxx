@@ -37,7 +37,7 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   //Initialize member vectors
   for(int isyst=0; isyst<weight_syst_list.size(); isyst++)
   {
-    // if(samplename=="Data" || samplename=="Fakes") {break;} //No syst. for data
+    if(samplename=="Data" || samplename=="Fakes") {break;} //No syst. for data
 
     v_syst_weight.push_back(weight_syst_list[isyst]);
     v_syst_float.push_back(0);
@@ -61,7 +61,6 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   METCollection = 0;
 
   TString filename = output_dir + "FCNCNTuple_" + samplename+".root";
-  if(samplename == "STtWll") filename = output_dir + "FCNCNTuple_SingleTop.root";
 
   f_output = new TFile(filename.Data(), "RECREATE");
 
@@ -612,7 +611,11 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
 //--- Input Trees
     TTree* t_MEM_input = 0; //Tree containing all info necessary for MEM (Jets, leptons, MET, etc.)
-    t_MEM_input = (TTree*) f_input->Get("MEMInfo"); if(t_MEM_input == 0) {cout<<"Can't find tree 'MEMCollection' !"<<endl; return;}
+    if(v_syst_tree[itreesyst] == "Fakes__plus") t_MEM_input = (TTree*) f_input->Get("MEMInfoPlus");
+    else if(v_syst_tree[itreesyst] == "Fakes__minus") t_MEM_input = (TTree*) f_input->Get("MEMInfoMinus");
+    else t_MEM_input = (TTree*) f_input->Get("MEMInfo");
+
+    if(t_MEM_input == 0) {cout<<"Can't find tree 'MEMCollection' !"<<endl; return;}
 
     TTree* t_vars_input = 0; //Tree containing all the BDT vars and more
     t_vars_input = (TTree*) f_input->Get( v_syst_tree[itreesyst] ); if(t_vars_input == 0) {cout<<"Can't find tree '"<<v_syst_tree[itreesyst]<<"' !"<<endl; return;}
@@ -667,7 +670,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       t_vars_input->SetBranchAddress(BDTvar_list[ivar].Data(), &BDTvar_floats[ivar]);
     }
     //---Systematics
-    if(v_syst_tree[itreesyst] == "Default")
+    if(v_syst_tree[itreesyst] == "Default" && samplename != "Data" && samplename != "Fakes")
     {
       for(int isyst=0; isyst<v_syst_weight.size(); isyst++)
       {
@@ -890,21 +893,20 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("tZq");
-  v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("ttZMad");
-  v_samplenames.push_back("WZl");
-  v_samplenames.push_back("WZb");
-  v_samplenames.push_back("WZc");
-  v_samplenames.push_back("ZZ");
-  v_samplenames.push_back("Data");
-  v_samplenames.push_back("ttH");
-  v_samplenames.push_back("ttW");
+  // v_samplenames.push_back("Data");
+  // v_samplenames.push_back("tZq");
+  // v_samplenames.push_back("ttZ");
+  // v_samplenames.push_back("WZl");
+  // v_samplenames.push_back("WZb");
+  // v_samplenames.push_back("WZc");
+  // v_samplenames.push_back("ZZ");
+  // v_samplenames.push_back("ttH");
+  // v_samplenames.push_back("ttW");
   v_samplenames.push_back("Fakes");
-  v_samplenames.push_back("STtWll"); //Renamed to SingleTop in the code
+  // v_samplenames.push_back("STtWll");
 
+  // v_samplenames.push_back("ttZMad");
   // v_samplenames.push_back("WZjets");
-  // v_samplenames.push_back("SingleTop");
   // v_samplenames.push_back("");
 
 //---------------------------------------------------------------------------
@@ -917,6 +919,8 @@ int main()
 // ########  ########     ##             ###    ##     ## ##     ##  ######
 //---------------------------------------------------------------------------
 //NOTE : Channel, Weight, mTW, NJets, NBJets are added manually in the code
+
+//NOTE : make sure the variable list is up-to-date compared to Ntuples' contents !!
 
   vector<TString> BDTvar_list;
   BDTvar_list.push_back("btagDiscri");
@@ -995,7 +999,7 @@ int main()
 //These systematics are stored in different TTrees (not simple weights)
   tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
   tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
-  // tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
+  tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
 
 //----------------
   vector<TString> weight_syst_list;

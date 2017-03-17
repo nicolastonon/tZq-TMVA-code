@@ -125,14 +125,10 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
 
   TFractionFitter* fit = new TFractionFitter(hdata, mc, "Q"); //'Q' for quiet
 
-  //FIXME : constrain backgrounds which are not fake ? (NB : because we're only interested in fitting the fakes to the data here!)
-  // double fracmc = hsum->Integral()/hdata->Integral() ;
-  // fit->Constrain(0,0.,1.); //Constrain param 0 (fakes fraction) between 0 & 1
-  // if(fracmc>0) fit->Constrain(1,fracmc*0.95,fracmc*1.05); //Constrain param 1 (other MC samples fraction)
-
-  // double fracmc =
-  // fit->UnConstrain(1); //Unconstrain fakes Fraction
-  // if(fracmc>0) fit->Constrain(1,0,0); //Constrain param 1 (other MC samples fraction)
+  //FIXME : constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
+  double fracmc = hsum->Integral()/hdata->Integral() ;
+  fit->Constrain(0,0.001,1000.); //Constrain param 0 (fakes fraction) between 0 & 1
+  if(fracmc>0) fit->Constrain(1,fracmc*0.99,fracmc*1.01); //Constrain param 1 (other MC samples fraction)
 
 
   TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
@@ -185,7 +181,7 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
 //-------------------------
 
 
-  cout<<endl<<BOLD(FYEL("Creating re-scaled template file for : "<<Combine_or_Theta<<" !"))<<endl;
+  cout<<endl<<BOLD(FRED("Creating re-scaled template file for : "<<Combine_or_Theta<<" !"))<<endl;
 
   if(Combine_or_Theta != "combine" && Combine_or_Theta != "theta") {cout<<BOLD(FRED("Error ! Need to choose b/w 'combine' or 'theta' in code !"))<<endl; return 0;}
 
@@ -209,7 +205,7 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   std::vector<TString> syst_names;
   syst_names.push_back("JES")  ;
   syst_names.push_back("JER")  ;
-  // syst_list.push_back("Fakes");
+  syst_names.push_back("Fakes");
   syst_names.push_back("Q2")      ;
   syst_names.push_back("PU")      ;
   syst_names.push_back("MuEff")   ;
@@ -256,17 +252,18 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   sample_list.push_back("tZq");
   sample_list.push_back("ttH");
   sample_list.push_back("ZZ");
-  sample_list.push_back("SingleTop");
+  sample_list.push_back("STtWll");
   sample_list.push_back("FakeElElEl");
   sample_list.push_back("FakeMuMuEl");
   sample_list.push_back("FakeElElMu");
   sample_list.push_back("FakeMuMuMu");
 
-  vector<TString> var_list;
+  vector<TString> var_list; //FIXME -- keep list of vars up-to-date !!
   //Template names
   var_list.push_back("BDT");
   var_list.push_back("BDTttZ");
   var_list.push_back("mTW");
+  var_list.push_back("METpt");
 
   //BDT vars names
   var_list.push_back("btagDiscri");
@@ -292,6 +289,7 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   var_list.push_back("mtop");
   var_list.push_back("m3l");
   var_list.push_back("dRZTop");
+  var_list.push_back("TopPT");
 
   //Other vars
   var_list.push_back("NJets");
@@ -336,7 +334,7 @@ SCALE FACTORS VALUES :
   //output file
   TString output_name = file_to_rescale_name ;
   int index = 0;
-  if(output_name.Contains("noScale") ) index = output_name.Index("_noScale.root"); //Find index of substring
+  if(output_name.Contains("noScale.root") ) index = output_name.Index("_noScale.root"); //Find index of substring
   else index = output_name.Index(".root"); //Find index of substring
   output_name.Remove(index); //Remove substring
   output_name+= "_ScaledFakes.root"; //Add desired suffix
@@ -401,14 +399,17 @@ SCALE FACTORS VALUES :
 //DEFINE THE PATHS OF THE FILE WHERE THE HISTOGRAMS TO RESCALE ARE
 int main(int argc, char **argv)
 {
-  if(argc == 2)
+  if(argc>1) //Specify file(s) path(s) at execution
   {
-    Scale_Fake_Histograms(argv[1]);
+    for(int ifile=1; ifile<argc; ifile++)
+    {
+      Scale_Fake_Histograms(argv[ifile]);
+    }
   }
 
-  else if(argc==1)
+  else if(argc==1) //Manually specify the file to rescale
   {
-    TString file_to_rescale = "";
+    TString file_to_rescale;
 
     file_to_rescale = "outputs/Combine_Input_noScale.root";
     Scale_Fake_Histograms(file_to_rescale);

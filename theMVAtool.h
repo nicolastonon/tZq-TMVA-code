@@ -74,7 +74,7 @@ class theMVAtool
 	public :
 
 //Methods
-	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString);
+	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString);
 	~theMVAtool(){delete reader;};
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
@@ -119,6 +119,7 @@ class theMVAtool
 	bool stop_program;
 
 	TString format; //Format extension for plots (pdf of png?)
+	bool combine_naming_convention; //Choose b/w Combine naming convention (true) or Theta ones (false)
 };
 
 #endif

@@ -143,21 +143,25 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		{
 			if(sample.Contains("Data") || sample.Contains("Fakes") || tree_syst_list[itreesyst] != "Tree") break; //No weight syst
 
-			TString systname_tmp = weight_syst_list[isyst]; //Copy systematic name & modify it for Combine conventions
-			if(systname_tmp.Contains("__plus"))
-			{
-				int i = systname_tmp.Index("__plus"); //Find index of substring
-				systname_tmp.Remove(i); //Remove substring
-				systname_tmp+= "Up"; //Add Combine syst. suffix
-			}
-			else if(systname_tmp.Contains("__minus"))
-			{
-				int i = systname_tmp.Index("__minus"); //Find index of substring
-				systname_tmp.Remove(i); //Remove substring
-				systname_tmp+= "Down"; //Add Combine syst. suffix
-			}
 
-			tree_modif->Branch(systname_tmp.Data(),&v_floats_syst[isyst],(systname_tmp+"/F").Data());
+			//--- Copy systematic name & modify it for Combine conventions
+
+			// TString systname_tmp = weight_syst_list[isyst];
+			// if(systname_tmp.Contains("__plus"))
+			// {
+			// 	int i = systname_tmp.Index("__plus"); //Find index of substring
+			// 	systname_tmp.Remove(i); //Remove substring
+			// 	systname_tmp+= "Up"; //Add Combine syst. suffix
+			// }
+			// else if(systname_tmp.Contains("__minus"))
+			// {
+			// 	int i = systname_tmp.Index("__minus"); //Find index of substring
+			// 	systname_tmp.Remove(i); //Remove substring
+			// 	systname_tmp+= "Down"; //Add Combine syst. suffix
+			// }
+
+			// tree_modif->Branch(systname_tmp.Data(),&v_floats_syst[isyst],(systname_tmp+"/F").Data());
+			tree_modif->Branch(weight_syst_list[isyst].Data(),&v_floats_syst[isyst],(weight_syst_list[isyst]+"/F").Data());
 		}
 
 		//Set Branch Addresses
@@ -251,21 +255,20 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	sample_list.push_back("Data");
+	// sample_list.push_back("Data");
 	sample_list.push_back("tZq");
-	sample_list.push_back("ttZMad");
-	sample_list.push_back("WZl");
-	sample_list.push_back("WZb");
-	sample_list.push_back("WZc");
+	// sample_list.push_back("WZl");
+	// sample_list.push_back("WZb");
+	// sample_list.push_back("WZc");
 	sample_list.push_back("ttZ");
 	sample_list.push_back("ttW");
-	sample_list.push_back("ttH");
-	sample_list.push_back("ZZ");
+	// sample_list.push_back("ttH");
+	// sample_list.push_back("ZZ");
 	sample_list.push_back("Fakes");
-	sample_list.push_back("SingleTop");
+	sample_list.push_back("STtWll")	;
 
+	// sample_list.push_back("ttZMad");
 	// sample_list.push_back("WZjets");
-	// sample_list.push_back("STtWll")	;
 	// sample_list.push_back("");
 
 
@@ -278,6 +281,9 @@ int main()
     //     ## ##   ##     ## ##    ##  ##    ##
     //      ###    ##     ## ##     ##  ######
 //---------------------------------------------------------------------------
+
+//NOTE : make sure the variable list is up-to-date compared to Ntuples' contents !!
+
 
 	vector<TString> thevarlist;
 	thevarlist.push_back("Weight");
@@ -369,7 +375,7 @@ int main()
 
 	tree_syst_list.push_back("JERUp"); tree_syst_list.push_back("JERDown");
 	tree_syst_list.push_back("JESUp"); tree_syst_list.push_back("JESDown");
-	// tree_syst_list.push_back("FakesUp"); tree_syst_list.push_back("FakesDown");
+	tree_syst_list.push_back("FakesUp"); tree_syst_list.push_back("FakesDown");
 
 
 	vector<TString> weight_syst_list;

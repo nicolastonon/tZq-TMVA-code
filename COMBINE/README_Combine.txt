@@ -12,6 +12,7 @@
  ##  ##  ####       ##    ##    ######### ##       ##       #########    ##     ##  ##     ## ##  ####
  ##  ##   ### ##    ##    ##    ##     ## ##       ##       ##     ##    ##     ##  ##     ## ##   ###
 #### ##    ##  ######     ##    ##     ## ######## ######## ##     ##    ##    ####  #######  ##    ##
+-----------------------------------
 
 - Follow instructions here (HiggsAnalysis + CombineHarvester):
 http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
@@ -26,6 +27,7 @@ http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
       ## ##          ##    ##     ## ##
 ##    ## ##          ##    ##     ## ##
  ######  ########    ##     #######  ##
+-----------------------------------
 
 1) Once you have installed both HiggsAnalysis & CombineHarvester, move to where you want to put the Combine codes (NB : it must be in a subdir. of CMSSW_7_4_7/src (e.g. CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis/)
 
@@ -43,10 +45,9 @@ http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 3) Move to 'datacards' dir. This directory contains codes for generating/combining all needed datacards. It is from here that we will run the Combine commands.
 
 
-4) In 'Create_Script_Datacard_Generation.cc' :
-- This code generates the scripts to create datacards both for template fit & to obtain postfit distributions of all input variables.
+4) 'Create_Script_Datacard_Generation.cc' generates the scripts to create datacards either to perform the template fit, or to obtain postfit distributions of all input variables, or to get both. It will also ask you if you want to include the systematics, what is your signal (tZq/ttZ/both), and in what region you want to obtain the postfit distributions of input variables.
 - In the code, you can change the path of the histogram file the datacards will point to.
-- Make sure the variable list is up-to-date.
+- Make sure the variable list (for postfit distributions) is up-to-date !!
 - Compile code & execute it :
 # g++ Create_Script_Datacard_Generation.cc -o Create_Script_Datacard_Generation.exe `root-config --cflags --glibs`
 
@@ -57,10 +58,17 @@ http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 6) The 2 created scripts 'Generate... .sh' generate combined datacards either for the template it or to get postfit distributions of input vars :
 # ./Generate... .exe
 
-
 - NB : could also use directly the 'Generate_Datacards.py' script to generate manually the single datacard you want, with this syntax :
-# python generateDatacards.py CHANNEL VARIABLE FILE_CONTAINING_HISTOS
+# python generateDatacards.py [CHANNEL] [VARIABLE] [FILE_CONTAINING_HISTOS] [syst_choice] [signal_choice]
+((check Generate_Datacards.py to understand what values the options can take))
 ((the 'Generate... .sh' executables run this script for all channels & variables !))
+
+
+7) Finally, you can add MC statistical uncertainties manually if you want to (not done by Combine by default) via the CombineHarvester 'AddBinbyBin.py' script. It will add stat. MC error to each histogram's bin. In the script, you need to specify the name of your combined datacard. It will create a new datacard & a new histogram file in your current directory. You can then directly run Combine commands on this new datacard.
+# python addBinbyBin
+- NB 1 : This adds a LOT of nuisance parameters (NP) to the fit (1 per histogram bin/process/channel/region) ! That's why the script contains an option 'SetAddThreshold' which you should set e.g. to 0.05, so that a NP is added only if the bin stat. relative uncertainty is >= 0.05 !
+- NB 2 : As a result, the fit takes a LOT more time to converge while the MC stat. uncertainties have been added.
+
 
 -----------------------------------
  ######   #######  ##     ## ##     ##    ###    ##    ## ########   ######
@@ -70,13 +78,20 @@ http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 ##       ##     ## ##     ## ##     ## ######### ##  #### ##     ##       ##
 ##    ## ##     ## ##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
  ######   #######  ##     ## ##     ## ##     ## ##    ## ########   ######
+-----------------------------------
+/!\ Make sure you're using the right datacard name in the commands /!\
 
-
-5) Compute the a-priori expected significance w/ a Profile Likelihood :
+5)- Compute the a-priori EXPECTED significance w/ a Profile Likelihood :
 # combine -M ProfileLikelihood --significance COMBINED_datacard.txt -t -1 --expectSignal=1 -v 4
-NB : option -v X (with X>=2) for verbose mode. With X=4, can access postfit POI values & get warning/error messages !
 NB : "-t -1" ==> Use Asimov Dataset ; to use toys instead, use "-t N", with N number of toys
 NB : for a-posteriori expected signif (uses data & MC), add --toysFreq
+
+- Compute the OBSERVED significance w/ a Profile Likelihood :
+# combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 COMBINED_datacard.txt
+
+NB : option -v X (with X>=2) for verbose mode. With X=4, can access postfit POI values & get warning/error messages !
+
+
 
 6) Perform a Maximum Likelihood Fit (to get access to postfit templates, postfit nuisances, ...) :
 NB : need to create outputs dir. first to avoid segfault ;
@@ -93,29 +108,13 @@ NB : need to create outputs dir. first to avoid segfault ;
 
 ==> This will create a 'nuisances.root' file containing all the necessary info on the NPs
 
+
 9) To save the plots of these pull distributions, you can copy the 'drawCanvas.C' macro (from 'datacards' dir.) into the dir. containing the 'output.root' file.
 --> Executing it should create 2 .png plots containing the useful info on NPs.
 
 
-
------------------------------------
- ######   #######  ##     ## ########         ##     ##    ###    ########  ##     ## ########  ######  ######## ######## ########
-##    ## ##     ## ###   ### ##     ##        ##     ##   ## ##   ##     ## ##     ## ##       ##    ##    ##    ##       ##     ##
-##       ##     ## #### #### ##     ##        ##     ##  ##   ##  ##     ## ##     ## ##       ##          ##    ##       ##     ##
-##       ##     ## ## ### ## ########         ######### ##     ## ########  ##     ## ######    ######     ##    ######   ########
-##       ##     ## ##     ## ##     ##        ##     ## ######### ##   ##    ##   ##  ##             ##    ##    ##       ##   ##
-##    ## ##     ## ##     ## ##     ## ###    ##     ## ##     ## ##    ##    ## ##   ##       ##    ##    ##    ##       ##    ##
- ######   #######  ##     ## ########  ###    ##     ## ##     ## ##     ##    ###    ########  ######     ##    ######## ##     ##
-
-
-(Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit). )
-
-- AddBinbyBin.py : Add bin by bin statistical MC error to histograms. It uses 'COMBINED_datacard.txt' to  create new datacards taking these errors into account, and also a rootfile :
-# python addBinbyBin
-(BUG for now ?)
-
--To produce the postfit histograms for any input variables, we need the file 'mlfit.root' produced by the Maximum Likelihood Fit, a datacard 'COMBINED_datacard_TemplateFit' created via the previous script 'Generate... .sh', and a file containing all the prefit templates of these input variables (just like the files produced via the function 'Create_Control_Histograms') !
-NOTE : you need to specify yourself the name of the template fit in 'Create_Script_Datacard_Generation.cc' (+ compile/execute it, then execute the created script --> Final datacard with correct file name)
+10) To produce the postfit histograms for any input variables, we need the file 'mlfit.root' produced by the Maximum Likelihood Fit, a datacard 'COMBINED_datacard_TemplateFit' created via the previous script 'Generate... .sh', and a file containing all the prefit templates of these input variables (just like the files produced via the function 'Create_Control_Histograms') !
+- NB : you need to specify yourself the name of the template fit in 'Create_Script_Datacard_Generation.cc' (+ compile/execute it, then execute the created script --> Final datacard with correct file name)
 # PostFitShapes -d COMBINED_datacard_TemplateFit.txt -o PostfitInputVars.root -f outputs/mlfit.root:fit_s --postfit --sampling --print
 
 
@@ -123,31 +122,34 @@ NOTE : you need to specify yourself the name of the template fit in 'Create_Scri
 
 
 
+
+
+
+
+
+
+
+
+
 -----------------------------------
+##    ##  #######  ######## ########  ######
+###   ## ##     ##    ##    ##       ##    ##
+####  ## ##     ##    ##    ##       ##
+## ## ## ##     ##    ##    ######    ######
+##  #### ##     ##    ##    ##             ##
+##   ### ##     ##    ##    ##       ##    ##
+##    ##  #######     ##    ########  ######
 -----------------------------------
-*** OTHER COMMANDS
+//Some additionnal infos
 
-- Calculate the OBSERVED significance :
-combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 datacard.txt
-
-- ...
-
-
-
-
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*** NOTES ON COMBINE/DATACARDS/...
 
 - A shape analysis relies not only on the expected event yields for the signals and backgrounds, but also on the distribution of those events in some discriminating variable. This approach is often convenient with respect to a counting experiment, especially when the background cannot be predicted reliably a-priori, since the information from the shape allows a better discrimination between a signal-like and a background-like excess, and provides an in-situ normalization of the background.
 
 • cf. https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopZSMFCNC13TeV#Statistical_combination_tool
 
 -  Convention of the Histograms : $CHANNEL__$PROCESS     $CHANNEL__$PROCESS__$SYSTEMATIC
+
+* Combine Harvester is a top-level CMSSW Package which contains some additional features. Among those, it can be used to add statistical uncertainties bin per bin (not done by default by combine) with a Barlow-Beeston-like approach. Also, it allows to propagate the changes of the nuisance parameters (NPs) to all input variables of the BDTs (not only the templates used for the fit).
 
 
 --- ABOUT DATACARDS :
@@ -171,3 +173,6 @@ combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 datacar
  •  $CHANNEL is replaced with the channel name
  •  $SYSTEMATIC is replaced with the name of the systematic + (Up, Down)
  •  $MASS is replaced with the higgs mass value which is passed as option in the command line used to run the limit tool
+
+
+-----------------------------------

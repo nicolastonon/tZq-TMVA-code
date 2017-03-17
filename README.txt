@@ -17,7 +17,9 @@ This GitHub repository contains the TMVA & CombineHiggsTool codes used in the tZ
 --- WARNINGS ---
 ####################
 
-/!\ Be careful to set properly all the booleans & other options in the main !
+/!\ In BDT_analysis.cc
+- Be careful to set properly all the configurable paths, booleans & other options in the main !!!
+- Also notice that all function calls are done via dedicated booleans (cf. section "Function Calls" in code) !
 
 /!\ Be sure to keep all the separate codes synchronized ! For example, any change in BDT_analysis.cc to the cuts/samples/channels/... will affect every function of the user-class theMVAtool. *BUT* you need to propagate these changes (e.g. list of samples or systematics) to the codes which are independant, for example standalone code 'scaleFakes.cc' (described later).
 
@@ -70,6 +72,8 @@ This class contains all the necessary functions to perform our Template Fit Anal
 
 --- REGION & CUTS => There are 3 regions in our analysis : CR WZ, CR ttZ & SR tZq. You can select it manually here, or specify the region at execution (e.g. './BDT_analysis.exe tZq'). This will automatically cut on the numbers of jets/b-jets accordingly. You can also add other cuts yourself (e.g. MET > 20) in the regions you want.
 
+--- DIR. PATH => /!\ Here you need to specify your own path to your Ntuples !! Be sure to also choose the proper default tree naming ! (check it in Ntuples)
+
 --- CHANNELS => ...
 --- SAMPLES => ...
 --- SYSTEMATICS => ...
@@ -78,7 +82,7 @@ This class contains all the necessary functions to perform our Template Fit Anal
 
 --- OTHER VARS => Can add additional variables not used in BDT, only for control plots.
 
---- FUNCTION CALLS => This is where the functions are called. Simply un-comment the functions you want to use.
+--- FUNCTION CALLS => This is where the functions are called. Simply set to 'TRUE' the booleans activating the functions you want to use.
 /!\ Be sure to set properly the few function-dependant options/booleans which are initialized there.
 
 
@@ -88,7 +92,7 @@ This class contains all the necessary functions to perform our Template Fit Anal
 
 ---------------------------
 
-* The './auto_BDTanalysis_3regions' script executes automatically the un-commented functions in all 3 regions.
+* The './auto_BDTanalysis_3regions' script executes automatically the activated functions, in all 3 regions.
 ==> USE THIS SCRIPT WHEN YOU WANT TO RUN CODE IN ALL 3 REGIONS !
 
 * The 'merge_templates_combine.sh' script combines the 3 'Reader...' (= template) files

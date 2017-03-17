@@ -126,7 +126,7 @@ float Find_Number_In_TString(TString ts)
 //Translates signs into words
 TString Convert_Sign_To_Word(TString ts_in)
 {
-	TString sign;
+	TString sign = "";
 
 	if(ts_in.Contains("<=")) {sign = "MaxEq";}
 	else if(ts_in.Contains(">=")) {sign = "MinEq";}
@@ -140,7 +140,7 @@ TString Convert_Sign_To_Word(TString ts_in)
 //Used when a "cut" is composed of 2 conditions -> breaks it into a pair of TStrings <cut1,cut2>
 pair<TString,TString> Break_Cuts_In_Two(TString multiple_cut)
 {
-	TString cut1, cut2;
+	TString cut1 = "", cut2 = "";
 
 	string s = multiple_cut.Data(); int size = s.size(); //To get TString size
 
@@ -150,7 +150,7 @@ pair<TString,TString> Break_Cuts_In_Two(TString multiple_cut)
 		if(multiple_cut[i] != ' ') {cut1 += multiple_cut[i];}
 	}
 
-	TString tmp;
+	TString tmp = "";
 	for (int i=0; i < size; i++) //Extract condition 2
 	{
 		tmp+= multiple_cut[i];
@@ -161,6 +161,27 @@ pair<TString,TString> Break_Cuts_In_Two(TString multiple_cut)
 	pair<TString,TString> the_cuts; the_cuts.first = cut1; the_cuts.second = cut2;
 
 	return the_cuts;
+}
+
+
+TString Theta_to_Combine(TString theta_name)
+{
+	TString new_Combine_name = theta_name;
+
+	if(new_Combine_name.Contains("__plus"))
+	{
+		int i = new_Combine_name.Index("__plus"); //Find index of substring
+		new_Combine_name.Remove(i); //Remove substring
+		new_Combine_name+= "Up"; //Add Combine syst. suffix
+	}
+	else if(new_Combine_name.Contains("__minus"))
+	{
+		int i = new_Combine_name.Index("__minus"); //Find index of substring
+		new_Combine_name.Remove(i); //Remove substring
+		new_Combine_name+= "Down"; //Add Combine syst. suffix
+	}
+
+	return new_Combine_name;
 }
 
 
