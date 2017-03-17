@@ -64,7 +64,7 @@ http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
 ((the 'Generate... .sh' executables run this script for all channels & variables !))
 
 
-7) Finally, you can add MC statistical uncertainties manually if you want to (not done by Combine by default) via the CombineHarvester 'AddBinbyBin.py' script. It will add stat. MC error to each histogram's bin. In the script, you need to specify the name of your combined datacard. It will create a new datacard & a new histogram file in your current directory. You can then directly run Combine commands on this new datacard.
+7) Finally, you can add MC statistical uncertainties manually if you want to (not done by Combine by default) via the CombineHarvester 'AddBinbyBin.py' script. It will add stat. MC error to each histogram's bin. In the script, you need to specify the name of your input datacard, and the names of the output datacard & histogram file. You can then directly run Combine commands on this new datacard.
 # python addBinbyBin
 - NB 1 : This adds a LOT of nuisance parameters (NP) to the fit (1 per histogram bin/process/channel/region) ! That's why the script contains an option 'SetAddThreshold' which you should set e.g. to 0.05, so that a NP is added only if the bin stat. relative uncertainty is >= 0.05 !
 - NB 2 : As a result, the fit takes a LOT more time to converge while the MC stat. uncertainties have been added.

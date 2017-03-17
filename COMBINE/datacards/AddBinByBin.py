@@ -5,7 +5,7 @@ import CombineHarvester.CombineTools.ch as ch
 # Create a CombineHarvester instance and parse an existing datacard
 # Important to specify the mass, other metadata values like analysis and channel are optional
 cmb = ch.CombineHarvester()
-cmb.ParseDatacard('COMBINED_datacard_TemplateFit.txt', mass='120', analysis='tZq', channel='all')
+cmb.ParseDatacard('COMBINED_datacard_TemplateFit.txt', mass='', analysis='tZq', channel='all')
 
 bbb = ch.BinByBinFactory()
 bbb.SetVerbosity(1)
