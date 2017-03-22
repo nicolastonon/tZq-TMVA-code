@@ -28,9 +28,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
-    double set_luminosity = 35.68; //Moriond 2017
+    // double set_luminosity = 35.68; //Moriond 2017
     // double set_luminosity = 12.9; //Summer 2016
-    // double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
+    double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
 
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
@@ -62,7 +62,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##     ## ########  ######   ####  #######  ##    ##        ####  ##        ######   #######     ##     ######
 //-----------------------------------------------------------------------------------------
 //Specify here the cuts that you wish to apply to all 3 regions.
-//To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
+//To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||" !
 //ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4"); set_v_cut_IsUsedForBDT.push_back(false);
 
     std::vector<TString > set_v_cut_name;
@@ -70,7 +70,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     std::vector<bool > set_v_cut_IsUsedForBDT;
 
 //-------------------
-    set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");            set_v_cut_IsUsedForBDT.push_back(false);
+set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");            set_v_cut_IsUsedForBDT.push_back(false);
+set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back("<280919");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
 
 
@@ -375,7 +376,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
         bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)

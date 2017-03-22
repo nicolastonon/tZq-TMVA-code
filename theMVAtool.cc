@@ -134,7 +134,7 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 	{
 		if( (v_cut_name[ivar]=="METpt" || v_cut_name[ivar]=="mTW") && v_cut_def[ivar] == ">0") {continue;} //Useless cuts
-		if(v_cut_name[ivar] == "passTrig") {continue;} //Useless cuts
+		if(v_cut_name[ivar] == "passTrig" || v_cut_name[ivar] == "RunNr") {continue;} //Useless cuts
 
 		if(v_cut_def[ivar] != "")
 		{
@@ -446,7 +446,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
  */
 double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
 {
-  if(fakeLep_flavour != "u" && fakeLep_flavour != "e") {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<"Wrong name for flavour of fake lepton ('e' or 'u') !"; return 0;}
+  if(fakeLep_flavour != "u" && fakeLep_flavour != "e") {cout<<__LINE__<<" : "<<"Wrong name for flavour of fake lepton ('e' or 'u') !"; return 0;}
 
   vector<TString> channels_same_flavour;
   if(fakeLep_flavour == "u")
@@ -558,7 +558,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
 
 
 /**
- * Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
+ * Rescale Fake histograms with SFs computed with TFractionFitter
  * @param file_to_rescale_name [Name of file containing fake histograms to be rescaled]
  */
 void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
@@ -567,19 +567,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 	TString input_file_name;
 	Long_t *id,*size,*flags,*modtime;
-	input_file_name = "outputs/Reader_mTW" + this->filename_suffix + ".root"; //mTW Templates
-	file_input = TFile::Open(input_file_name);
-	if(!file_input) //If file doesn't exist
-	{
-		input_file_name = "outputs/Combine_Input_noScale.root"; //Combine templates
-		file_input = TFile::Open(input_file_name);
-		if(!file_input) //If file doesn't exist
-		{
-			input_file_name = "outputs/Theta_Input_noScale.root"; //Theta templates
-			file_input = TFile::Open(input_file_name);
-			if(!file_input) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<FRED(<<input_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
-		}
-	}
+	input_file_name = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
 
 	file_input = TFile::Open(input_file_name.Data()); //File containing the templates, from which can compute fake ratio
 	if(!file_input) {cout<<FRED(<<input_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
@@ -609,7 +597,22 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	}
 
 	TFile * file_to_rescale = 0;
-	file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "UPDATE"); //NOTE : update mode --> overwrite fake histograms
+
+	//Special case : for mTW template file, we need an 'unscaled' version so that we can compute the Fakes SFs from there
+	//--> If file to be rescaled is mTW, create a new separate file. For all other files, simply update the existing files.
+	if(file_to_rescale_name.Contains("_unScaled.root") )
+	{
+		int index = 0;
+		index = file_to_rescale_name.Index("_unScaled.root"); //Find index of substring
+		file_to_rescale_name.Remove(index); //Remove substring
+		file_to_rescale_name+= ".root"; //Add desired suffix
+
+		file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "RECREATE"); //
+	}
+	else
+	{
+		file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "UPDATE"); //NOTE : update mode --> overwrite fake histograms
+	}
 	if(!file_to_rescale) {cout<<FRED(<<file_to_rescale_name.Data()<<" not found! -- Abort")<<endl; return;}
 
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
@@ -694,7 +697,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TString output_file_name = "outputs/Reader_" + template_name + this->filename_suffix;
 	if(cut_on_BDT) output_file_name+= "_CutBDT";
-	output_file_name+= ".root";
+	//Cf. Fakes rescaling function : need to have an 'unscaled' version of the mTW template to compute the Fakes SFs
+	if(template_name == "mTW") output_file_name+= "_unScaled.root"; //Add suffix to distinguish it : this file will be used to compute SFs
+	else output_file_name+= ".root";
+
 	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
 
 	TH1::SetDefaultSumw2();
@@ -1159,7 +1165,7 @@ float theMVAtool::Determine_Control_Cut()
 	// if(isttZ) input_file_name = "outputs/Reader_BDTttZ" + this->filename_suffix + ".root";
 	// else input_file_name = "outputs/Reader_BDT" + this->filename_suffix + ".root";
 
-	input_file_name = "outputs/Combine_Input_ScaledFakes.root"; //CHANGED
+	input_file_name = "outputs/Combine_Input.root"; //CHANGED
 
 	TFile* f = 0;
 	f = TFile::Open(input_file_name.Data());
@@ -1380,7 +1386,9 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") )   {continue;} //Fake syst. only for "fakes" samples
 
 			//NB : call the output file here in UPDATE mode because otherwise I got memory errors
-			TString output_file_name = "outputs/Control_Trees" + this->filename_suffix + ".root";
+			TString output_file_name = "outputs/Control_Trees" + this->filename_suffix;
+			if(cut_on_BDT) output_file_name+= "_CutBDT";
+			output_file_name+= ".root";
 			TFile* output_file = TFile::Open( output_file_name, "UPDATE" );
 
 			//Create new tree, that will be filled only with events verifying MVA<cut
@@ -1590,6 +1598,18 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 		total_var_list.push_back(v_add_var_names[i].Data());
 	}
 
+	bool restart_loop = false; //Do it this way so that everytime a 'useless variable' is removed from vector, we restart the whole loop to check for other variables (because doing this changes the index of each element --> restart from scratch)
+	do
+	{
+		restart_loop = false;
+		for(int i=0; i<total_var_list.size(); i++)
+		{
+			if(total_var_list[i] == "passTrig" || total_var_list[i] == "RunNr") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
+		}
+	} while (restart_loop);
+
+
+
 	int nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() * syst_list.size()) + total_var_list.size();
 
 	if(nof_histos_to_create > 800)
@@ -1634,7 +1654,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 						if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
-					if(i_hist_created%100==0) {cout<<"--- "<<i_hist_created<<"/"<<nof_histos_to_create<<endl;}
+					if(i_hist_created%100==0 && i_hist_created != 0) {cout<<"--- "<<i_hist_created<<"/"<<nof_histos_to_create<<endl;}
 
 					TH1F* h_tmp = 0;
 					if(total_var_list[ivar] == "mTW") 								{h_tmp = new TH1F( "","", binning, 0, 250 );}
@@ -1677,7 +1697,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "MEMvar_3")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
 					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", binning, 0, 150 );}
 
-					else {cout<<endl<<__LINE__<<BOLD(FRED(" --> !!Unknown variable!! ")) << total_var_list[ivar] << " Correct name or add it here" <<endl<<endl;}
+					else {cout<<endl<<"theMVAtool.cc - l."<<__LINE__<<BOLD(FRED(" --> !!Unknown variable!! ")) << total_var_list[ivar] << " Correct name or add it here" <<endl<<endl;}
 
 					TString tree_name = "Control_" + sample_list[isample];
 					if(syst_list[isyst] != "") {tree_name+= "_" + syst_list[isyst];}
@@ -1926,7 +1946,7 @@ int theMVAtool::Generate_PseudoData_Templates(TString template_name)
 
 	TRandom1 therand(0); //Randomization
 
-	TString pseudodata_input_name = "outputs/Combine_Input_ScaledFakes.root";
+	TString pseudodata_input_name = "outputs/Combine_Input.root";
 	// TString pseudodata_input_name = "outputs/Reader_" + template_name + this->filename_suffix + ".root";
     TFile* file = 0;
 	file = TFile::Open( pseudodata_input_name.Data(), "UPDATE");
@@ -2053,7 +2073,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 	}
 	else
 	{
-		TString input_file_name = "outputs/Control_Histograms" + this->filename_suffix + "_ScaledFakes.root";
+		TString input_file_name = "outputs/Control_Histograms" + this->filename_suffix + ".root";
 		f = TFile::Open( input_file_name );
 		if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 	}
@@ -2578,7 +2598,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
 	// TString input_name = "outputs/Reader_" + template_name + this->filename_suffix + ".root";
-	TString input_name = "outputs/Combine_Input_ScaledFakes.root"; //FAKES RE-SCALED
+	TString input_name = "outputs/Combine_Input.root"; //FAKES RE-SCALED
 	TFile* file_input = 0;
 	file_input = TFile::Open( input_name.Data() );
 	if(file_input == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
@@ -2842,7 +2862,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
 	//In mlfit.root, data is given as a TGraph. Instead, we take it directly from the Template file given to Combine (un-changed!)
-	TString input_name = "outputs/Combine_Input_ScaledFakes.root"; //FAKES RE-SCALED
+	TString input_name = "outputs/Combine_Input.root"; //FAKES RE-SCALED
 	TFile* file_data = 0;
 	file_data = TFile::Open( input_name.Data() );
 	if(file_data == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
