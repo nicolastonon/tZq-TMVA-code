@@ -545,7 +545,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
 
   double fakes_postfit = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
 
-  cout<<endl<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fakes_postfit*100<<" %"<<endl;
+  // cout<<endl<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fakes_postfit*100<<" %"<<endl;
 
   return (fakes_postfit/hfake->Integral() ) * hdata->Integral();
 }

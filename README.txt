@@ -21,9 +21,32 @@ This GitHub repository contains the TMVA & CombineHiggsTool codes used in the tZ
 - Be careful to set properly all the configurable paths, booleans & other options in the main !!!
 - Also notice that all function calls are done via dedicated booleans (cf. section "Function Calls" in code) !
 
-/!\ Be sure to keep all the separate codes synchronized ! For example, any change in BDT_analysis.cc to the cuts/samples/channels/... will affect every function of the user-class theMVAtool. *BUT* you need to propagate these changes (e.g. list of samples or systematics) to the codes which are independant, for example standalone code 'scaleFakes.cc' (described later).
+/!\ Be sure to keep all the codes synchronized : sample list, etc. (e.g. if you want to use interfacing code, standalone code 'scaleFakes.cc', etc.)
 
 /!\ ...
+
+_____________________________________________________________________________
+  #####  ####### ####### #     # ######
+ #     # #          #    #     # #     #
+ #       #          #    #     # #     #
+  #####  #####      #    #     # ######
+       # #          #    #     # #
+ #     # #          #    #     # #
+  #####  #######    #     #####  #
+_____________________________________________________________________________
+
+1) If you want to use the Combine Framework, first install it following these instructions : (to install 'HiggsAnalysis' + 'CombineHarvester'):
+http://cms-analysis.github.io/CombineHarvester/index.html#getting-started
+
+2) Choose the location where you will copy the code. If you will use Combine, the code must be in a subdir. of CMSSW_7_4_7/src (e.g. CMSSW_7_4_7/src/HiggsAnalysis/CombinedLimit/tzq_analysis/)
+
+3) Copy the necessary codes & files from GitHub (https://github.com/nicolastonon/tZq-TMVA-code).
+/!\ You can either clone the entire repository (containing TMVA code, COMBINE folder, + a few codes which are not needed) ; or, if you just want to get the COMBINE directory (e.g. because you already have the TMVA code in some other location), perform a 'sparse checkout' to download only this dir. :
+# git init .
+# git remote add -f origin https://github.com/nicolastonon/tZq-TMVA-code
+(# git config core.sparseCheckout true)
+(# echo "COMBINE/" >> .git/info/sparse-checkout)
+# git pull origin master
 
 
 _____________________________________________________________________________
@@ -101,10 +124,6 @@ This class contains all the necessary functions to perform our Template Fit Anal
 - NOTE 2 : script 'merge_templates_theta.sh' does the same thing, but for Reader files produced with theta naming conventions (__Theta.root files produced via function 'Convert_Templates_Theta')
 
 
-/!\ /!\ BEFORE PERFORMING THE TEMPLATE FIT, NEED TO RESCALE DATA-DRIVEN FAKES /!\ /!\
-* 'scaleFakes.cc' is used to re-scale the data-driven fakes to a reasonable initial value, using TFractionFitter (fit to data). You can either set in the code the path of the file containing the histos to rescale, or at execution (e.g. ./scaleFakes.exe file.root). This will create an output file with the extention '_ScaledFakes.root'.
-- NB : must specify in the code via boolean if the histograms to rescale follow Combine or Theta conventions !
-
 * Func_other.h can be used to store secondary/helper functions.
 
 ((* Other codes are not described/used here))
@@ -157,7 +176,7 @@ NOTE : You need to retrieve this input file yourself, and move it to 'outputs/'.
 
 --- Convert Templates names for Theta
 
-* Convert_Templates_Theta : takes rescaled Combine templates files in input (located in dir. 'outputs/'), and creates rescaled templates files following Theta naming conventions (in dir. 'outputs/').
+* Convert_Templates_Theta : takes Combine templates files in input (located in dir. 'outputs/'), and simply changes the name of the histograms to follow Theta conventions (creates new file).
 
 
 
@@ -180,12 +199,8 @@ _____________________________________________________________________________
 2) Activate 'Train_Test_Evaluate' & 'Read' functions. Run the 'auto_BDTanalysis_3regions.sh' script (= all 3 regions)
 ---> Creates 3 'Reader' files in 'outputs/'.
 
-3) Move to 'outputs/' & run the script 'combine_templates.sh'
----> Creates file Combine_Input_noScale.root from the 3 previous files.
-
-4) Move back to previous dir., and run './scaleFakes.exe outputs/Combine_Input_noScale.root'
----> Creates file Control_Histograms_NJetsMin0_NBJetsEq0_ScaledFakes.root in 'outputs/'.
-
+3) Move to 'outputs/' & run the script 'merge_templates_combine.sh'
+---> Creates file Combine_Input.root from the 3 previous files.
 ===> This is the input file we're going to feed to Combine !
 
 
@@ -201,7 +216,7 @@ _____________________________________________________________________________
 
 
 --- 6) Additionally, if you want to plot the prefit/postfit templates :
-NB :  need to have the following files in 'outputs/' dir. : Combine_Input_ScaledFakes.root (prefit) & mlfit.root obtained from Maximum Likelihood Fit (postfit)
+NB :  need to have the following files in 'outputs/' dir. : Combine_Input.root (prefit) & mlfit.root obtained from Maximum Likelihood Fit (postfit)
 
 --> Simply set the booleans properly, and run script './auto_BDTanalysis_3regions.sh' (all 3 regions)to draw plots !
 
