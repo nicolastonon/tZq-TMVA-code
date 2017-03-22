@@ -163,25 +163,49 @@ pair<TString,TString> Break_Cuts_In_Two(TString multiple_cut)
 	return the_cuts;
 }
 
-
-TString Theta_to_Combine(TString theta_name)
+//Make sure that systematic name follows Combine conventions
+TString Combine_Naming_Convention(TString name)
 {
-	TString new_Combine_name = theta_name;
+	if(name.Contains("Up") || name.Contains("Down") ) {return name;} //If systematics is already following Combine convention
 
-	if(new_Combine_name.Contains("__plus"))
+	else if(name.Contains("__plus"))
 	{
-		int i = new_Combine_name.Index("__plus"); //Find index of substring
-		new_Combine_name.Remove(i); //Remove substring
-		new_Combine_name+= "Up"; //Add Combine syst. suffix
-	}
-	else if(new_Combine_name.Contains("__minus"))
-	{
-		int i = new_Combine_name.Index("__minus"); //Find index of substring
-		new_Combine_name.Remove(i); //Remove substring
-		new_Combine_name+= "Down"; //Add Combine syst. suffix
+		int i = name.Index("__plus"); //Find index of substring
+		name.Remove(i); //Remove substring
+		name+= "Up"; //Add Combine syst. suffix
 	}
 
-	return new_Combine_name;
+	else if(name.Contains("__minus"))
+	{
+		int i = name.Index("__minus"); //Find index of substring
+		name.Remove(i); //Remove substring
+		name+= "Down"; //Add Combine syst. suffix
+	}
+
+	return name;
+}
+
+//Make sure that systematic name follows Theta conventions
+
+TString Theta_Naming_Convention(TString name)
+{
+	if(name.Contains("__plus") || name.Contains("__minus") ) {return name;} //If systematics is already following Theta convention
+
+	else if(name.Contains("Up"))
+	{
+		int i = name.Index("Up"); //Find index of substring
+		name.Remove(i); //Remove substring
+		name+= "__plus"; //Add Theta syst. suffix
+	}
+
+	else if(name.Contains("Down"))
+	{
+		int i = name.Index("Down"); //Find index of substring
+		name.Remove(i); //Remove substring
+		name+= "__minus"; //Add Theta syst. suffix
+	}
+
+	return name;
 }
 
 

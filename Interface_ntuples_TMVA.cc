@@ -57,7 +57,7 @@ TString Convert_Number_To_TString(int number)
  * @param thevarlist list of vars NOT related to MEM to be in the output ntuple
  * @param MEMvarlist list of vars RELATED to MEM to be in the output ntuple
  */
-void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> MEMvarlist, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString MEM_or_WZ)
+void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> MEMvarlist, vector<TString> MEMvarlist_new, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString MEM_or_WZ)
 {
 	vector<float> v_floats; //Store all other variables as floats
 	vector<double> v_double_MEM; //Store MEM variables as doubles
@@ -71,9 +71,9 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	// FIXME -- Use "withMEM" ntuples in ttZ/tZq regions
 	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
 	// FIXME -- Use "readyForMEM" (no MEM) in ttZ/tZq regions
-	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
+	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
 
-	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
+	// else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
 
 	TFile* f_input = 0;
   	f_input = new TFile(input_filename.Data()); if(!f_input || f_input->IsZombie() ) {cout<<"Can't find input file !"<<endl; return;}
@@ -102,8 +102,6 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		TTree* tree_modif = 0;
 		tree_modif = new TTree(tree_syst_list[itreesyst].Data(), "");
 
-		int n_MEMvars = 4; //FIXME -- adapt here the # of final MEM vars to be implemented
-
 		//Allocate memory/elements to vectors
 		//NOTE : don't do it in same loop as Branch() !! (push_back can change vector address -->segfault)
 		for(int i=0; i<thevarlist.size(); i++)
@@ -115,7 +113,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			v_floats_MEM.push_back(-999);
 			v_double_MEM.push_back(-999);
 		}
-		for(int i=0; i<n_MEMvars; i++)
+		for(int i=0; i<MEMvarlist_new.size(); i++)
 		{
 			v_floats_modif.push_back(-999);
 		}
@@ -134,9 +132,9 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		{
 			tree_modif->Branch(MEMvarlist[ivar].Data(),&v_floats_MEM[ivar],(MEMvarlist[ivar]+"/F").Data());
 		}
-		for(int ivar=0; ivar<n_MEMvars; ivar++)
+		for(int ivar=0; ivar<MEMvarlist_new.size(); ivar++)
 		{
-			tree_modif->Branch(("MEMvar_"+Convert_Number_To_TString(ivar)).Data(),&v_floats_modif[ivar],("MEMvar_"+Convert_Number_To_TString(ivar)+"/F").Data());
+			tree_modif->Branch(MEMvarlist_new[ivar].Data(),&v_floats_modif[ivar],(MEMvarlist_new[ivar]+"/F").Data());
 		}
 		//Systematics renaming for Combine
 		for(int isyst=0; isyst<weight_syst_list.size(); isyst++)
@@ -255,15 +253,15 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	// sample_list.push_back("Data");
+	sample_list.push_back("Data");
 	sample_list.push_back("tZq");
-	// sample_list.push_back("WZl");
-	// sample_list.push_back("WZb");
-	// sample_list.push_back("WZc");
+	sample_list.push_back("WZl");
+	sample_list.push_back("WZb");
+	sample_list.push_back("WZc");
 	sample_list.push_back("ttZ");
 	sample_list.push_back("ttW");
-	// sample_list.push_back("ttH");
-	// sample_list.push_back("ZZ");
+	sample_list.push_back("ttH");
+	sample_list.push_back("ZZ");
 	sample_list.push_back("Fakes");
 	sample_list.push_back("STtWll")	;
 
@@ -351,12 +349,21 @@ int main()
 	thevarlist.push_back("duplMuon");
 
 
+	//--- MEM variables (weights, ...) which we modify into new variables in the code
 	vector<TString> MEMvarlist; //FIXME add new MEM vars
 	MEMvarlist.push_back("mc_mem_ttz_weight");
 	MEMvarlist.push_back("mc_mem_tllj_weight");
 	MEMvarlist.push_back("mc_mem_tllj_weight_kinmaxint");
 	MEMvarlist.push_back("mc_mem_ttz_weight_kinmaxint");
 	MEMvarlist.push_back("mc_mem_ttz_tllj_likelihood");
+
+
+	//--- Names of new MEM variable (used directly in BDT)
+	vector<TString> MEMvarlist_new;
+	MEMvarlist_new.push_back("MEMvar_0");
+	MEMvarlist_new.push_back("MEMvar_1");
+	MEMvarlist_new.push_back("MEMvar_2");
+	MEMvarlist_new.push_back("MEMvar_3");
 
 
 
@@ -373,9 +380,13 @@ int main()
 	vector<TString> tree_syst_list;
 	tree_syst_list.push_back("Tree"); //NOTE -- KEEP THIS LINE : nominal
 
-	tree_syst_list.push_back("JERUp"); tree_syst_list.push_back("JERDown");
-	tree_syst_list.push_back("JESUp"); tree_syst_list.push_back("JESDown");
-	tree_syst_list.push_back("FakesUp"); tree_syst_list.push_back("FakesDown");
+	tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
+	tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
+	tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
+
+	// tree_syst_list.push_back("JERUp"); tree_syst_list.push_back("JERDown");
+	// tree_syst_list.push_back("JESUp"); tree_syst_list.push_back("JESDown");
+	// tree_syst_list.push_back("FakesUp"); tree_syst_list.push_back("FakesDown");
 
 
 	vector<TString> weight_syst_list;
@@ -406,14 +417,14 @@ int main()
 	MEM_or_WZ = "MEM";
 	for(int isample=0; isample<sample_list.size(); isample++)
 	{
-		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, weight_syst_list, tree_syst_list, MEM_or_WZ);
+		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
 	}
 
 //--- Interface ntuples for WZ CR study (mTW template fit)
 	MEM_or_WZ = "WZ";
 	for(int isample=0; isample<sample_list.size(); isample++)
 	{
-		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, weight_syst_list, tree_syst_list, MEM_or_WZ);
+		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
 	}
 
 	return 0;

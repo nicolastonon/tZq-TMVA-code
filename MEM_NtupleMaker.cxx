@@ -22,10 +22,12 @@
 using namespace std;
 
 //Overloaded constructor (default)
-MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice)
+MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice, double set_CSV_threshold, double set_eta_threshold)
 {
   if(region_choice != "MEM" && region_choice != "WZ") {cout<<endl<<BOLD( FRED("ERROR : choose WZ or (tZq+ttZ) region !") )<<endl;}
   MEM_or_WZ = region_choice;
+
+  CSV_threshold = set_CSV_threshold; eta_threshold = set_eta_threshold;
 
   mkdir("output_ntuples/ntuples_readyForMEM",0755);
   mkdir("output_ntuples/ntuples_WZ",0755);
@@ -356,7 +358,7 @@ void MEM_NtupleMaker::SelectBjets(std::vector<ciemat::Jet>* vSelectedJets, std::
     for (int ib=0; ib<vSelectedJets->size(); ib++)
     {
       // if (doSelectOnlyBjets && vSelectedJets->at(ib).btagCSV<0.5426 ) continue; //Mara doesn't ask for eta <2.4!
-      if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV<0.5426 || fabs(vSelectedJets->at(ib).eta) > 2.4) ) {continue;} //FIXME -- make sure bjet def is correct
+      if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV < CSV_threshold || fabs(vSelectedJets->at(ib).eta) > eta_threshold) ) {continue;} //FIXME -- make sure bjet def is correct
 
       if (vSelectedJets->at(ib).btagCSV>btag_max)
       {
@@ -623,15 +625,17 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
 
 //--- Output Trees
-    f_output->cd(); TString output_tree_name = "";
+    f_output->cd(); TString output_tree_name = v_syst_tree[itreesyst];
     if(v_syst_tree[itreesyst] == "Default")           output_tree_name = "Tree";
-    else if(v_syst_tree[itreesyst] == "JER__plus")    output_tree_name = "JERUp";
-    else if(v_syst_tree[itreesyst] == "JER__minus")   output_tree_name = "JERDown";
-    else if(v_syst_tree[itreesyst] == "JES__plus")    output_tree_name = "JESUp";
-    else if(v_syst_tree[itreesyst] == "JES__minus")   output_tree_name = "JESDown";
-    else if(v_syst_tree[itreesyst] == "Fakes__plus")  output_tree_name = "FakesUp";
-    else if(v_syst_tree[itreesyst] == "Fakes__minus") output_tree_name = "FakesDown";
-    else {cout<<__LINE__<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
+
+    // else if(v_syst_tree[itreesyst] == "JER__plus")    output_tree_name = "JERUp";
+    // else if(v_syst_tree[itreesyst] == "JER__minus")   output_tree_name = "JERDown";
+    // else if(v_syst_tree[itreesyst] == "JES__plus")    output_tree_name = "JESUp";
+    // else if(v_syst_tree[itreesyst] == "JES__minus")   output_tree_name = "JESDown";
+    // else if(v_syst_tree[itreesyst] == "Fakes__plus")  output_tree_name = "FakesUp";
+    // else if(v_syst_tree[itreesyst] == "Fakes__minus") output_tree_name = "FakesDown";
+    // else {cout<<__LINE__<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
+
     TTree* tree_output = new TTree(output_tree_name.Data(), "");
     Prepare_Tree(samplename, tree_output, output_tree_name);
 
@@ -711,7 +715,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       int NBJets_tmp = 0; //NB : NJets contains both btag and non-btag
       for(int i=0; i<vSelectedJets->size(); i++)
       {
-        if( fabs(vSelectedJets->at(i).eta) <= 2.4 && vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //FIXME updated def
+        if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= CSV_threshold) {NBJets_tmp++;} //FIXME updated def
         // if( vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //No cut on eta
       }
 
@@ -879,9 +883,6 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
 int main()
 {
-  cout<<endl<<"NOTE : Make sure CSV threshold is up-to-date (Current :  >= 0.5426) !"<<endl<<endl;
-
-
   //---------------------------------------------------------------------------
   //  ######     ###    ##     ## ########  ##       ########  ######
   // ##    ##   ## ##   ###   ### ##     ## ##       ##       ##    ##
@@ -893,17 +894,17 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("tZq");
-  // v_samplenames.push_back("ttZ");
-  // v_samplenames.push_back("WZl");
-  // v_samplenames.push_back("WZb");
-  // v_samplenames.push_back("WZc");
-  // v_samplenames.push_back("ZZ");
-  // v_samplenames.push_back("ttH");
-  // v_samplenames.push_back("ttW");
+  v_samplenames.push_back("ttZ");
+  v_samplenames.push_back("Data");
+  v_samplenames.push_back("tZq");
+  v_samplenames.push_back("WZl");
+  v_samplenames.push_back("WZb");
+  v_samplenames.push_back("WZc");
+  v_samplenames.push_back("ZZ");
+  v_samplenames.push_back("ttH");
+  v_samplenames.push_back("ttW");
   v_samplenames.push_back("Fakes");
-  // v_samplenames.push_back("STtWll");
+  v_samplenames.push_back("STtWll");
 
   // v_samplenames.push_back("ttZMad");
   // v_samplenames.push_back("WZjets");
@@ -1031,11 +1032,18 @@ int main()
   //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples
   TString region_choice; //Choose if produce samples which are going to be used for MEM or for WZ CR
 
+  //Bjet definition -- Needed to select btagged jets in Jet vector ! Make sure it's updated !!
+  double CSV_threshold = 0.5426; //Medium CSV
+  double eta_threshold = 2.4 ; //No Bjet SF beyond that
+
+
+
+
 //--- Produce ntuples for MEM (ttZ/tZq regions)
   region_choice = "MEM";
   for(int isample=0; isample<v_samplenames.size(); isample++)
   {
-    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice);
+    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
     theNtupleMaker->Init();
     theNtupleMaker->NtupleMaker(v_samplenames[isample]);
     theNtupleMaker->~MEM_NtupleMaker();
@@ -1045,7 +1053,7 @@ int main()
   region_choice = "WZ";
   for(int isample=0; isample<v_samplenames.size(); isample++)
   {
-    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice);
+    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
     theNtupleMaker->Init();
     theNtupleMaker->NtupleMaker(v_samplenames[isample]);
     theNtupleMaker->~MEM_NtupleMaker();
@@ -1056,7 +1064,7 @@ int main()
 //--- Single Ntuple
   // region_choice = "MEM";
   // TString samplename = "WZjets";
-  // MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, weight_syst_list, tree_syst_list, region_choice);
+  // MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
   // theNtupleMaker->Init();
   // theNtupleMaker->NtupleMaker(samplename);
   // theNtupleMaker->~MEM_NtupleMaker();

@@ -32,7 +32,7 @@ class MEM_NtupleMaker
 {
 	public :
 
-		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, TString);
+		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, TString, double, double);
 		~MEM_NtupleMaker();
 
 		void Init();
@@ -43,6 +43,7 @@ class MEM_NtupleMaker
 		void NtupleMaker(TString);
 
 		TString MEM_or_WZ;
+		double CSV_threshold; double eta_threshold;
 
 		TString output_dir;
 		TFile* f_output;

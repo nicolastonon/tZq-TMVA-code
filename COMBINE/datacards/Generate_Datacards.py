@@ -6,8 +6,7 @@ import string
 
 import os
 
-#fileToSearch = "Template_Datacard_allSyst.txt"
-#fileToSearch = "Template_Datacard_noSyst.txt"
+fileToSearch = "Template_Datacard.txt"
 
 theFakeLLL = "-"
 theFLLL_chNumb = "-"
@@ -16,6 +15,7 @@ tZq_chNumb = "-"
 ttZ_chNumb = "-"
 tZqsyst = "-"
 ttZsyst = "-"
+shapeSyst = ""
 total = len(sys.argv)
 cmdargs = str(sys.argv)
 
@@ -55,9 +55,9 @@ if(systList!="allSyst" and systList!="noSyst"):
     print "Wrong systList value ! should be allSyst or noSyst"
     exit()
 if systList=="allSyst":
-    fileToSearch = "Template_Datacard_allSyst.txt"
+    shapeSyst = ""
 if systList == "noSyst":
-    fileToSearch = "Template_Datacard_noSyst.txt"
+    shapeSyst = "#"
 
 
 if(Signal!="tZq" and Signal!="ttZ" and Signal!="tZqANDttZ"):
@@ -81,6 +81,7 @@ if Signal=="tZqANDttZ":
 
 print 'creating datacard for channel '+channel+' and variable '+theVar
 s = open( fileToSearch).read()
+s = s.replace("[*]", shapeSyst)
 s = s.replace("chan", channel)
 s = s.replace("var",theVar)
 s = s.replace("FakeLLL",theFakeLLL )

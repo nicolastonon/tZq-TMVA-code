@@ -12,8 +12,10 @@
 #include "TVirtualFitter.h"
 #include "TFitResultPtr.h"
 #include "TFitResult.h"
+#include "TSystem.h"
 #include <iostream>
 #include <map>
+#include <cstdlib>
 
 /* BASH COLORS */
 #define RST   "\x1B[0m"
@@ -44,9 +46,9 @@ using namespace std;
 // ##    ## ##     ## ##     ## ##        ##     ##    ##    ##             ##    ## ### ##       ###
 //  ######   #######  ##     ## ##         #######     ##    ########        ######  ### ##       ###
 
-double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_list, TString Combine_or_Theta)
+double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_list, TString Combine_or_Theta, bool verbose = true)
 {
-  if(fakeLep_flavour != "u" && fakeLep_flavour != "e") {cout<<"Wrong name for flavour of fake lepton ('e' or 'u') !"; return 0;}
+  if(fakeLep_flavour != "u" && fakeLep_flavour != "e") {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<"Wrong name for flavour of fake lepton ('e' or 'u') !"; return 0;}
 
   vector<TString> channels_same_flavour;
   if(fakeLep_flavour == "u")
@@ -64,9 +66,9 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
   std::vector<TString> listSum;
   for(int isample=0; isample<sample_list.size(); isample++)
   {
-    if(sample_list[isample] == "data_obs" || sample_list[isample] == "DATA" || sample_list[isample].Contains("Fake") ) {continue;} //Treated separately
+    if(sample_list[isample] == "data_obs" || sample_list[isample] == "DATA" || sample_list[isample] == "DATA" || sample_list[isample].Contains("Fake") ) {continue;} //Treated separately
     TString name_tmp = "mTW_uuu__"+sample_list[isample];
-    if(!f ->GetListOfKeys()->Contains( name_tmp.Data() ) ) {cout<<name_tmp.Data()<<" not found !"<<endl;  continue;}
+    if(!f ->GetListOfKeys()->Contains( name_tmp.Data() ) ) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<name_tmp.Data()<<" not found !"<<endl;  continue;}
 
     listSum.push_back(sample_list[isample]);
   }
@@ -94,14 +96,14 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
     //DATA
     if(Combine_or_Theta == "combine") myHist = "mTW_" + channels_same_flavour[ichan] + "__data_obs";
     else if(Combine_or_Theta == "theta") myHist = "mTW_" + channels_same_flavour[ichan] + "__DATA";
-    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<myHist.Data()<<" not found !"<<endl; return 0;}
     h_tmp = (TH1F*)f->Get( myHist);
     if(ichan==0) {hdata = (TH1F*) h_tmp->Clone();}
     else {hdata->Add(h_tmp);}
 
     //FAKES
     myHist = "mTW_" + channels_same_flavour[ichan] + "__" + channelfake[ichan];
-    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) )  {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) )  {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<myHist.Data()<<" not found !"<<endl; return 0;}
     h_tmp = (TH1F*)f->Get( myHist);
     if(ichan==0) {hfake = (TH1F*) h_tmp->Clone();}
     else {hfake->Add(h_tmp);}
@@ -110,7 +112,7 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
     for (int i = 0; i<listSum.size(); i++)
     {
       myHist = "mTW_" + channels_same_flavour[ichan] + "__" + listSum[i];
-      if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+      if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<myHist.Data()<<" not found !"<<endl; return 0;}
       h_tmp = (TH1F*)f->Get( myHist);
       if(ichan==0 && i==0) {hsum = (TH1F*) h_tmp->Clone();}
       else {hsum->Add(h_tmp);}
@@ -127,8 +129,8 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
 
   //FIXME : constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
   double fracmc = hsum->Integral()/hdata->Integral() ;
-  fit->Constrain(0,0.001,1000.); //Constrain param 0 (fakes fraction) between 0 & 1
-  if(fracmc>0) fit->Constrain(1,fracmc*0.99,fracmc*1.01); //Constrain param 1 (other MC samples fraction)
+  fit->Constrain(0, 0.001, pow(10,6) ); //Constrain param 0 (fakes)
+  if(fracmc>0) fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain param 1 (other MC samples)
 
 
   TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
@@ -142,15 +144,11 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
   c1->SaveAs(("plots/ScaleFakes_"+fakeLep_flavour+".png").Data()); //Save fit plot
   delete c1;
 
-  double fraction_fakes = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
-  cout<<endl<<endl<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fraction_fakes*100<<" %"<<endl;
+  double fakes_postfit = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
+  if(verbose) cout<<endl<<"ScaleFakes.cc "<<__LINE__<<" : "<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fakes_postfit*100<<" %"<<endl;
 
-  double integralQuotient = hdata->Integral()/hfake->Integral();
 
-  // double mySF = vFit->GetParameter(0)*integralQuotient;
-  double mySF = fraction_fakes*integralQuotient;
-
-  return mySF; //returns (fakes/data)[FIT]  *  (data/fakes) --> Scale factor for Fakes samples !
+  return (fakes_postfit/hfake->Integral() ) * hdata->Integral();
 }
 
 
@@ -170,27 +168,16 @@ double scaleFactor(TFile * f, TString fakeLep_flavour, vector<TString> sample_li
 // ##     ##  ##  ##    ##    ##    ##     ## ##    ##  ##    ##  ##     ## ##     ## ##    ##
 // ##     ## ####  ######     ##     #######   ######   ##     ## ##     ## ##     ##  ######
 
-int Scale_Fake_Histograms(TString file_to_rescale_name)
+int Scale_Fake_Histograms(TString file_to_rescale_name, TString Combine_or_Theta = "combine", bool verbose = true)
 {
+  if(Combine_or_Theta != "combine" && Combine_or_Theta != "theta" && verbose) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<BOLD(FRED("Error ! Need to choose b/w 'combine' or 'theta' in code !"))<<endl; return 0;}
+  if(verbose) cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<BOLD(FRED("Creating re-scaled template file for : "<<Combine_or_Theta<<" !"))<<endl;
 
-
-//CHOOSE HERE BETWEEN 'COMBINE' OR 'THETA' (depending on the naming conventions of the histograms to rescale)
-//-------------------------
-  TString Combine_or_Theta = "combine";
-  // TString Combine_or_Theta = "theta";
-//-------------------------
-
-
-  cout<<endl<<BOLD(FRED("Creating re-scaled template file for : "<<Combine_or_Theta<<" !"))<<endl;
-
-  if(Combine_or_Theta != "combine" && Combine_or_Theta != "theta") {cout<<BOLD(FRED("Error ! Need to choose b/w 'combine' or 'theta' in code !"))<<endl; return 0;}
-
-  int rebin = 1;
   TH1::SetDefaultSumw2();
 
   TFile * file_to_rescale = 0;
   file_to_rescale = TFile::Open(file_to_rescale_name.Data()); //File containing the templates, from which can compute fake ratio
-  if(!file_to_rescale) {cout<<FRED(<<file_to_rescale_name.Data()<<" not found! Which file do you want to Rescale ? -- Abort")<<endl; return 0;}
+  if(!file_to_rescale) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<FRED(<<file_to_rescale_name.Data()<<" not found! Which file do you want to Rescale ? -- Abort")<<endl; return 0;}
 
 
   TString prefit_file_name;
@@ -198,8 +185,20 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
   else if(Combine_or_Theta == "theta") prefit_file_name = "outputs/Theta_Input_noScale.root"; //Theta templates
 
   TFile * inputfile_prefit = 0;
-  inputfile_prefit = TFile::Open(prefit_file_name.Data()); //File containing the templates, from which can compute fake ratio
-  if(!inputfile_prefit) {cout<<FRED(<<prefit_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return 0;}
+  Long_t *id,*size,*flags,*modtime;
+
+  inputfile_prefit = TFile::Open(prefit_file_name); //File containing the templates, from which can compute fake ratio
+  if(!inputfile_prefit) //If file doesn't exist, check for the other one
+  {
+    if(Combine_or_Theta == "combine") prefit_file_name = "outputs/Theta_Input_noScale.root"; //Combine templates
+    else if(Combine_or_Theta == "theta") prefit_file_name = "outputs/Combine_Input_noScale.root"; //Theta templates
+
+    inputfile_prefit = TFile::Open(prefit_file_name);
+    if(!inputfile_prefit) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<FRED(<<prefit_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return 0;}
+  }
+
+
+  if(!inputfile_prefit) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<FRED(<<prefit_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return 0;}
 
 
   std::vector<TString> syst_names;
@@ -304,32 +303,17 @@ int Scale_Fake_Histograms(TString file_to_rescale_name)
 
 
   //Get SF for each channel
-  double factor_uuu = scaleFactor(inputfile_prefit,"u", sample_list, Combine_or_Theta);
-  double factor_uue = scaleFactor(inputfile_prefit,"e", sample_list, Combine_or_Theta);
-  double factor_eeu = scaleFactor(inputfile_prefit,"u", sample_list, Combine_or_Theta);
-  double factor_eee = scaleFactor(inputfile_prefit,"e", sample_list, Combine_or_Theta);
-
-  //FIXME -- try arbitrary values !
-  // double factor_uuu = 0.00328917;
-  // double factor_uue = scaleFactor(inputfile_prefit,1, sample_list, Combine_or_Theta);
-  // double factor_eeu = 0.0233086;
-  // double factor_eee = scaleFactor(inputfile_prefit,3, sample_list, Combine_or_Theta);
-
-/*  - Avec mon rescaling (sans contrainte) : Significance: 5.57154
-SCALE FACTORS VALUES :
---- SF uuu = 0.00328917
---- SF uue = 0.0642661
---- SF eeu = 0.0233086
---- SF eee = 0.011329*/
+  double SF_FakeMu = scaleFactor(inputfile_prefit,"u", sample_list, Combine_or_Theta, verbose);
+  double SF_FakeEl = scaleFactor(inputfile_prefit,"e", sample_list, Combine_or_Theta, verbose);
 
 
-  // printf("\n\n ------- %f %f %f %f -----\n \n",factor_uuu,factor_uue,factor_eeu,factor_eee);
+  if(verbose)
+  {
+    cout<<endl<<"SCALE FACTORS VALUES : "<<endl;
+    cout<<"--- SF Fake Muon = "<<SF_FakeMu<<endl;
+    cout<<"--- SF Fake Electron = "<<SF_FakeEl<<endl;
 
-  cout<<endl<<"SCALE FACTORS VALUES : "<<endl;
-  cout<<"--- SF uuu = "<<factor_uuu<<endl;
-  cout<<"--- SF uue = "<<factor_uue<<endl;
-  cout<<"--- SF eeu = "<<factor_eeu<<endl;
-  cout<<"--- SF eee = "<<factor_eee<<endl<<endl;
+  }
 
   //output file
   TString output_name = file_to_rescale_name ;
@@ -351,7 +335,7 @@ SCALE FACTORS VALUES :
   // Loop over channels
   for(int ichan=0; ichan<channel_list.size(); ichan++)
   {
-    cout<<"Channel : "<<channel_list[ichan]<<endl;
+    if(verbose) cout<<"Channel : "<<channel_list[ichan]<<endl;
 
     // Loop over samples
     for(unsigned int isample = 0; isample < sample_list.size(); isample++)
@@ -366,21 +350,20 @@ SCALE FACTORS VALUES :
           histo_name = var_list[ivar] + "_" + channel_list[ichan] + "__" + sample_list[isample];
           if(syst_list[isys] != "") histo_name+= "__" + syst_list[isys];
 
-          // if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {cout<<histo_name.Data()<<" not found !"<<endl; continue;}
+          // if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<histo_name.Data()<<" not found !"<<endl; continue;}
           if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {continue;}
 
           histo = (TH1F*)file_to_rescale->Get( histo_name );
 
           //RE-SCALE ONLY FAKE HISTOS
-          if(sample_list[isample] == "FakeElElEl")       { histo->Scale(factor_eee); }
-          else if(sample_list[isample] == "FakeElElMu")  { histo->Scale(factor_eeu); }
-          else if(sample_list[isample] == "FakeMuMuEl")  { histo->Scale(factor_uue); }
-          else if(sample_list[isample] == "FakeMuMuMu")  { histo->Scale(factor_uuu); }
+          if(sample_list[isample] == "FakeElElEl")       { histo->Scale(SF_FakeEl); }
+          else if(sample_list[isample] == "FakeElElMu")  { histo->Scale(SF_FakeMu); }
+          else if(sample_list[isample] == "FakeMuMuEl")  { histo->Scale(SF_FakeEl); }
+          else if(sample_list[isample] == "FakeMuMuMu")  { histo->Scale(SF_FakeMu); }
 
           //WRITE ALL HISTOS
           // histo->SetName( histo_name );
           outfile_post->cd();
-          histo->Rebin(rebin);
           histo->Write(histo_name, TObject::kOverwrite);
         } // end syst loop
       } // end var loop
@@ -399,11 +382,15 @@ SCALE FACTORS VALUES :
 //DEFINE THE PATHS OF THE FILE WHERE THE HISTOGRAMS TO RESCALE ARE
 int main(int argc, char **argv)
 {
+  bool verbose = true;
+
+  TString Combine_or_Theta = "combine";
+
   if(argc>1) //Specify file(s) path(s) at execution
   {
     for(int ifile=1; ifile<argc; ifile++)
     {
-      Scale_Fake_Histograms(argv[ifile]);
+      Scale_Fake_Histograms(argv[ifile], Combine_or_Theta, verbose);
     }
   }
 
@@ -412,13 +399,13 @@ int main(int argc, char **argv)
     TString file_to_rescale;
 
     file_to_rescale = "outputs/Combine_Input_noScale.root";
-    Scale_Fake_Histograms(file_to_rescale);
+    Scale_Fake_Histograms(file_to_rescale, Combine_or_Theta, verbose);
 
     file_to_rescale = "outputs/Control_Histograms_NJetsMin0_NBJetsEq0.root";
-    Scale_Fake_Histograms(file_to_rescale);
+    Scale_Fake_Histograms(file_to_rescale, Combine_or_Theta, verbose);
   }
 
-  else {cout<<"Wrong number of arguments !"<<endl; return 1;}
+  else {cout<<"ScaleFakes.cc "<<__LINE__<<" : "<<"Wrong number of arguments !"<<endl; return 1;}
 
 
   return 0;

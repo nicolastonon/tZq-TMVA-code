@@ -27,35 +27,29 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool do_optimization_scan = false;
 
 
-    //Used to re-scale every weights in the code by a lumi factor (in fb-1) //NOTE -- W.R.T. MORIOND 2017 LUMI !!
-    // double set_luminosity = 12.9; //Summer 2016
+    //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
     double set_luminosity = 35.68; //Moriond 2017
+    // double set_luminosity = 12.9; //Summer 2016
+    // double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
 
-
-
+    //Training
+    bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
 
     //Templates
-    int nofbin_templates = 10; //NOTE : to be optimized --- Binning to be used for *template* production
-    bool real_data_templates = true; //If true, use real data sample to create *templates* (BDT, mTW, ...) / else, use pseudodata !
+    int nofbin_templates = 10; //Templates binning (to be optimized)
+    bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
+    bool cut_on_BDT = false;
+
+    //Fakes
     bool fakes_from_data = true; //Use MC fakes or data-driven fakes)
-    bool fakes_summed_channels = false; //Sum uuu+eeu & eee+uue --> Double the fake stat.!
-    bool use_ttZMad_training = false; //TRAINING - Use either Madgraph or aMC@NLO sample for ttZ
+    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.!
 
     //Outputs
     TString format = ".png"; //.png or .pdf only
-    bool combine_naming_convention = true; //True --> Combine names ; False --> Theta names
+    bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
 
 //-------------------
-    std::vector<TString> thesamplelist;
-    std::vector<TString > thevarlist; //Variables used in BDT
-    std::vector<TString > thevarlist_ttZ; //Variables used in BDT
-    std::vector<TString > thesystlist;
-    std::vector<TString > thechannellist;
-    std::vector<TString > set_v_cut_name;
-    std::vector<TString > set_v_cut_def;
-    std::vector<bool > set_v_cut_IsUsedForBDT;
-    std::vector<int> v_color; //sample <-> color
-//-------------------
+
 
 
 //-----------------------------------------------------------------------------------------
@@ -67,15 +61,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##    ##  ##       ##    ##   ##  ##     ## ##   ###       ##   ##         ##    ## ##     ##    ##    ##    ##
 // ##     ## ########  ######   ####  #######  ##    ##        ####  ##        ######   #######     ##     ######
 //-----------------------------------------------------------------------------------------
+//Specify here the cuts that you wish to apply to all 3 regions.
+//To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
+//ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4"); set_v_cut_IsUsedForBDT.push_back(false);
+
+    std::vector<TString > set_v_cut_name;
+    std::vector<TString > set_v_cut_def;
+    std::vector<bool > set_v_cut_IsUsedForBDT;
 
 //-------------------
-//------Specify here the cuts that you wish to apply to all 3 regions.
-//To dis-activate a cut, just set it to "". Use "==" for equality. Don't use "||".
-//ex: set_v_cut_name.push_back("NBJets"); set_v_cut_def.push_back(">0 && <4");
-
-    //NOTE : can only use "< X" for iso (because if 3rd lepton has opposite flavour --> iso=-1 --> event wouldn't pass cut)
-    //set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    //set_v_cut_name.push_back("AdditionalEleIso");       set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+    set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");            set_v_cut_IsUsedForBDT.push_back(false);
 //-------------------
 
 
@@ -128,8 +123,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // set_v_cut_name.push_back("mTW");       set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
         // set_v_cut_name.push_back("METpt");     set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
-//---------------------
 
+//---------------------
 
 
 
@@ -148,7 +143,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     TString dir_ntuples; TString t_name;
 
-//FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !!!
+//FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
     //--- CIEMAT : Default Ntuples
     dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
@@ -172,6 +167,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##    ## ##     ## ##     ## ##   ### ##   ### ##       ##       ##    ##
 //  ######  ##     ## ##     ## ##    ## ##    ## ######## ########  ######
 //---------------------------------------------------------------------------
+    std::vector<TString > thechannellist;
 
     thechannellist.push_back("uuu");
     thechannellist.push_back("eeu");
@@ -187,10 +183,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##    ## ##     ## ##     ## ##        ##       ##       ##    ##
 //  ######  ##     ## ##     ## ##        ######## ########  ######
 //---------------------------------------------------------------------------
-
+    std::vector<TString> thesamplelist;
+    std::vector<int> v_color; //sample <-> color
 
 //-------------------
-//Sample order is important in function Read (so it knows which are the fake samples it must sum) and in Draw_Control_Plots (see explanation in code)
     //DATA --- THE DATA SAMPLE MUST BE UNIQUE AND IN FIRST POSITION
     thesamplelist.push_back("Data");
 
@@ -198,9 +194,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
 
     //BKG
-    thesamplelist.push_back("WZl");             v_color.push_back(920); //grey
-    thesamplelist.push_back("WZb");             v_color.push_back(921); //grey
-    thesamplelist.push_back("WZc");             v_color.push_back(922); //grey
+    thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
+    thesamplelist.push_back("WZB");             v_color.push_back(921); //grey
+    thesamplelist.push_back("WZC");             v_color.push_back(922); //grey
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed);
@@ -229,7 +225,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##     ## ##     ##    ##            ## ##   ##     ## ##    ##  ##    ##
 // ########  ########     ##             ###    ##     ## ##     ##  ######
 //---------------------------------------------------------------------------
-//NOTE : make sure you also update the variable list in file 'scaleFakes.cc' !!
+    std::vector<TString > thevarlist; //Variables used in BDT
+    std::vector<TString > thevarlist_ttZ; //Variables used in BDTttZ
 
 //------------------------ for tZq
     thevarlist.push_back("btagDiscri");
@@ -253,26 +250,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
     // thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
 
-    //thevarlist.push_back("mTW");
-    //thevarlist.push_back("m3l");
-    //thevarlist.push_back("ZCandMass");
-    //thevarlist.push_back("leadingLeptonPT");
-    //thevarlist.push_back("MAddLepB");
-    //thevarlist.push_back("dPhiAddLepQ");
-    //thevarlist.push_back("dPhiZMET");
-    //thevarlist.push_back("dRZTop");
-    //thevarlist.push_back("TopPT");
-    //thevarlist.push_back("tZq_mass");
-    //thevarlist.push_back("tZq_eta");
-    // thevarlist.push_back("tq_mass");
-    //thevarlist.push_back("tq_pT"); // strong correlation with ZpT
-    //thevarlist.push_back("tq_eta");
     // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
     // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
     // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
 
 
-//NOTE : make sure you also update the variable list in file 'scaleFakes.cc' !!
+
 //------------------------ for ttZ
     thevarlist_ttZ.push_back("btagDiscri");
     thevarlist_ttZ.push_back("dRAddLepQ");
@@ -293,22 +276,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist_ttZ.push_back("dRZTop");
     thevarlist_ttZ.push_back("tZq_pT");
 
-
     // thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
     // thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
     // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
 
-    //thevarlist_ttZ.push_back("tZq_mass");
-    // thevarlist_ttZ.push_back("LeadJetEta");
-    // thevarlist_ttZ.push_back("dPhiAddLepB");
-    // thevarlist_ttZ.push_back("dPhiAddLepQ");
-    // thevarlist_ttZ.push_back("leadingLeptonPT");
-    // thevarlist_ttZ.push_back("dPhiZMET");
-    //thevarlist_ttZ.push_back("dRAddLepBFromTop");
-    //thevarlist_ttZ.push_back("tZq_eta");
-    //thevarlist_ttZ.push_back("tq_mass");
-    //thevarlist_ttZ.push_back("tq_pT"); // strong correlation with ZpT
-    // thevarlist_ttZ.push_back("tq_eta");
     // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
     // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
     // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
@@ -327,15 +298,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##     ##    ##    ##     ## ##       ##    ##         ## ##   ##     ## ##    ##  ##    ##
 //  #######     ##    ##     ## ######## ##     ##         ###    ##     ## ##     ##  ######
 //---------------------------------------------------------------------------
-
 //Can add additionnal vars which are NOT used in TMVA NOR for cuts, only for CR plots
-//NOTE : having the same variable in more than one variable vectors (thevarlist, set_v_cut_name & v_add_var_names) can cause problem later, because address of branch can be linked to only *one* variable via SetBranchAddress
-
-//NOTE : make sure you also update the variable list in file 'scaleFakes.cc' !!
+//NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if add. variable is present in other variables vectors, it is removed from this vector !
 
 
     vector<TString> v_add_var_names;
-    v_add_var_names.push_back("mTW"); //FIXME -- bug CR plotting
+    v_add_var_names.push_back("mTW");
     v_add_var_names.push_back("METpt");
 
 
@@ -350,12 +318,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
+    bool use_systematics = false;
 //----------------
-//-- CHOOSE IF YOU WANT COMBINE/THETA/NO SYSTEMATICS !
-    //0 = no syst, 1 = theta, 2 = combine !
-    int i_systematics_choice = 2;
 
-    //--- General names of systematics
+
+//--- General names of systematics
     vector<TString> systematics_names_tmp;
     //--- Affect the variable distributions
     systematics_names_tmp.push_back("JER");
@@ -378,33 +345,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     systematics_names_tmp.push_back("LFstats2");
 //----------------
 
-//--- AUTOMATIZED, don't change here
-    //Actual vector of systematic names we will use (NOTE : naming depends on framework to be used for template fit)
+//--- Actual vector of systematic names we will use
+    vector<TString> thesystlist;
     thesystlist.push_back(""); //Nominal -- KEEP this line
 
-    if(i_systematics_choice == 1)
+    for(int isyst=0; isyst<systematics_names_tmp.size(); isyst++)
     {
-        for(int isyst=0; isyst<systematics_names_tmp.size(); isyst++)
-        {
-            thesystlist.push_back( systematics_names_tmp[isyst] + "__plus" );
-            thesystlist.push_back( systematics_names_tmp[isyst] + "__minus" );
-        }
+        if(!use_systematics) {break;}
+        thesystlist.push_back( systematics_names_tmp[isyst] + "__plus" );
+        thesystlist.push_back( systematics_names_tmp[isyst] + "__minus" );
     }
-    else if(i_systematics_choice == 2)
-    {
-        for(int isyst=0; isyst<systematics_names_tmp.size(); isyst++)
-        {
-            thesystlist.push_back( systematics_names_tmp[isyst] + "Up" );
-            thesystlist.push_back( systematics_names_tmp[isyst] + "Down" );
-        }
-    }
-    else if(i_systematics_choice != 0) {cout<<"Wrong systematics choice ! Abort"<<endl; return 1;}
-
-
-
-
-
-
 
 
 
@@ -421,6 +371,34 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     if(!do_optimization_scan)
     {
+
+//*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
+
+//-----------------    TRAINING
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+
+//-----------------    TEMPLATES CREATION
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+
+//-----------------    CONTROL HISTOGRAMS
+        bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
+
+//-----------------    PLOTS
+        bool draw_input_vars = false; //Plot input variables
+        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
+
+        bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
+
+//-----------------    OTHER
+        bool convert_templates_for_theta = false; //Use this if you already produced template files with Combine conventions, and want to convert them to Theta
+
+//-----------------
+
+
+
+
+//---> AUTOMATIZED FUNCTION CALLS FROM BOOLEANS
+
         //#############################################
         //  CREATE INSTANCE OF CLASS & INITIALIZE
         //#############################################
@@ -430,73 +408,50 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
-
         TString template_name = "BDT"; //BDT in Signal Region
         if(isttZ)  template_name = "BDTttZ"; //BDT in ttZ Control region
         if(isWZ)   template_name = "mTW"; //Template for WZ Control region
 
-
         //#############################################
         // TRAINING
         //#############################################
-        bool do_training = false;
-        //------------------------
-
-
         for(int i=0; i<thechannellist.size(); i++)
         {
-
-            if(do_training && !isWZ)
+            if(train_BDT && !isWZ)
             {
-                MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZMad_training);
+                MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training);
             }
         }
 
         //#############################################
         //  TEMPLATES CREATION
         //#############################################
-        bool create_templates = false;
-
-        bool cut_on_BDT = false;   float cut_BDT_value = -99;  if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
+        float cut_BDT_value = -99;
+        if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
         if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
         //------------------------
 
         if(create_templates) {MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT, cut_BDT_value);}
 
-
         //#############################################
         //  CONTROL TREES & HISTOGRAMS
         //#############################################
-        bool create_control_histograms = false;
-
-        bool use_pseudodata_CR_plots = false;
-        cut_on_BDT = false;        if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
-        if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-        //------------------------
-
         if(create_control_histograms)
         {
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, use_pseudodata_CR_plots);
-            MVAtool->Create_Control_Histograms(fakes_from_data, use_pseudodata_CR_plots, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./vars !
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, false);
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./vars !
         }
-
 
         //#############################################
         //  DRAW PLOTS
         //#############################################
-        bool draw_input_vars = false;
-        bool draw_templates = false;
-
-        bool postfit = false; //Decide if want prefit OR combine postfit plots of input vars (NB : different files)
-
-        //--------------- Automatized from booleans
         for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
         {
             if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
             if(draw_templates)
             {
-                if(!postfit) MVAtool->Plot_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
-                else MVAtool->Plot_Templates_from_Combine(thechannellist[i], template_name, false); //Postfit templates from Combine file
+                if(!postfit) MVAtool->Plot_Prefit_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
+                else MVAtool->Plot_Postfit_Templates(thechannellist[i], template_name, false); //Postfit templates from Combine file
             }
             // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
         }
@@ -505,24 +460,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
         if(draw_templates)
         {
-            if(!postfit) MVAtool->Plot_Templates("all", template_name, true); //Plot the prefit templates
-            else MVAtool->Plot_Templates_from_Combine("all", template_name, true); //Postfit templates from Combine file
+            if(!postfit) MVAtool->Plot_Prefit_Templates("all", template_name, true); //Plot the prefit templates
+            else MVAtool->Plot_Postfit_Templates("all", template_name, true); //Postfit templates from Combine file
         }
-        // MVAtool->Compare_Negative_Weights_Effect_On_Distributions("", true);
-
-
 
         //#############################################
         //  Convert Templates names for Theta
         //#############################################
-        bool convert_templates_for_theta = false;
-        //-----------------
-
         if(convert_templates_for_theta) {MVAtool->Convert_Templates_Theta();}
 
 
-
-        //-----------------
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
     }
@@ -637,16 +584,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 //#############################################
                 // TRAINING
                 //#############################################
-                bool do_training = false;
+                bool train_BDT = false;
                 //------------------------
 
 
                 for(int i=0; i<thechannellist.size(); i++)
                 {
 
-                    if(do_training && !isWZ)
+                    if(train_BDT && !isWZ)
                     {
-                        MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZMad_training);
+                        MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training);
                     }
                 }
 
