@@ -109,9 +109,6 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
     {
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
         set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(true); //NB : cst -> not actually used in BDT
-
-        // set_v_cut_name.push_back("mTW");        set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
-        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");         set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
     if(isWZ) //WZ CR Region : NJets > 0 && NBJets == 0
     {
@@ -122,9 +119,6 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
     {
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
         set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
-
-        // set_v_cut_name.push_back("mTW");       set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
-        // set_v_cut_name.push_back("METpt");     set_v_cut_def.push_back(">10");          set_v_cut_IsUsedForBDT.push_back(false); //Mara
     }
 
 //---------------------
