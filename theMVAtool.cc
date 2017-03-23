@@ -563,56 +563,68 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
  */
 void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 {
-	TFile * file_input = 0;
+	TFile * file_mTW_templates_unscaled = 0;
 
-	TString input_file_name;
+	TString file_mTW_templates_unscaled_PATH;
 	Long_t *id,*size,*flags,*modtime;
-	input_file_name = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
+	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
 
-	file_input = TFile::Open(input_file_name.Data()); //File containing the templates, from which can compute fake ratio
-	if(!file_input) {cout<<FRED(<<input_file_name.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
+	file_mTW_templates_unscaled = TFile::Open(file_mTW_templates_unscaled_PATH, "READ"); //File containing the templates, from which can compute fake ratio
+	if(!file_mTW_templates_unscaled) {cout<<FRED(<<file_mTW_templates_unscaled_PATH.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
 
-	double SF_FakeMu = Compute_Fake_SF(file_input, 'u');
-	double SF_FakeEl = Compute_Fake_SF(file_input, 'e');
+	double SF_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, 'u');
+	double SF_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, 'e');
 
-	file_input->Close(); file_input->Delete();
+	cout<<endl<<BOLD(FYEL("--- Re-scaling the Fake histograms ---"))<<endl;
+	cout<<FYEL("Muon SF = "<<SF_FakeMu<<"")<<endl;
+	cout<<FYEL("Electron SF = "<<SF_FakeEl<<"")<<endl;
+
+	file_mTW_templates_unscaled->Close(); file_mTW_templates_unscaled->Delete();
 
 
 
 	vector<TString> total_var_list;
+	//Templates
 	total_var_list.push_back("mTW");
 	total_var_list.push_back("BDT");
 	total_var_list.push_back("BDTttZ");
+
+	//Other vars
 	for(int ivar=0; ivar<var_list.size(); ivar++)
 	{
+		if(var_list[ivar] == "mTW") {continue;} //already added
 		total_var_list.push_back(var_list[ivar]);
 	}
 	for(int ivar=0; ivar<v_add_var_names.size(); ivar++)
 	{
+		if(v_add_var_names[ivar] == "mTW") {continue;} //already added
 		total_var_list.push_back(v_add_var_names[ivar]);
 	}
 	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 	{
+		if(v_cut_name[ivar] == "mTW") {continue;} //already added
 		total_var_list.push_back(v_cut_name[ivar]);
 	}
 
 	TFile * file_to_rescale = 0;
 
 	//Special case : for mTW template file, we need an 'unscaled' version so that we can compute the Fakes SFs from there
-	//--> If file to be rescaled is mTW, create a new separate file. For all other files, simply update the existing files.
+	//--> If file to be rescaled contains the original mTW templates, do the rescaling in a new copy of the file
 	if(file_to_rescale_name.Contains("_unScaled.root") )
 	{
+		TString copy_command = "cp " + file_to_rescale_name;
+
 		int index = 0;
 		index = file_to_rescale_name.Index("_unScaled.root"); //Find index of substring
 		file_to_rescale_name.Remove(index); //Remove substring
 		file_to_rescale_name+= ".root"; //Add desired suffix
 
-		file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "RECREATE"); //
+		copy_command+= " " + file_to_rescale_name;
+		system(copy_command.Data()); //Copy the original (unrescaled) template file first
 	}
-	else
-	{
-		file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "UPDATE"); //NOTE : update mode --> overwrite fake histograms
-	}
+
+
+	file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "UPDATE"); //NOTE : update mode --> overwrite fake histograms
 	if(!file_to_rescale) {cout<<FRED(<<file_to_rescale_name.Data()<<" not found! -- Abort")<<endl; return;}
 
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
@@ -1230,12 +1242,15 @@ float theMVAtool::Determine_Control_Cut()
 
 	for(int ibin=nofbins; ibin>0; ibin--)
 	{
+		// cout<<"ibin = "<<ibin<<" / (h_sig->Integral(1, ibin) / h_sig->Integral()) = "<<(h_sig->Integral(1, ibin) / h_sig->Integral())<<endl;
+
 		//Search the bin w/ lowest sig/total, while keeping enough bkg events (criterion needs to be optimized/tuned) //FIXME
 		// if( (h_sig->Integral(1, ibin) / h_total->Integral(1, ibin)) < sig_over_total && (h_sum_bkg->Integral(1, ibin) / h_sum_bkg->Integral()) >= 0.6 )
-		if( (h_sig->Integral(1, ibin) / h_sig->Integral()) <= 0.20 ) //If reject at least 80% signal => CUT
+		if( (h_sig->Integral(1, ibin) / h_sig->Integral()) <= 0.15 ) //If reject at least 85% signal => CUT
 		{
 			bin_cut = ibin;
 			sig_over_total = h_sig->Integral(1, bin_cut) / h_total->Integral(1,bin_cut);
+			break; //Stop there
 		}
 	}
 

@@ -8,7 +8,7 @@ bin             var_chan
 observation     -1
 ----------------------------------------------------------------------------------------------------------------------------------
 bin                 var_chan        var_chan     var_chan     var_chan     var_chan 		var_chan		var_chan	var_chan	var_chan	var_chan
-process             tZq               ZZ           ttZ          ttW	        ttH        		STtWll			FakeLLL		  WZl		   WZb		  WZc
+process             tZq               ZZ           ttZ          ttW	        ttH        		STtWll			FakeLLL		  WZL		   WZB		  WZC
 process            tZq_chNumb         2           ttZ_chNumb     4           5          	  6				FLLL_chNumb	  7	    		 8	     9
 rate                  -1              -1            -1          -1          -1            	  -1 			   -1		  -1			-1		-1
 ----------------------------------------------------------------------------------------------------------

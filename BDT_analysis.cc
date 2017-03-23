@@ -38,11 +38,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Templates
     int nofbin_templates = 10; //Templates binning (to be optimized)
     bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
-    bool cut_on_BDT = false;
+    bool cut_on_BDT = false; //Apply cut on BDT values --> Don't look signal region !
 
     //Fakes
     bool fakes_from_data = true; //Use MC fakes or data-driven fakes)
-    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat.!
+    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)!
 
     //Outputs
     TString format = ".png"; //.png or .pdf only
@@ -379,7 +379,7 @@ set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back("<280919");     
         bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -394,7 +394,6 @@ set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back("<280919");     
         bool convert_templates_for_theta = false; //Use this if you already produced template files with Combine conventions, and want to convert them to Theta
 
 //-----------------
-
 
 
 
