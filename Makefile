@@ -10,7 +10,8 @@
 CC=g++ #Compiler used
 DEBUG = -g
 CFLAGS = -c  $(DEBUG) #Compilation options
-LFLAGS = $(DEBUG) -L/home/nico/root/lib -lTMVA #-lTMVAGui
+# LFLAGS = $(DEBUG) -L/home/nico/root/lib -lTMVA -lTMVAGui
+LFLAGS = $(DEBUG) -lTMVA #-lTMVAGui
 ROOTFLAGS = `root-config --glibs --cflags`
 
 SRCS = $(wildcard *.cc) #Source files are all files with .cc extension

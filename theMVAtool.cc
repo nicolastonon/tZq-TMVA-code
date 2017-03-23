@@ -143,7 +143,7 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 			{
 				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(v_cut_def[ivar]));
 			}
-			else //Double condition
+			else //Double '&&' condition
 			{
 				TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first, cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
 				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut1) + Convert_Number_To_TString(Find_Number_In_TString(cut1));
@@ -335,13 +335,14 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 		if(v_cut_def[ivar] != "") //NB : no need to break conditions in 2 ?
 		{
 			if(!v_cut_def[ivar].Contains("&&") && !v_cut_def[ivar].Contains("||")) {tmp+= v_cut_name[ivar] + v_cut_def[ivar];} //If cut contains only 1 condition
-			else if(!v_cut_def[ivar].Contains("||") )//If '&&' in the cut, break it in 2
+			else if(v_cut_def[ivar].Contains("&&") && v_cut_def[ivar].Contains("||")) {cout<<BOLD(FRED("ERROR ! Wrong cut definition !"))<<endl;}
+			else if(v_cut_def[ivar].Contains("&&") )//If '&&' in the cut, break it in 2
 			{
 				tmp+= v_cut_name[ivar] + Break_Cuts_In_Two(v_cut_def[ivar]).first;
 				tmp+= " && ";
 				tmp+= v_cut_name[ivar] + Break_Cuts_In_Two(v_cut_def[ivar]).second;
 			}
-			else if(!v_cut_def[ivar].Contains("&&") )//If '||' in the cut, break it in 2
+			else if(v_cut_def[ivar].Contains("||") )//If '||' in the cut, break it in 2
 			{
 				tmp+= v_cut_name[ivar] + Break_Cuts_In_Two(v_cut_def[ivar]).first;
 				tmp+= " || ";
@@ -546,6 +547,8 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
   TH1F* result = (TH1F*) fit->GetPlot();
   hdata->Draw("Ep");
   result->Draw("same");
+
+  mkdir("plots",0777); //Create directory if inexistant
 
   c1->SaveAs(("plots/ScaleFakes_"+fakeLep_flavour+".png").Data()); //Save fit plot
   delete c1;
@@ -917,11 +920,12 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
 						if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
 						else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
-						else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+						else if(v_cut_def[ivar].Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
+						else if(v_cut_def[ivar].Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
 						else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
 					}
-					else if(!v_cut_def[ivar].Contains("||") )//If '&&' in the cut def, break it in 2
+					else if(v_cut_def[ivar].Contains("&&") && v_cut_def[ivar].Contains("||")) {cout<<BOLD(FRED("ERROR ! Wrong cut definition !"))<<endl;}
+					else if(v_cut_def[ivar].Contains("&&") )//If '&&' in the cut def, break it in 2
 					{
 						TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first;
 						TString cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
@@ -929,18 +933,18 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						cut_tmp = Find_Number_In_TString(cut1);
 						if(cut1.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
 						else if(cut1.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
-						else if(cut1.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
-						else if(cut1.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+						else if(cut1.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+						else if(cut1.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
 						else if(cut1.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
 						//CUT 2
 						cut_tmp = Find_Number_In_TString(cut2);
 						if(cut2.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
 						else if(cut2.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
-						else if(cut2.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
-						else if(cut2.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+						else if(cut2.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+						else if(cut2.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
 						else if(cut2.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
 					}
-					else if(!v_cut_def[ivar].Contains("&&") )//If '||' in the cut def, break it in 2
+					else if(v_cut_def[ivar].Contains("||") )//If '||' in the cut def, break it in 2
 					{
 						TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first;
 						TString cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
@@ -951,15 +955,15 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						cut_tmp = Find_Number_In_TString(cut1);
 						if(cut1.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_cut1 = false;}
 						else if(cut1.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_cut1 = false;}
-						else if(cut1.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut1 = false;}
-						else if(cut1.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut1 = false;}
+						else if(cut1.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut1 = false;}
+						else if(cut1.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut1 = false;}
 						else if(cut1.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_cut1 = false;}
 						//CUT 2
 						cut_tmp = Find_Number_In_TString(cut2);
 						if(cut2.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_cut2 = false;}
 						else if(cut2.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_cut2 = false;}
-						else if(cut2.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut2 = false;}
-						else if(cut2.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut2 = false;}
+						else if(cut2.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut2 = false;}
+						else if(cut2.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut2 = false;}
 						else if(cut2.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_cut2 = false;}
 
 						if(!pass_cut1 && !pass_cut2) {pass_all_cuts = false; break;}
@@ -1309,6 +1313,9 @@ float theMVAtool::Determine_Control_Cut()
 	l->SetLineWidth(2);
 	l->SetLineStyle(3);
 	l->Draw("");
+
+	mkdir("plots",0777); //Create directory if inexistant
+
 	c->SaveAs("plots/Signal_Background_BDT"+this->filename_suffix+this->format);
 
 	//Cout some results
@@ -1506,6 +1513,14 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 //------------------- Apply cuts -----------------------------
 				float cut_tmp = 0; bool pass_all_cuts = true;
 
+				// //FIXME
+				// for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+				// {
+				// 	if(v_cut_name[ivar] == "NJets" && v_cut_float[ivar] == 0)
+				// 	{cout<<"NJets : "<<v_cut_float[ivar]<<endl;}
+				// }
+
+
 				for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 				{
 					if(v_cut_def[ivar] != "")
@@ -1513,13 +1528,15 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 						if(!v_cut_def[ivar].Contains("&&") && !v_cut_def[ivar].Contains("||")) //If cut contains only 1 condition
 						{
 							cut_tmp = Find_Number_In_TString(v_cut_def[ivar]);
+
 							if(v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] < cut_tmp)		 {pass_all_cuts = false; break;}
 							else if(v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] > cut_tmp)	 {pass_all_cuts = false; break;}
-							else if(v_cut_def[ivar].Contains(">") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
-							else if(v_cut_def[ivar].Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)	 {pass_all_cuts = false; break;}
+							else if(v_cut_def[ivar].Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
 							else if(v_cut_def[ivar].Contains("==") && v_cut_float[ivar] != cut_tmp)  {pass_all_cuts = false; break;}
 						}
-						else if(!v_cut_def[ivar].Contains("||") )//If '&&' in the cut def, break it in 2
+						else if(v_cut_def[ivar].Contains("&&") && v_cut_def[ivar].Contains("||")) {cout<<BOLD(FRED("ERROR ! Wrong cut definition !"))<<endl;}
+						else if(v_cut_def[ivar].Contains("&&") )//If '&&' in the cut def, break it in 2
 						{
 							TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first;
 							TString cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
@@ -1527,18 +1544,18 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 							cut_tmp = Find_Number_In_TString(cut1);
 							if(cut1.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
 							else if(cut1.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
-							else if(cut1.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
-							else if(cut1.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(cut1.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut1.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
 							else if(cut1.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
 							//CUT 2
 							cut_tmp = Find_Number_In_TString(cut2);
 							if(cut2.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_all_cuts = false; break;}
 							else if(cut2.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_all_cuts = false; break;}
-							else if(cut2.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
-							else if(cut2.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
+							else if(cut2.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_all_cuts = false; break;}
+							else if(cut2.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_all_cuts = false; break;}
 							else if(cut2.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_all_cuts = false; break;}
 						}
-						else if(!v_cut_def[ivar].Contains("&&") )//If '||' in the cut def, break it in 2
+						else if(v_cut_def[ivar].Contains("||") )//If '||' in the cut def, break it in 2
 						{
 							TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first;
 							TString cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
@@ -1549,15 +1566,15 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 							cut_tmp = Find_Number_In_TString(cut1);
 							if(cut1.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_cut1 = false;}
 							else if(cut1.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_cut1 = false;}
-							else if(cut1.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut1 = false;}
-							else if(cut1.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut1 = false;}
+							else if(cut1.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut1 = false;}
+							else if(cut1.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut1 = false;}
 							else if(cut1.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_cut1 = false;}
 							//CUT 2
 							cut_tmp = Find_Number_In_TString(cut2);
 							if(cut2.Contains(">=") && v_cut_float[ivar] < cut_tmp)			 {pass_cut2 = false;}
 							else if(cut2.Contains("<=") && v_cut_float[ivar] > cut_tmp)		 {pass_cut2 = false;}
-							else if(cut2.Contains(">") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut2 = false;}
-							else if(cut2.Contains("<") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut2 = false;}
+							else if(cut2.Contains(">") && !v_cut_def[ivar].Contains(">=") && v_cut_float[ivar] <= cut_tmp)		 {pass_cut2 = false;}
+							else if(cut2.Contains("<") && !v_cut_def[ivar].Contains("<=") && v_cut_float[ivar] >= cut_tmp) 	 {pass_cut2 = false;}
 							else if(cut2.Contains("==") && v_cut_float[ivar] != cut_tmp) 	 {pass_cut2 = false;}
 
 							if(!pass_cut1 && !pass_cut2) {pass_all_cuts = false; break;}
@@ -1752,7 +1769,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "dRZAddLep")					{h_tmp = new TH1F( "","", binning, 0, 5 );}
 					else if(total_var_list[ivar] == "dRZTop")						{h_tmp = new TH1F( "","", binning, 0, 5 );}
 					else if(total_var_list[ivar] == "TopPT")						{h_tmp = new TH1F( "","", binning, 0, 500 );}
-					else if(total_var_list[ivar] == "NJets")						{h_tmp = new TH1F( "","", 5, 1, 6 );}
+					else if(total_var_list[ivar] == "NJets")						{h_tmp = new TH1F( "","", 6, 0, 6 );}
 					else if(total_var_list[ivar] == "ptQ")							{h_tmp = new TH1F( "","", binning, 0, 300 );}
 					else if(total_var_list[ivar] == "dRjj")							{h_tmp = new TH1F( "","", binning, 0, 5 );}
 					else if(total_var_list[ivar] == "AdditionalEleIso")				{h_tmp = new TH1F( "","", binning, 0, 0.5 );}
@@ -2884,6 +2901,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	qw->Draw("same");
 
+	mkdir("plots",0777); //Create directory if inexistant
+
 	//Output
 	TString output_plot_name = "plots/" + template_name +"_template_" + channel+ this->filename_suffix + this->format;
 	if(channel == "" || allchannels) {output_plot_name = "plots/" + template_name +"_template_all" + this->filename_suffix + ".png";}
@@ -3199,6 +3218,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 
 	qw->Draw("same");
+
+	mkdir("plots",0777); //Create directory if inexistant
 
 	//Output
 	TString output_plot_name = "plots/postfit_" + template_name +"_template_" + channel+ this->filename_suffix + this->format;
