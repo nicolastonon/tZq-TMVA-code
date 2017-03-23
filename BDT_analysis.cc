@@ -30,7 +30,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
     // double set_luminosity = 35.68; //Moriond 2017
     // double set_luminosity = 12.9; //Summer 2016
-    double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
+    // double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
+    double set_luminosity = 8.605; //Run H only
 
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
@@ -380,10 +381,10 @@ set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back(">280919 || ==1"
         bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
-        bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
+        bool create_control_histograms = true; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables

@@ -1676,7 +1676,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 		restart_loop = false;
 		for(int i=0; i<total_var_list.size(); i++)
 		{
-			if(total_var_list[i] == "passTrig" || total_var_list[i] == "RunNr") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
+			if(total_var_list[i] == "passTrig") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
+			// if(total_var_list[i] == "passTrig" || total_var_list[i] == "RunNr") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
 		}
 	} while (restart_loop);
 
@@ -1767,6 +1768,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
 					else if(total_var_list[ivar] == "MEMvar_2")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
 					else if(total_var_list[ivar] == "MEMvar_3")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
+					else if(total_var_list[ivar] == "RunNr")							{h_tmp = new TH1F( "","", 500, 0, 400000 );}
 					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", binning, 0, 150 );}
 
 					else {cout<<endl<<"theMVAtool.cc - l."<<__LINE__<<BOLD(FRED(" --> !!Unknown variable!! ")) << total_var_list[ivar] << " Correct name or add it here" <<endl<<endl;}
