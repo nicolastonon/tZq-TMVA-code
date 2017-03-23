@@ -146,15 +146,15 @@ pair<TString,TString> Break_Cuts_In_Two(TString multiple_cut)
 
 	for (int i=0; i < size; i++) //Extract condition 1
 	{
-		if(multiple_cut[i] == '&') {break;}
-		if(multiple_cut[i] != ' ') {cut1 += multiple_cut[i];}
+		if(multiple_cut[i] == '&' || multiple_cut[i] == '|') {break;} //stop when we find '&&' or '||'
+		if(multiple_cut[i] != ' ') {cut1 += multiple_cut[i];} //else, store characters in TString
 	}
 
 	TString tmp = "";
 	for (int i=0; i < size; i++) //Extract condition 2
 	{
 		tmp+= multiple_cut[i];
-		if(!tmp.Contains("&&") || multiple_cut[i] == '&') {continue;}
+		if( (!tmp.Contains("&&") && !tmp.Contains("||")) || multiple_cut[i] == '&' || multiple_cut[i] == '|') {continue;}
 		if(multiple_cut[i] != ' ') {cut2 += multiple_cut[i];}
 	}
 
