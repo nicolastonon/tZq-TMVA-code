@@ -30,8 +30,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
     // double set_luminosity = 35.68; //Moriond 2017
     // double set_luminosity = 12.9; //Summer 2016
-    // double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
-    double set_luminosity = 8.605; //Run H only
+    double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
+    // double set_luminosity = 8.605; //Run H only
 
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
@@ -39,7 +39,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Templates
     int nofbin_templates = 10; //Templates binning (to be optimized)
     bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
-    bool cut_on_BDT = true; //Apply cut on BDT values --> Don't look signal region !
+    bool cut_on_BDT = false; //Apply cut on BDT values --> Don't look signal region !
 
     //Fakes
     bool fakes_from_data = true; //Use MC fakes or data-driven fakes)
@@ -72,8 +72,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //-------------------
 set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");            set_v_cut_IsUsedForBDT.push_back(false);
-// set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back("<280919");            set_v_cut_IsUsedForBDT.push_back(false);
-set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back(">280919 || ==1");            set_v_cut_IsUsedForBDT.push_back(false);
+set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back("<280919");            set_v_cut_IsUsedForBDT.push_back(false); //Without Run H
+// set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back(">280919 || ==1");            set_v_cut_IsUsedForBDT.push_back(false); //Run H only
 //-------------------
 
 
@@ -384,7 +384,7 @@ set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back(">280919 || ==1"
         bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
-        bool create_control_histograms = true; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
+        bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
