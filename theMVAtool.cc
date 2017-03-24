@@ -415,7 +415,8 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
     std::cout << "==> Wrote root file: " << output_file->GetName() << std::endl;
     std::cout << "==> TMVA is done!" << std::endl;
 
-    delete output_file;
+
+    output_file->Close(); delete output_file;
     delete factory;
 
 	for(unsigned int i=0; i<files_to_close.size(); i++) {files_to_close[i]->Close();}
@@ -774,8 +775,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	TH1F *hist_uuu = 0, *hist_uue = 0, *hist_eeu = 0, *hist_eee = 0;
 	TH1F *h_sum_fake = 0;
 
-	//To store the integrals of the nominal templates
-	double Ifake_uuu = 0.; double  Ifake_uue = 0.; double  Ifake_eeu = 0.; double  Ifake_eee = 0.;
 
 	// --- Systematics loop
 	for(int isyst=0; isyst<syst_list.size(); isyst++)
@@ -1159,6 +1158,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
+
+			file_input->Close(); //Need to close every file we opened
 		} //end sample loop
 		if(dbgMode) cout<<"Done with syst : "<<syst_list[isyst]<<endl;
 	} 	//end syst loop
@@ -1336,7 +1337,7 @@ float theMVAtool::Determine_Control_Cut()
 
 	//for(int i=0; i<h_sig->GetNbinsX(); i++) {cout<<"bin content "<<i+1<<" = "<<h_sig->GetBinContent(i+1)<<endl;} //If want to verify that the signal is computed correctly
 	delete  h_sum_bkg; delete h_sig; delete h_tmp;
-	f->Close(); delete c; delete leg; delete l;
+	f->Close(); delete f; delete c; delete leg; delete l;
 	return cut;
 }
 
@@ -1614,6 +1615,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 
 			delete tree_control; delete tree;
 			output_file->Close(); delete output_file;
+			file_input->Close(); delete file_input;
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 		} //end sample loop
 		cout<<"Done with "<<syst_list[isyst]<<" syst"<<endl;
@@ -2004,7 +2006,7 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_from
 		} //end var loop
 	} //end channel loop
 
-	file->Close();
+	file->Close(); delete file;
 
 	cout<<"--- Done with generation of pseudo-data for CR"<<endl; return 0;
 }
@@ -2094,9 +2096,7 @@ int theMVAtool::Generate_PseudoData_Templates(TString template_name)
 
 	} //end channel loop
 
-	file->Close();
-	file->Close();
-	delete file;
+	file->Close();	delete file;
 	cout<<"--- Done with generation of pseudo-data"<<endl<<endl; return 0;
 }
 
@@ -2641,6 +2641,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		delete c1; //Must free dinamically-allocated memory
 	} //end var loop
+
+	f->Close(); delete f;
+
 	return 0;
 }
 
@@ -2908,6 +2911,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	if(channel == "" || allchannels) {output_plot_name = "plots/" + template_name +"_template_all" + this->filename_suffix + ".png";}
 
 	c1->SaveAs(output_plot_name.Data());
+
+	file_input->Close(); delete file_input;
 
 	delete c1; delete qw; delete h_sum_data ; delete stack_MC; return 0;
 }
@@ -3227,6 +3232,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	c1->SaveAs(output_plot_name.Data());
 
+	file_input->Close(); delete file_input;
+	file_data->Close(); delete file_data;
 	delete c1; delete qw; delete h_sum_data ; delete stack_MC; return 0;
 }
 
@@ -3308,7 +3315,8 @@ int theMVAtool::Fit_Fake_Templates(TString function, TString template_name="BDT"
 		}
 	}
 
-	f_output->Close();
+	f_output->Close(); delete f_output;
+	f_input->Close(); delete f_input;
 
 	return 0;
 }
@@ -3407,7 +3415,8 @@ int theMVAtool::Create_Fake_Templates_From_Fit(TString function, TString templat
 		}
 	}
 
-	f_output->Close();
+	f_output->Close(); delete f_output;
+	f_input->Close(); delete f_input;
 
 	return 0;
 }
@@ -3507,7 +3516,7 @@ void theMVAtool::Convert_Templates_Theta()
 		}
 	}
 
-	delete h_tmp; f_input->Close(); f_output->Close();
+	delete h_tmp; f_input->Close(); f_output->Close(); delete f_input; delete f_output;
 
 	return;
 }
