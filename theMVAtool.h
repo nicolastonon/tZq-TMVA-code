@@ -78,7 +78,7 @@ class theMVAtool
 
 //Methods
 	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString);
-	~theMVAtool(){delete reader;};
+	~theMVAtool() {delete reader;}; //Free memory
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples

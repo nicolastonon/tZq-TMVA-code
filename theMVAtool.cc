@@ -416,10 +416,10 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
     std::cout << "==> TMVA is done!" << std::endl;
 
 
-    output_file->Close(); delete output_file;
+    delete output_file;
     delete factory;
 
-	for(unsigned int i=0; i<files_to_close.size(); i++) {files_to_close[i]->Close();}
+	for(unsigned int i=0; i<files_to_close.size(); i++) {files_to_close[i]->Close(); delete files_to_close[i];}
 
 
     // Launch the GUI for the root macros    //NB : write interactively in the ROOT environment --> TMVA::TMVAGui("output.root")
@@ -552,11 +552,12 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
   mkdir("plots",0777); //Create directory if inexistant
 
   c1->SaveAs(("plots/ScaleFakes_"+fakeLep_flavour+".png").Data()); //Save fit plot
-  delete c1;
 
   double fakes_postfit = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
 
   // cout<<endl<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fakes_postfit*100<<" %"<<endl;
+
+  delete mc; delete fit; delete c1;
 
   return (fakes_postfit/hfake->Integral() ) * hdata->Integral();
 }
@@ -590,9 +591,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	cout<<FYEL("Muon SF = "<<SF_FakeMu<<"")<<endl;
 	cout<<FYEL("Electron SF = "<<SF_FakeEl<<"")<<endl;
 
-	file_mTW_templates_unscaled->Close(); file_mTW_templates_unscaled->Delete();
-
-
+	delete file_mTW_templates_unscaled;
 
 	vector<TString> total_var_list;
 	//Templates
@@ -668,7 +667,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 		}
 	}
 
-	file_to_rescale->Close(); file_to_rescale->Delete();
+	delete file_to_rescale;
 
 	return;
 }
@@ -731,7 +730,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	mkdir("outputs",0777);
 
-	reader = new TMVA::Reader( "!Color:!Silent" );
+	delete reader; //Free any previous allocated memory, and re-initialize reader
+	reader = new TMVA::Reader( "!Color:!Silent" ); //CHANGED
 
 	// Name & adress of local variables which carry the updated input values during the event loop
 	// - the variable names MUST corresponds in name and type to those given in the weight file(s) used
@@ -1159,19 +1159,19 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 
-			file_input->Close(); //Need to close every file we opened
+			delete tree; //Free memory
+			delete hist_uuu; delete hist_uue; delete hist_eeu; delete hist_eee; //Free memory
+			delete file_input; //CHANGED -- free memory
 		} //end sample loop
+
 		if(dbgMode) cout<<"Done with syst : "<<syst_list[isyst]<<endl;
 	} 	//end syst loop
 
-	delete hist_uuu; delete hist_uue; delete hist_eeu; delete hist_eee;
-	delete tree;
-	file_input->Close(); delete file_input;
+
 	std::cout << "--- Created root file: "<<file_output->GetName()<<" containing the output histograms" << std::endl;
-	file_output->Close(); delete file_output;
+	delete file_output;
 	std::cout << "==> Reader() is done!" << std::endl << std::endl;
 
-	//CHANGED
 	Rescale_Fake_Histograms(output_file_name);
 
 
@@ -1337,7 +1337,9 @@ float theMVAtool::Determine_Control_Cut()
 
 	//for(int i=0; i<h_sig->GetNbinsX(); i++) {cout<<"bin content "<<i+1<<" = "<<h_sig->GetBinContent(i+1)<<endl;} //If want to verify that the signal is computed correctly
 	delete  h_sum_bkg; delete h_sig; delete h_tmp;
-	f->Close(); delete f; delete c; delete leg; delete l;
+	delete f;
+	delete c; delete leg; delete l;
+
 	return cut;
 }
 
@@ -1382,6 +1384,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	if(cut_on_BDT) {cout<<FYEL("--- Creating control tree WITH cut on BDT value // Cut value = "<<cut<<" ----")<<endl;}
 	else if(!cut_on_BDT) {cout<<FYEL("--- Creating control tree WITHOUT cut on BDT value ---")<<endl;}
 
+	delete reader; //Free any previous allocated memory, and re-initialize reader
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
 	mkdir("outputs",0777);
@@ -1614,8 +1617,8 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			tree_control->Write(output_tree_name.Data(), TObject::kOverwrite);
 
 			delete tree_control; delete tree;
-			output_file->Close(); delete output_file;
-			file_input->Close(); delete file_input;
+		 	delete output_file;
+			delete file_input;
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 		} //end sample loop
 		cout<<"Done with "<<syst_list[isyst]<<" syst"<<endl;
@@ -1701,16 +1704,27 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	} while (restart_loop);
 
 
+	bool create_syst_histos = false;
+	if(syst_list.size() != 1)
+	{
+		string answer = "";
+		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+		cin>>answer;
+
+		while(answer != "yes" && answer!= "no")
+		{
+			cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+			cin.clear();
+			cin.ignore(1000, '\n');
+			cin>>answer;
+		}
+
+		if(answer == "yes") create_syst_histos = true;
+	}
 
 	int nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() * syst_list.size()) + total_var_list.size();
+	if(!create_syst_histos) nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() ) + total_var_list.size();
 
-	if(nof_histos_to_create > 800)
-	{
-		string answer;
-		cout<<UNDL(FGRN("Warning : about to create "<<nof_histos_to_create<<" histograms (*4 channels) --- Type 'yes' to continue !"))<<endl;
-		cin>>answer;
-		if(answer!="yes") return;
-	}
 
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
 	{
@@ -1738,6 +1752,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 				for(int isyst=0; isyst<syst_list.size(); isyst++)
 				{
+					if(!create_syst_histos && syst_list[isyst] != "") {continue;} //If don't want to create histos for the systematics
+
 					if(!fakes_from_data && sample_list[isample]=="Fakes") {continue;} //Fakes from MC only
 					else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
 
@@ -1865,8 +1881,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 						else if(channel_list[ichan]=="eee") fake_name = "FakeElElEl";
 					}
 
-					//CHANGED
-					// TString output_histo_name = "Control_"+ channel_list[ichan] + "_" + total_var_list[ivar];
+
 					TString output_histo_name = total_var_list[ivar] + "_" + channel_list[ichan] + "__";
 
 					if(sample_list[isample]=="Data")
@@ -1886,7 +1901,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					f_output->cd();
 					h_tmp->Write(output_histo_name.Data());
 
-					delete h_tmp;
+					delete h_tmp; delete tree; //FRee memory
 
 					i_hist_created++;
 				} //end syst loop
@@ -1895,9 +1910,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	} //end channel loop
 
 
-	delete tree; //segfault ?
-	f_input->Close(); delete f_input;
-	f_output->Close(); delete f_output;
+	delete f_input;
+	delete f_output;
 
 
 	//CHANGED
@@ -2006,7 +2020,7 @@ int theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_from
 		} //end var loop
 	} //end channel loop
 
-	file->Close(); delete file;
+	delete file;
 
 	cout<<"--- Done with generation of pseudo-data for CR"<<endl; return 0;
 }
@@ -2096,7 +2110,7 @@ int theMVAtool::Generate_PseudoData_Templates(TString template_name)
 
 	} //end channel loop
 
-	file->Close();	delete file;
+	delete file;
 	cout<<"--- Done with generation of pseudo-data"<<endl<<endl; return 0;
 }
 
@@ -2156,7 +2170,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		t_mu->GetEntry(0);
 		sig_strength = (double) t_mu->GetLeaf("mu")->GetValue(0);
 		cout<<"SIGNAL STRENGTH = "<<sig_strength<<endl;
-		f->Close();
+		delete f; //Free memory
 
 		input_file_name = "outputs/PostfitInputVars.root";
 		f = TFile::Open( input_file_name );
@@ -2383,12 +2397,15 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					//CHANGED
 					// histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample] + "_" + syst_list[isyst];
 
-					if(postfit || combine_naming_convention) histo_name+= "__" + Combine_Naming_Convention(syst_list[isyst]);
-					else histo_name+= "__" + Theta_Naming_Convention(syst_list[isyst]);
+					TString histo_name_syst = histo_name;
 
-					if(!f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+					if(postfit || combine_naming_convention) histo_name_syst+= "__" + Combine_Naming_Convention(syst_list[isyst]);
+					else histo_name_syst+= "__" + Theta_Naming_Convention(syst_list[isyst]);
 
-					histo_syst = (TH1F*) f->Get(histo_name.Data())->Clone();
+					if(syst_list[isyst] == "" && !f->GetListOfKeys()->Contains(histo_name_syst.Data())) {cout<<histo_name_syst<<" : not found !"<<endl; continue;}
+					else if(!f->GetListOfKeys()->Contains(histo_name_syst.Data()) ) {continue;} //No error messages if systematics histos not found
+
+					histo_syst = (TH1F*) f->Get(histo_name_syst.Data())->Clone();
 
 					//Add up here the different errors (quadratically), for each bin separately
 					for(int ibin=0; ibin<nofbins; ibin++)
@@ -2642,7 +2659,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		delete c1; //Must free dinamically-allocated memory
 	} //end var loop
 
-	f->Close(); delete f;
+	delete f;
 
 	return 0;
 }
@@ -2912,9 +2929,11 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	c1->SaveAs(output_plot_name.Data());
 
-	file_input->Close(); delete file_input;
+	delete file_input;
 
-	delete c1; delete qw; delete h_sum_data ; delete stack_MC; return 0;
+	delete c1; delete qw; delete h_sum_data ; delete stack_MC;
+
+	return 0;
 }
 
 
@@ -3232,9 +3251,11 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	c1->SaveAs(output_plot_name.Data());
 
-	file_input->Close(); delete file_input;
-	file_data->Close(); delete file_data;
-	delete c1; delete qw; delete h_sum_data ; delete stack_MC; return 0;
+	delete file_input;
+	delete file_data;
+	delete c1; delete qw; delete h_sum_data ; delete stack_MC;
+
+	return 0;
 }
 
 
@@ -3315,8 +3336,8 @@ int theMVAtool::Fit_Fake_Templates(TString function, TString template_name="BDT"
 		}
 	}
 
-	f_output->Close(); delete f_output;
-	f_input->Close(); delete f_input;
+	delete f_output;
+	delete f_input;
 
 	return 0;
 }
@@ -3415,8 +3436,8 @@ int theMVAtool::Create_Fake_Templates_From_Fit(TString function, TString templat
 		}
 	}
 
-	f_output->Close(); delete f_output;
-	f_input->Close(); delete f_input;
+	delete f_output;
+	delete f_input;
 
 	return 0;
 }
@@ -3516,7 +3537,7 @@ void theMVAtool::Convert_Templates_Theta()
 		}
 	}
 
-	delete h_tmp; f_input->Close(); f_output->Close(); delete f_input; delete f_output;
+	delete h_tmp; delete f_input; delete f_output;
 
 	return;
 }

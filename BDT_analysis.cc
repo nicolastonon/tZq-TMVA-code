@@ -315,7 +315,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 
@@ -378,7 +378,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
-        bool create_control_histograms = true; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
+        bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
