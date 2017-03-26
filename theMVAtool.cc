@@ -771,6 +771,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TFile* file_input = 0;
 	TTree* tree(0);
+	TTree* tree_passTrig = 0; //CHANGED -- hard-coded, to remove
 
 	TH1F *hist_uuu = 0, *hist_uue = 0, *hist_eeu = 0, *hist_eee = 0;
 	TH1F *h_sum_fake = 0;
@@ -824,12 +825,14 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			tree = 0;
-			TString tree_name = "";
+			tree_passTrig = 0; //CHANGED
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
 			{
 				tree = (TTree*) file_input->Get(syst_list[isyst].Data());
+
+				tree_passTrig = (TTree*) file_input->Get(t_name.Data()); //passTrig info is in Default Tree only
 			}
 			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
@@ -838,20 +841,35 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			for(int i=0; i<v_add_var_names.size(); i++)
 			{
+				if(v_add_var_names[i] == "passTrig" || v_add_var_names[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(v_add_var_names[i].Data(), &v_add_var_floats[i]);
 			}
 			for(int i=0; i<var_list.size(); i++)
 			{
+				if(var_list[i] == "passTrig" || var_list[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(var_list[i].Data(), &var_list_floats[i]);
 			}
 			for(int i=0; i<v_cut_name.size(); i++)
 			{
+				if(v_cut_name[i] == "passTrig" || v_cut_name[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(v_cut_name[i].Data(), &v_cut_float[i]);
 			}
 
 			float mTW = -666; tree->SetBranchAddress("mTW", &mTW);
 			float i_channel = 9; tree->SetBranchAddress("Channel", &i_channel);
 
+			float passTrig = -999;
+			float RunNr = -999;
+			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes"))
+			{
+				tree_passTrig->SetBranchAddress("passTrig", &passTrig);
+				tree_passTrig->SetBranchAddress("RunNr", &RunNr);
+			}
+			else
+			{
+				tree->SetBranchAddress("passTrig", &passTrig);
+				tree->SetBranchAddress("RunNr", &RunNr);
+			}
 
 			float weight;
 			//For all other systematics, only the events weights change
@@ -872,8 +890,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				if(dbgMode) {cout<<endl<<"--- Syst "<<syst_list[isyst]<<" / Sample : "<<sample_list[isample]<<endl;}
 
 				weight = 0; i_channel = 9; mTW=-666;
+				passTrig = -999; RunNr = -999;
 
 				tree->GetEntry(ievt);
+				if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes")) {tree_passTrig->GetEntry(ievt);}
 
         		bool isChannelToKeep = false;
 
@@ -911,6 +931,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					if(v_cut_name[ivar] == "mTW") {v_cut_float[ivar] = mTW;}
 					//Idem for channel value
 					if(v_cut_name[ivar] == "Channel") {v_cut_float[ivar] = i_channel;}
+					if(v_cut_name[ivar] == "passTrig") {v_cut_float[ivar] = passTrig;}
+					if(v_cut_name[ivar] == "RunNr") {v_cut_float[ivar] = RunNr;}
 
 					// cout<<v_cut_name[ivar]<<" "<<v_cut_float[ivar]<<endl;
 
@@ -1160,6 +1182,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 
 			delete tree; //Free memory
+			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") ) {delete tree_passTrig;}
 			delete hist_uuu; delete hist_uue; delete hist_eeu; delete hist_eee; //Free memory
 			delete file_input; //CHANGED -- free memory
 		} //end sample loop
@@ -1419,9 +1442,32 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	  if(cut_on_BDT) {reader->BookMVA( MVA_method_name, weightfile );}
 	}
 
+
+	bool create_syst_histos = false; //FIXME -- allow user to choose ?
+	// if(syst_list.size() != 1)
+	// {
+	// 	string answer = "";
+	// 	cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+	// 	cin>>answer;
+	//
+	// 	while(answer != "yes" && answer!= "no")
+	// 	{
+	// 		cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+	// 		cin.clear();
+	// 		cin.ignore(1000, '\n');
+	// 		cin>>answer;
+	// 	}
+	//
+	// 	if(answer == "yes") create_syst_histos = true;
+	// }
+
+
+
 //---Loop on histograms
 	for(int isyst = 0; isyst < syst_list.size(); isyst++)
 	{
+		if(!create_syst_histos && syst_list[isyst] != "") {continue;} //Don't need systematics for Control plots...
+
 		cout<<"Syst : "<<syst_list[isyst]<<endl;
 
 		for(int isample=0; isample<sample_list.size(); isample++)
@@ -1704,23 +1750,23 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	} while (restart_loop);
 
 
-	bool create_syst_histos = false;
-	if(syst_list.size() != 1)
-	{
-		string answer = "";
-		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
-		cin>>answer;
-
-		while(answer != "yes" && answer!= "no")
-		{
-			cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
-			cin.clear();
-			cin.ignore(1000, '\n');
-			cin>>answer;
-		}
-
-		if(answer == "yes") create_syst_histos = true;
-	}
+	bool create_syst_histos = false; //FIXME -- allow user to choose ?
+	// if(syst_list.size() != 1)
+	// {
+	// 	string answer = "";
+	// 	cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+	// 	cin>>answer;
+	//
+	// 	while(answer != "yes" && answer!= "no")
+	// 	{
+	// 		cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+	// 		cin.clear();
+	// 		cin.ignore(1000, '\n');
+	// 		cin>>answer;
+	// 	}
+	//
+	// 	if(answer == "yes") create_syst_histos = true;
+	// }
 
 	int nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() * syst_list.size()) + total_var_list.size();
 	if(!create_syst_histos) nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() ) + total_var_list.size();
