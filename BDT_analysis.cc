@@ -39,7 +39,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Templates
     int nofbin_templates = 10; //Templates binning (to be optimized)
     bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
-    bool cut_on_BDT = false; //Apply cut on BDT values --> Don't look signal region !
+    bool cut_on_BDT = true; //Apply cut on BDT values --> Don't look signal region !
 
     //Fakes
     bool fakes_from_data = true; //Use MC fakes or data-driven fakes)
@@ -378,10 +378,10 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
-        bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
+        bool create_control_histograms = true; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = false; //Plot input variables
+        bool draw_input_vars = true; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
@@ -408,6 +408,9 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         if(isttZ)  template_name = "BDTttZ"; //BDT in ttZ Control region
         if(isWZ)   template_name = "mTW"; //Template for WZ Control region
 
+        float cut_BDT_value = -99;
+        if(isWZ || isttZ)  cut_on_BDT = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
+
         //#############################################
         // TRAINING
         //#############################################
@@ -419,23 +422,25 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
             }
         }
 
+
         //#############################################
         //  TEMPLATES CREATION
         //#############################################
-        float cut_BDT_value = -99;
-        if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
-        if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-        //------------------------
 
-        if(create_templates) {MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT, cut_BDT_value);}
+        if(create_templates)
+        {
+            if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+            MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT, cut_BDT_value);
+        }
 
         //#############################################
         //  CONTROL TREES & HISTOGRAMS
         //#############################################
         if(create_control_histograms)
         {
+            if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
             MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, false);
-            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels); //NOTE : very long ! You should only activate necessary syst./vars !
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT); //NOTE : very long ! You should only activate necessary syst./vars !
         }
 
         //#############################################
@@ -443,7 +448,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         //#############################################
         for(int i=0; i<thechannellist.size(); i++) //SINGLE CHANNELS
         {
-            if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit); //Draw plots for the BDT CR
+            if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit, cut_on_BDT); //Draw plots for the BDT CR
             if(draw_templates)
             {
                 if(!postfit) MVAtool->Plot_Prefit_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
@@ -453,7 +458,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         }
 
         // --- ALL CHANNELS
-        if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit);
+        if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit, cut_on_BDT);
         if(draw_templates)
         {
             if(!postfit) MVAtool->Plot_Prefit_Templates("all", template_name, true); //Plot the prefit templates
@@ -465,6 +470,8 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         //#############################################
         if(convert_templates_for_theta) {MVAtool->Convert_Templates_Theta();}
 
+
+        // MVAtool->Rescale_Fake_Histograms("FileToRescale.root"); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
@@ -561,6 +568,22 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
                 set_v_cut_IsUsedForBDT_optim.push_back(false);
 
 
+
+
+
+        //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
+
+            //-----------------    TRAINING
+                bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+
+            //-----------------    TEMPLATES CREATION
+                bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+
+            //-----------------
+
+
+
+        //---> AUTOMATIZED FUNCTION CALLS FROM BOOLEANS
                 //#############################################
                 //  CREATE INSTANCE OF CLASS & INITIALIZE
                 //#############################################
@@ -575,14 +598,11 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
                 if(isttZ)  template_name = "BDTttZ"; //BDT in ttZ Control region
                 if(isWZ)   template_name = "mTW"; //Template for WZ Control region
 
-
+                float cut_BDT_value = -99;  if(isWZ || isttZ)  cut_on_BDT = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
 
                 //#############################################
                 // TRAINING
                 //#############################################
-                bool train_BDT = false;
-                //------------------------
-
 
                 for(int i=0; i<thechannellist.size(); i++)
                 {
@@ -596,13 +616,12 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
                 //#############################################
                 //  TEMPLATES CREATION
                 //#############################################
-                bool create_templates = false;
 
-                bool cut_on_BDT = false;   float cut_BDT_value = -99;  if(isWZ)  cut_on_BDT = false; //No BDT in WZ CR
-                if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-                //------------------------
-
-                if(create_templates) {MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT, cut_BDT_value);}
+                if(create_templates)
+                {
+                    if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT, cut_BDT_value);
+                }
 
 
 
@@ -611,6 +630,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
                 MVAtool->~theMVAtool(); //Delete object
 
             } //end second scanned variable loop
+
         } //end first scanned variable loop
 
     } //End optimization Scan

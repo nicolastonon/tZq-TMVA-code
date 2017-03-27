@@ -24,8 +24,8 @@ WZl_rate       lnN     -                 -           -           -	    		-      
 WZb_rate       lnN     -                 -           -           -	    		-             -					-			-			   1.3		-
 WZc_rate       lnN     -                 -           -           -	    		-             -					-			-			   -		1.3
 
-FakeRate_type lnN      -		  	 	 -	    	  -           -	     		-             -					5.0			-			   -		-
-FakeBgd_rate  lnN      -	             -	    	  -           -	     		-             -					1.3			-			   -		-
+FakeRate_type lnN      -		  	 	 -	    	  -           -	     		-             -					FakeRate_Numb			-			   -		-
+FakeBgd_rate  lnN      -	             -	    	  -           -	     		-             -					FakeBgd_Numb			-			   -		-
 
 [*]Q2 			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1
 [*]pdf			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1

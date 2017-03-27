@@ -224,6 +224,8 @@ void theMVAtool::Set_Luminosity(double desired_luminosity)
 
 void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", bool use_ttZaMCatNLO=true)
 {
+	if(isWZ) {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the WZ Control Region ! Abort"))<<endl; return;}
+
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("---TRAINING ---")<<endl;
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
@@ -302,16 +304,28 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
         Double_t signalWeight     = 1.0;
         Double_t backgroundWeight = 1.0;
 
-        // You can add an arbitrary number of signal or background trees
-		//FIXME : can use abs(weights) instead
+        //CHANGED -- Choose between absolute/relative weights for training
 		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
         // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
 
-		if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
-        else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+        // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+
+		//Use relative weights in signal region & absolute weights in ttZ CR (needed to avoid overtraining !)
+		if(isttZ && !isWZ)
+		{
+			if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+		}
+		else if(!isWZ && !isttZ)
+		{
+			if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+		}
+		else {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the wrong region ! Abort"))<<endl; return;}
     }
 
-	cout<<"////////WARNING : TAKE *ABSOLUTE* VALUES OF WEIGHTS////////"<<endl;
+	cout<<FYEL("////////WARNING : TAKE *ABSOLUTE* VALUES OF WEIGHTS////////")<<endl;
 
 	// Apply additional cuts on the signal and background samples (can be different)
 	TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
@@ -397,7 +411,6 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 
 	//NOTE : to be used for now
 	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
-
 
 	output_file->cd();
 
@@ -637,6 +650,21 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	file_to_rescale = TFile::Open(file_to_rescale_name.Data(), "UPDATE"); //NOTE : update mode --> overwrite fake histograms
 	if(!file_to_rescale) {cout<<FRED(<<file_to_rescale_name.Data()<<" not found! -- Abort")<<endl; return;}
 
+
+	//Define list of systematics here, so the function always look for the corresponding histos
+	vector<TString> syst_fakes;
+	syst_fakes.push_back(""); //Nominal
+	if(combine_naming_convention) //Combine
+	{
+		syst_fakes.push_back("FakesUp");
+		syst_fakes.push_back("FakesDown");
+	}
+	else  //Theta
+	{
+		syst_fakes.push_back("Fakes__plus");
+		syst_fakes.push_back("Fakes__minus");
+	}
+
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
 	{
 		TString Fakename;
@@ -645,10 +673,10 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 		else if(channel_list[ichan] == "eeu") Fakename = "__FakeElElMu";
 		else if(channel_list[ichan] == "eee") Fakename = "__FakeElElEl";
 
-		for(int isyst=0; isyst<syst_list.size(); isyst++)
+		for(int isyst=0; isyst<syst_fakes.size(); isyst++)
 		{
 			TString systname = "";
-			if(syst_list[isyst] != "") systname = "__" + syst_list[isyst];
+			if(syst_fakes[isyst] != "") systname = "__" + syst_fakes[isyst];
 
 			for(int ivar=0; ivar<total_var_list.size(); ivar++)
 			{
@@ -656,13 +684,19 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 				if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {continue;}
 
 				TH1F* h_tmp = (TH1F*) file_to_rescale->Get(histo_name);
+
+				if(h_tmp->Integral() < 50)
+				{
+					cout<<BOLD(FMAG("Warning : "<<histo_name<<"->Integral() = "<<h_tmp->Integral()<<" < 50 ! Are you sure the fakes were not re-scaled already ?"))<<endl<<endl;
+				}
+
 				if(channel_list[ichan] == "uuu" || channel_list[ichan] == "eeu") h_tmp->Scale(SF_FakeMu);
 				else if(channel_list[ichan] == "eee" || channel_list[ichan] == "uue") h_tmp->Scale(SF_FakeEl);
 
 				file_to_rescale->cd();
 				h_tmp->Write(histo_name, TObject::kOverwrite);
 
-				h_tmp->Delete();
+				delete h_tmp;
 			}
 		}
 	}
@@ -1443,7 +1477,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	}
 
 
-	bool create_syst_histos = false; //FIXME -- allow user to choose ?
+	bool create_syst_histos = false; //NOTE : for now ,simply disactivate systematics for control plots (too long)
 	// if(syst_list.size() != 1)
 	// {
 	// 	string answer = "";
@@ -1461,6 +1495,15 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	// 	if(answer == "yes") create_syst_histos = true;
 	// }
 
+	TFile* file_input = 0;
+	TTree* tree = 0;
+
+
+	TString output_file_name = "outputs/Control_Trees" + this->filename_suffix;
+	if(cut_on_BDT) output_file_name+= "_CutBDT";
+	output_file_name+= ".root";
+	TFile* output_file = TFile::Open( output_file_name, "RECREATE" );
+	TTree *tree_control = 0;
 
 
 //---Loop on histograms
@@ -1480,24 +1523,26 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
-			TFile* file_input = 0;
+			file_input = 0;
 			file_input = TFile::Open( inputfile.Data() );
 			if(!file_input) {cout<<inputfile.Data()<<" not found!"<<endl; continue;}
+
+			file_input->cd();
+			tree = 0;
+			tree = new TTree("tree", "input tree"); //CHANGED
+
 
 			if( (sample_list[isample] == "Data" && syst_list[isyst]!="")
 				|| ( sample_list[isample].Contains("Fakes") && syst_list[isyst]!="" && !syst_list[isyst].Contains("Fakes") ) ) {continue;} //Data = no syst. -- Fakes = only fake syst.
 
 			if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") )   {continue;} //Fake syst. only for "fakes" samples
 
-			//NB : call the output file here in UPDATE mode because otherwise I got memory errors
-			TString output_file_name = "outputs/Control_Trees" + this->filename_suffix;
-			if(cut_on_BDT) output_file_name+= "_CutBDT";
-			output_file_name+= ".root";
-			TFile* output_file = TFile::Open( output_file_name, "UPDATE" );
 
-			//Create new tree, that will be filled only with events verifying MVA<cut
-			TTree *tree(0), *tree_control(0);
-			tree_control = new TTree("tree_control", "Control Tree");
+			output_file->cd();
+			tree_control = 0;
+			tree_control = new TTree("tree_control", "Control Tree"); //CHANGED
+
+
 
 			for(int ivar=0; ivar<var_list.size(); ivar++)
 			{
@@ -1562,13 +1607,6 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 //------------------------------------------------------------
 //------------------- Apply cuts -----------------------------
 				float cut_tmp = 0; bool pass_all_cuts = true;
-
-				// //FIXME
-				// for(int ivar=0; ivar<v_cut_name.size(); ivar++)
-				// {
-				// 	if(v_cut_name[ivar] == "NJets" && v_cut_float[ivar] == 0)
-				// 	{cout<<"NJets : "<<v_cut_float[ivar]<<endl;}
-				// }
 
 
 				for(int ivar=0; ivar<v_cut_name.size(); ivar++)
@@ -1663,12 +1701,15 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			tree_control->Write(output_tree_name.Data(), TObject::kOverwrite);
 
 			delete tree_control; delete tree;
-		 	delete output_file;
 			delete file_input;
+
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 		} //end sample loop
 		cout<<"Done with "<<syst_list[isyst]<<" syst"<<endl;
+
 	} //end syst loop
+
+	delete output_file;
 
 	std::cout << "--- Created root file containing the output trees" << std::endl;
 	std::cout << "==> Create_Control_Trees() is done!" << std::endl << std::endl;
@@ -1702,7 +1743,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
  * @param fakes_from_data         If true, use fakes from data sample
  * @param use_pseudodata_CR_plots If true, use pseudodata
  */
-void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudodata_CR_plots, bool fakes_summed_channels)
+void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudodata_CR_plots, bool fakes_summed_channels, bool cut_on_BDT)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("--- Create Control Histograms ---")<<endl;
@@ -1713,7 +1754,10 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 
 	TString input_file_name = "outputs/Control_Trees" + this->filename_suffix + ".root";
+	if(cut_on_BDT) input_file_name = "outputs/Control_Trees" + this->filename_suffix + "_CutBDT.root";
 	TString output_file_name = "outputs/Control_Histograms" + this->filename_suffix + ".root";
+	if(cut_on_BDT) output_file_name = "outputs/Control_Histograms" + this->filename_suffix + "_CutBDT.root";
+
 	TFile* f_input = 0;
 	f_input = TFile::Open( input_file_name.Data() );
 	if(!f_input) {cout<<input_file_name.Data()<<" not found ! Abort"<<endl;}
@@ -1856,7 +1900,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					TString tree_name = "Control_" + sample_list[isample];
 					if(syst_list[isyst] != "") {tree_name+= "_" + syst_list[isyst];}
-					if(!f_input->GetListOfKeys()->Contains(tree_name.Data()) && sample_list[isample] != "Data" ) {if(isyst==0 && ivar==0) {cout<<__LINE__<<" : "<<tree_name<<" not found (missing sample?) -- [Stop error messages]"<<endl;} continue;}
+					if( !f_input->GetListOfKeys()->Contains(tree_name.Data()) && sample_list[isample] != "Data" ) {if(isyst==0 && ivar==0) {cout<<__LINE__<<" : "<<tree_name<<" not found (missing sample?) -- [Stop error messages]"<<endl;} continue;}
 					tree = (TTree*) f_input->Get(tree_name.Data());
 					// cout<<__LINE__<<endl;
 
@@ -2195,7 +2239,7 @@ int theMVAtool::Generate_PseudoData_Templates(TString template_name)
  * @param  allchannels           If true, sum 4 channels
  * @param  postfit           	 Decide if produce prefit OR postfit plots (NB : different files/hist names)
  */
-int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool allchannels, bool postfit = false)
+int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool allchannels, bool postfit, bool cut_on_BDT)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("--- Draw Control Plots ---")<<endl;
@@ -2225,6 +2269,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 	else
 	{
 		TString input_file_name = "outputs/Control_Histograms" + this->filename_suffix + ".root";
+		if(cut_on_BDT) input_file_name = "outputs/Control_Histograms" + this->filename_suffix + "_CutBDT.root";
 		f = TFile::Open( input_file_name );
 		if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 	}
@@ -2977,7 +3022,9 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	delete file_input;
 
-	delete c1; delete qw; delete h_sum_data ; delete stack_MC;
+	delete c1;
+	delete qw;
+	delete stack_MC;
 
 	return 0;
 }
@@ -3299,7 +3346,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	delete file_input;
 	delete file_data;
-	delete c1; delete qw; delete h_sum_data ; delete stack_MC;
+	delete c1; delete qw;
+	delete stack_MC;
 
 	return 0;
 }

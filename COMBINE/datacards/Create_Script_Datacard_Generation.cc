@@ -28,7 +28,7 @@ using namespace std;
 
 void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 {
-	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2)  ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
+	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3)  ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
 	TString systList;
 	if(include_systematics == 'y') {systList = "allSyst";}
@@ -36,7 +36,8 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 	TString signal;
 	if(signal_choice == 0) {signal = "tZq";}
 	else if(signal_choice == 1) {signal = "ttZ";}
-	else if(signal_choice == 2) {signal = "tZq&ttZ";}
+	else if(signal_choice == 2) {signal = "tZqANDttZ";}
+	else if(signal_choice == 3) {signal = "tZqANDFakes";}
 
 	TString file_histos = "";
 	TString region_choice = "";
@@ -127,7 +128,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 
 void Script_Datacards_TemplateFit(char include_systematics, int signal_choice)
 {
-	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2)  ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
+	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3)  ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
 	TString systList;
 	if(include_systematics == 'y') {systList = "allSyst";}
@@ -135,7 +136,8 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice)
 	TString signal;
 	if(signal_choice == 0) {signal = "tZq";}
 	else if(signal_choice == 1) {signal = "ttZ";}
-	else if(signal_choice == 2) {signal = "tZq&ttZ";}
+	else if(signal_choice == 2) {signal = "tZqANDttZ";}
+	else if(signal_choice == 3) {signal = "tZqANDFakes";}
 
 	TString file_histos = "../templates/Combine_Input.root";
 
@@ -217,9 +219,9 @@ int main()
 		cin>>include_systematics;
 	}
 
-	cout<<endl<<FYEL("--- What is your signal : tZq = '0', ttZ = '1', both = '2'")<<endl;
+	cout<<endl<<FYEL("--- What processes do you want to let free in the fit ?"<<endl<<"[tZq = '0', ttZ = '1', tZq & ttZ = '2', tZq & Fakes = '3']")<<endl;
 	cin>>signal_choice;
-	while(signal_choice != 0 && signal_choice != 1 && signal_choice != 2)
+	while(signal_choice != 0 && signal_choice != 1 && signal_choice != 2 && signal_choice != 3)
 	{
 		cin.clear();
 		cin.ignore(1000, '\n');

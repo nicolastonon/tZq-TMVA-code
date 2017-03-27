@@ -51,6 +51,10 @@ if channel=="eee":
     theFLLL_chNumb= "13"
     theFakeRate_type = "FakeRate_el"
 
+FakeRate_Numb = "5.0"
+FakeBgd_Numb = "1.3"
+
+
 if(systList!="allSyst" and systList!="noSyst"):
     print "Wrong systList value ! should be allSyst or noSyst"
     exit()
@@ -60,8 +64,8 @@ if systList == "noSyst":
     shapeSyst = "#"
 
 
-if(Signal!="tZq" and Signal!="ttZ" and Signal!="tZqANDttZ"):
-    print "Wrong Signal value ! should be tZq or ttZ or tZqANDttZ"
+if(Signal!="tZq" and Signal!="ttZ" and Signal!="tZqANDttZ" and Signal!="tZqANDFakes"):
+    print "Wrong Signal value ! should be tZq or ttZ or tZqANDttZ or tZqANDFakes"
     exit()
 if Signal=="tZq":
     tZq_chNumb = "0"
@@ -78,6 +82,25 @@ if Signal=="tZqANDttZ":
     ttZ_chNumb = "-1"
     tZqsyst = "-"
     ttZsyst = "-"
+if Signal=="tZqANDFakes":
+    tZq_chNumb = "0"
+    tZqsyst = "-"
+    ttZ_chNumb = "3"
+    ttZsyst = "1.3"
+    FakeRate_Numb = "-"
+    FakeBgd_Numb = "-"
+
+    if channel=="uuu":
+        theFLLL_chNumb = "-1"
+    if channel=="uue":
+        theFLLL_chNumb = "-2"
+    if channel=="eeu":
+        theFLLL_chNumb = "-3"
+    if channel=="eee":
+        theFLLL_chNumb= "-4"
+
+
+
 
 print 'creating datacard for channel '+channel+' and variable '+theVar
 s = open( fileToSearch).read()
@@ -92,6 +115,8 @@ s = s.replace("tZq_chNumb", tZq_chNumb)
 s = s.replace("ttZ_chNumb", ttZ_chNumb)
 s = s.replace("tZqsyst", tZqsyst)
 s = s.replace("ttZsyst", ttZsyst)
+s = s.replace("FakeRate_Numb", FakeRate_Numb)
+s = s.replace("FakeBgd_Numb", FakeBgd_Numb)
 
 print 'datacard created'
 
