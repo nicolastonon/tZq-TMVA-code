@@ -39,7 +39,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Templates
     int nofbin_templates = 10; //Templates binning (to be optimized)
     bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
-    bool cut_on_BDT = true; //Apply cut on BDT values --> Don't look signal region !
+    bool cut_on_BDT = false; //Apply cut on BDT values --> Don't look signal region !
 
     //Fakes
     bool fakes_from_data = true; //Use MC fakes or data-driven fakes)
@@ -378,13 +378,13 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
-        bool create_control_histograms = true; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
+        bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
         bool draw_input_vars = true; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
-        bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
+        bool postfit = true; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
 //-----------------    OTHER
         bool convert_templates_for_theta = false; //Use this if you already produced template files with Combine conventions, and want to convert them to Theta

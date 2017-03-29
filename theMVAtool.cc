@@ -316,16 +316,18 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 		{
 			if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
 			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+			cout<<FYEL("-- Using *ABSOLUTE* weights (BDTttZ) --")<<endl;
 		}
 		else if(!isWZ && !isttZ)
 		{
 			if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
 			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+			cout<<FYEL("-- Using *RELATIVE* weights (BDT) --")<<endl;
 		}
 		else {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the wrong region ! Abort"))<<endl; return;}
     }
 
-	cout<<FYEL("////////WARNING : TAKE *ABSOLUTE* VALUES OF WEIGHTS////////")<<endl;
+
 
 	// Apply additional cuts on the signal and background samples (can be different)
 	TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
@@ -2276,6 +2278,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 	TH1::SetDefaultSumw2();
 
+	if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
+
 	mkdir("plots",0777); //Create directory if inexistant
 
 	TH1F *h_tmp = 0, *h_data = 0;
@@ -2481,7 +2485,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
-					if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
 
 					TH1F* histo_syst = 0; //Store the "systematic histograms"
 

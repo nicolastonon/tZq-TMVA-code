@@ -47,7 +47,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 		cin.clear();
 		cin.ignore(1000, '\n');
 
-		cout<<endl<<FYEL("--- In what region do you wish to plot postfit input variables ? (tZq/ttZ/WZ)")<<endl;
+		cout<<endl<<FYEL("--- In what region do you wish to plot postfit input variables ? (Type 'tZq', 'ttZ' or 'WZ' )")<<endl;
 		cin>>region_choice;
 	}
 
@@ -108,7 +108,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<var_list[ivar] + "_" + chan_list[ichan] + " = datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
+			file_out<<var_list[ivar] + "_" + chan_list[ichan] + "=datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
 		}
 	}
 
@@ -118,7 +118,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 
 	file_out<<"mv datacard_*.txt datacards_InputVars/";
 
-	cout<<FGRN("---> Created script Generate_Datacards_InputVars.sh !")<<endl;
+	cout<<FGRN("---> Created script Generate_Datacards_InputVars.sh, for region "<<region_choice<<" !")<<endl;
 
 	return;
 }
@@ -219,7 +219,7 @@ int main()
 		cin>>include_systematics;
 	}
 
-	cout<<endl<<FYEL("--- What processes do you want to let free in the fit ?"<<endl<<"[tZq = '0', ttZ = '1', tZq & ttZ = '2', tZq & Fakes = '3']")<<endl;
+	cout<<endl<<FYEL("--- What processes do you want to let free in the fit ?"<<endl<<"['0' = tZq / '1' = ttZ / '2' = tZq & ttZ / '3' = tZq & Fakes]")<<endl;
 	cin>>signal_choice;
 	while(signal_choice != 0 && signal_choice != 1 && signal_choice != 2 && signal_choice != 3)
 	{
