@@ -6,11 +6,11 @@ from sys import version_info #To obtain python version automatically
 py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
 
 if py3:
-  signal = input("What processes are free in the fit ['0' = tZq / '1' = ttZ / '2' = tZq & ttZ / '3' = tZq & Fakes] ? : ")
-  systematics = input("With systematics ? (y/n) : ")
+  signal = input("--- What processes are free in the fit ['0' = tZq / '1' = ttZ / '2' = tZq & ttZ / '3' = tZq & Fakes] ? : ")
+  systematics = input("--- With systematics ? (y/n) : ")
 else:
-  signal = raw_input("What processes are free in the fit ['0' = tZq / '1' = ttZ / '2' = tZq & ttZ / '3' = tZq & Fakes] ? : ")
-  systematics = raw_input("With systematics ? (y/n) : ")
+  signal = raw_input("--- What processes are free in the fit ['0' = tZq / '1' = ttZ / '2' = tZq & ttZ / '3' = tZq & Fakes] ? : ")
+  systematics = raw_input("--- With systematics ? (y/n) : ")
 
 if systematics=="y":
     syst_suffix = ""
@@ -45,4 +45,4 @@ bbb.AddBinByBin(cmb.cp(), cmb)
 
 # Write the datacard back out. Note that the root file containing the histogram inputs is fully
 # recreated and will now contain all the Up/Down shapes for the bin-by-bin too
-cmb.WriteDatacard('COMBINED_datacard_TemplateFit_'+signal_name+syst_suffix+'_MCstat.txt', '../templates/Combine_Input_'+signal_name+syst_suffix+'.root')
+cmb.WriteDatacard('COMBINED_datacard_TemplateFit_'+signal_name+syst_suffix+'_MCstat.txt', '../templates/Combine_Input_'+signal_name+syst_suffix+'_MCstat.root')

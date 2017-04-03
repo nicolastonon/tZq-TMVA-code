@@ -18,7 +18,10 @@
 
 - Move to COMBINE/ dir.
 
-- /!\ NB : The 'templates' dir. must contain a file named 'Combine_Input.root', to which the datacards are pointing to. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file. (read the other README.txt to know how to create the templates)
+- /!\ NB : The 'templates' dir. must contain a file named 'Combine_Input_SUFFIX.root', to which the datacards are pointing to. This file contains [3 regions * 4 channels] = 12 nominal templates (+ all the systematics shifted templates), from which Combine will perform the template fit. Make sure that you're using the right input file. (read the other README.txt to know how to create the templates)
+- For Template files, we use the convention : 'Combine_Input_Signal.root' (where signal = 'tZq', 'ttZ', 'tZqANDttZ', 'tZqANDFakes').
+
+
 -----------------------------------
 ########     ###    ########    ###     ######     ###    ########  ########   ######
 ##     ##   ## ##      ##      ## ##   ##    ##   ## ##   ##     ## ##     ## ##    ##
@@ -33,16 +36,16 @@
 
 
 4) 'Create_Script_Datacard_Generation.cc' generates the scripts to create datacards either to perform the template fit, or to obtain postfit distributions of all input variables, or to get both. It will also ask you if you want to include the systematics, what is your signal (tZq/ttZ/both), and in what region you want to obtain the postfit distributions of input variables.
-- In the code, you can change the path of the histogram file the datacards will point to.
-- Make sure the variable list (for postfit distributions) is up-to-date !!
-- Compile code & execute it :
-# g++ Create_Script_Datacard_Generation.cc -o Create_Script_Datacard_Generation.exe `root-config --cflags --glibs`
+- Compile code via Makefile :
+# make
+
+- NB : in the source code you can modify the variable list (if you're interested in getting postfit distributions of the BDT variables), the datacard name, etc.
 
 
-5) The created script 'Create_Script_Datacard_Generation.exe' automatically generates the appropriate datacards & combines them into 'COMBINED_datacard_suffix' :
+5) The created script 'Create_Script_Datacard_Generation.exe' asks input from the user to automatically create a script which will generate the desired datacard :
 # ./Create_Script_Datacard_Generation.exe
 
-6) The 2 created scripts 'Generate... .sh' generate combined datacards either for the template it or to get postfit distributions of input vars :
+6) The created script 'Generate... .sh' generates a combined datacard 'COMBINED_datacard_suffix' (either for the template it or to get postfit distributions of input vars) :
 # ./Generate... .exe
 
 - NB : could also use directly the 'Generate_Datacards.py' script to generate manually the single datacard you want, with this syntax :
@@ -51,9 +54,10 @@
 ((the 'Generate... .sh' executables run this script for all channels & variables !))
 
 
-7) Finally, you can add MC statistical uncertainties manually if you want to (not done by Combine by default) via the CombineHarvester 'AddBinbyBin.py' script. It will add stat. MC error to each histogram's bin. In the script, you need to specify the name of your input datacard, and the names of the output datacard & histogram file. You can then directly run Combine commands on this new datacard.
+7) Finally, you can add MC statistical uncertainties manually if you want to (not done in Combine by default) via the CombineHarvester 'AddBinbyBin.py' script. It will add stat. MC error to each histogram's bin. It will ask input from the user in order to look for the right datacard name :
 # python addBinbyBin
-- NB 1 : This adds a LOT of nuisance parameters (NP) to the fit (1 per histogram bin/process/channel/region) ! That's why the script contains an option 'SetAddThreshold' which you should set e.g. to 0.05, so that a NP is added only if the bin stat. relative uncertainty is >= 0.05 !
+
+- NB 1 : This adds a LOT of nuisance parameters (NP) to the fit (1 per histogram bin/process/channel/region) ! That's why the script contains an option 'SetAddThreshold' which you should set e.g. to 0.05, so that a NP is added only if the bin stat. relative uncertainty is >= 5% of total error !
 - NB 2 : As a result, the fit takes a LOT more time to converge while the MC stat. uncertainties have been added.
 
 
@@ -69,7 +73,7 @@
 /!\ Make sure you're using the right datacard name in the commands /!\
 
 5)- Compute the a-priori EXPECTED significance w/ a Profile Likelihood :
-# combine -M ProfileLikelihood --significance COMBINED_datacard.txt -t -1 --expectSignal=1 -v 4
+# combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 COMBINED_datacard.txt
 NB : "-t -1" ==> Use Asimov Dataset ; to use toys instead, use "-t N", with N number of toys
 NB : for a-posteriori expected signif (uses data & MC), add --toysFreq
 

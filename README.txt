@@ -21,9 +21,8 @@ This GitHub repository contains the TMVA & CombineHiggsTool codes used in the tZ
 - Be careful to set properly all the configurable paths, booleans & other options in the main !!!
 - Also notice that all function calls are done via dedicated booleans (cf. section "Function Calls" in code) !
 
-/!\ Be sure to keep all the codes synchronized : sample list, etc. (e.g. if you want to use interfacing code, standalone code 'scaleFakes.cc', etc.)
+((- Also : make sure to keep all the independant codes synchronized : sample list, etc. (e.g. if you want to use interfacing code, standalone code 'scaleFakes.cc', etc.) ))
 
-/!\ ...
 
 _____________________________________________________________________________
   #####  ####### ####### #     # ######
@@ -105,12 +104,12 @@ This class contains all the necessary functions to perform our Template Fit Anal
 
 --- OTHER VARS => Can add additional variables not used in BDT, only for control plots.
 
---- FUNCTION CALLS => This is where the functions are called. Simply set to 'TRUE' the booleans activating the functions you want to use.
-/!\ Be sure to set properly the few function-dependant options/booleans which are initialized there.
+--- FUNCTION CALLS => This is where the functions are called. Simply set to 'TRUE' the booleans activating the functions you want to use. Then all the function calls are made automatically from there.
 
 
 --- OPTIMIZATION => This is a simple loop on 2 sets of cuts, which allows to produce templates in the selected region with different cuts ==> Can then perform template fit with all the different files, and see which set of cuts maximizes the significance !
-- NB : to use the optimization loop, need to set boolean in 'Options' ;
+- NB : only does training + template creation (needed for comparison b/w cut sets)
+- NB : to use the optimization loop, need to set corresponding boolean in 'Options' section ;
 - NB : can easily loop on more than two sets of cuts, by adding loops !
 
 ---------------------------
@@ -145,6 +144,10 @@ The main functions of theMVAtool are :
 --- TRAINING
 
 * Train_Test_Evaluate : Trains a BDT from list of variables, in chosen region. Creates weight files (necessary to then compute BDT discriminants) & TMVA control '.root' files.
+
+--- RE-SCALING
+
+* Compute_Fake_SF & Rescale_Fake_Histograms : use TFractionFitter class to re-scale fakes to data, constraining all other backgrounds. This is needed in order to get a reasonable prefit normalization of the fakes (so that the control plots make sense, and the template fit will converge correctly).
 
 
 --- Templates Creation
