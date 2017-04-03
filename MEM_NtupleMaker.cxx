@@ -628,6 +628,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     f_output->cd(); TString output_tree_name = v_syst_tree[itreesyst];
     if(v_syst_tree[itreesyst] == "Default")           output_tree_name = "Tree";
 
+
     // else if(v_syst_tree[itreesyst] == "JER__plus")    output_tree_name = "JERUp";
     // else if(v_syst_tree[itreesyst] == "JER__minus")   output_tree_name = "JERDown";
     // else if(v_syst_tree[itreesyst] == "JES__plus")    output_tree_name = "JESUp";
@@ -635,6 +636,9 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     // else if(v_syst_tree[itreesyst] == "Fakes__plus")  output_tree_name = "FakesUp";
     // else if(v_syst_tree[itreesyst] == "Fakes__minus") output_tree_name = "FakesDown";
     // else {cout<<__LINE__<<BOLD(FRED("Wrong systematic Tree name ! Abort"))<<endl; return;}
+
+
+
 
     TTree* tree_output = new TTree(output_tree_name.Data(), "");
     Prepare_Tree(samplename, tree_output, output_tree_name);
@@ -682,6 +686,21 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       }
     }
 
+    //CHANGED
+    float passTrig = -999; //Needed to keep only good events
+
+    TTree* t_passTrig = 0;
+
+    if(samplename != "Data")
+    {
+      if(v_syst_tree[itreesyst] == "Default") {t_vars_input->SetBranchAddress("passTrig", &passTrig);}
+      else
+      {
+        t_passTrig = (TTree*) f_input->Get( "Default" ); if(t_passTrig == 0) {cout<<"Can't find tree 'Default' !"<<endl; return;}
+        t_passTrig->SetBranchAddress("passTrig", &passTrig);
+      }
+    }
+
 
 
   //--------------------
@@ -697,8 +716,18 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
       Init(); //Re-initialize values of all variables
 
+      passTrig = -999;
+
       t_MEM_input->GetEntry(ientry);
       t_vars_input->GetEntry(ientry);
+      if(samplename != "Data")
+      {
+        if(v_syst_tree[itreesyst] != "Default") t_passTrig->GetEntry(ientry);
+
+        if(passTrig != 1) {continue;}
+      }
+
+
 
   //---------------------------
       //Translate channel in TString (easier to debug)
@@ -845,11 +874,13 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     f_output->cd();
     tree_output->Write();
 
+    if(v_syst_tree[itreesyst] != "Default") {delete t_passTrig;}
+
     t_MEM_input->Delete(); t_vars_input->Delete(); tree_output->Delete();
   }//end tree_syst Loop
 
 
-  f_input->Close(); f_input->Delete();
+  delete f_input;
 
   return ;
 }
@@ -894,21 +925,18 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("ttZ");
   v_samplenames.push_back("Data");
+  v_samplenames.push_back("WZB");
+  v_samplenames.push_back("WZL");
+  v_samplenames.push_back("WZC");
+  v_samplenames.push_back("ttZ");
   v_samplenames.push_back("tZq");
-  v_samplenames.push_back("WZl");
-  v_samplenames.push_back("WZb");
-  v_samplenames.push_back("WZc");
   v_samplenames.push_back("ZZ");
   v_samplenames.push_back("ttH");
   v_samplenames.push_back("ttW");
   v_samplenames.push_back("Fakes");
   v_samplenames.push_back("STtWll");
 
-  // v_samplenames.push_back("ttZMad");
-  // v_samplenames.push_back("WZjets");
-  // v_samplenames.push_back("");
 
 //---------------------------------------------------------------------------
 // ########  ########  ########       ##     ##    ###    ########   ######
@@ -944,9 +972,11 @@ int main()
   BDTvar_list.push_back("dRZTop");
   BDTvar_list.push_back("TopPT");
   BDTvar_list.push_back("m3l");
-
-  //--- New vars
   BDTvar_list.push_back("METpt");
+
+
+/*
+  //--- New vars
   BDTvar_list.push_back("MAddLepB");
   BDTvar_list.push_back("LeadJetPT");
   BDTvar_list.push_back("dPhiZMET");
@@ -981,7 +1011,7 @@ int main()
   BDTvar_list.push_back("hitsNotRep");
   BDTvar_list.push_back("badMuon");
   BDTvar_list.push_back("duplMuon");
-
+*/
 
 
 //---------------------------------------------------------------------------
