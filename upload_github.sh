@@ -6,6 +6,8 @@ cp ../*.h .
 cp ../Makefile .
 cp ../*.txt .
 
+cp ../other/getROC_curves.cc .
+
 cp ../COMBINE/README_Combine.txt ./COMBINE/
 
 cp ../COMBINE/templates/Combine_Input.root ./COMBINE/templates/.
