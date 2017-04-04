@@ -113,7 +113,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 	}
 
 	file_out<<"> COMBINED_datacard_InputVars_"<<signal;
-	if(!include_systematics) file_out<<"_noSyst";
+	if(systList == "noSyst") file_out<<"_noSyst";
 	file_out<<".txt"<<endl;
 
 	system("chmod 755 Generate_Datacards_InputVars.sh");
@@ -188,7 +188,7 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice)
 
 
 	file_out<<"> COMBINED_datacard_TemplateFit_"<<signal;
-	if(!include_systematics) file_out<<"_noSyst";
+	if(systList == "noSyst") file_out<<"_noSyst";
 	file_out<<".txt"<<endl;
 
 	system("chmod 755 Generate_Datacards_TemplateFit.sh");

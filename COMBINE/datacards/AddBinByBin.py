@@ -17,17 +17,25 @@ if systematics=="y":
 else:
     syst_suffix = "_noSyst"
 
-signal_name = "" #use suffix only when use ttZ as signal
-
+if signal=="0":
+  signal_name="_tZq"
+  signal_name_template=""
 if signal=="1":
   signal_name="_ttZ"
+  signal_name_template="_ttZ"
+if signal=="2":
+  signal_name="_tZqANDttZ"
+  signal_name_template=""
+if signal=="3":
+  signal_name="_tZqANDFakes"
+  signal_name_template=""
 
 
 
 # Create a CombineHarvester instance and parse an existing datacard
 # Important to specify the mass, other metadata values like analysis and channel are optional
 cmb = ch.CombineHarvester()
-cmb.ParseDatacard('COMBINED_datacard_TemplateFit_'+signal_name+syst_suffix+'.txt', mass='', analysis='tZq', channel='all')
+cmb.ParseDatacard('COMBINED_datacard_TemplateFit'+signal_name+syst_suffix+'.txt', mass='', analysis='tZq', channel='all')
 
 bbb = ch.BinByBinFactory()
 bbb.SetVerbosity(1)
@@ -41,4 +49,4 @@ bbb.AddBinByBin(cmb.cp(), cmb)
 
 # Write the datacard back out. Note that the root file containing the histogram inputs is fully
 # recreated and will now contain all the Up/Down shapes for the bin-by-bin too
-cmb.WriteDatacard('COMBINED_datacard_TemplateFit'+signal_name+syst_suffix+'_MCstat.txt', '../templates/Combine_Input_'+signal_name+syst_suffix+'_MCstat.root')
+cmb.WriteDatacard('COMBINED_datacard_TemplateFit'+signal_name+syst_suffix+'_MCstat.txt', '../templates/Combine_Input'+signal_name_template+syst_suffix+'_MCstat.root')

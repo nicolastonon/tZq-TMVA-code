@@ -9,10 +9,10 @@ import os
 fileToSearch = "Template_Datacard.txt"
 
 theFlll = "-"
-theFlll_chan = "-"
+Fakes_ch = ""
 theFakeRate_type = "-"
-tZq_chan = "-"
-ttZ_chan = "-"
+tZq_ch = ""
+ttZ_ch = ""
 tZqsyst = "-"
 ttZsyst = "-"
 shapeSyst = ""
@@ -36,22 +36,22 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
 
 if channel=="uuu":
     theFlll = "FakeMuMuMu"
-    theFlll_chan = "10"
+    Fakes_ch = "10"
     theFakeRate_type = "FakeRate_mu"
     trigsyst = "1.01"
 if channel=="uue":
     theFlll = "FakeMuMuEl"
-    theFlll_chan = "11"
+    Fakes_ch = "11"
     theFakeRate_type = "FakeRate_el"
     trigsyst = "1.01"
 if channel=="eeu":
     theFlll = "FakeElElMu"
-    theFlll_chan = "12"
+    Fakes_ch = "12"
     theFakeRate_type = "FakeRate_mu"
     trigsyst = "1.01"
 if channel=="eee":
     theFlll = "FakeElElEl"
-    theFlll_chan= "13"
+    Fakes_ch= "13"
     theFakeRate_type = "FakeRate_el"
     trigsyst = "1.02"
 
@@ -72,36 +72,36 @@ if(Signal!="tZq" and Signal!="ttZ" and Signal!="tZqANDttZ" and Signal!="tZqANDFa
     print "Wrong Signal value ! should be tZq or ttZ or tZqANDttZ or tZqANDFakes"
     exit()
 if Signal=="tZq":
-    tZq_chan = "0"
-    ttZ_chan = "3"
+    tZq_ch = "0"
+    ttZ_ch = "3"
     tZqsyst = "-"
     ttZsyst = "1.3"
 if Signal=="ttZ":
-    tZq_chan = "3"
-    ttZ_chan = "0"
+    tZq_ch = "3"
+    ttZ_ch = "0"
     tZqsyst = "1.3"
     ttZsyst = "-"
 if Signal=="tZqANDttZ":
-    tZq_chan = "0"
-    ttZ_chan = "-1"
+    tZq_ch = "0"
+    ttZ_ch = "-1"
     tZqsyst = "-"
     ttZsyst = "-"
 if Signal=="tZqANDFakes":
-    tZq_chan = "0"
+    tZq_ch = "0"
     tZqsyst = "-"
-    ttZ_chan = "3"
+    ttZ_ch = "3"
     ttZsyst = "1.3"
     FakeRate_Numb = "-"
     FakeBgd_Numb = "-"
 
     if channel=="uuu":
-        theFlll_chan = "-1"
+        Fakes_ch = "-1"
     if channel=="uue":
-        theFlll_chan = "-2"
+        Fakes_ch = "-2"
     if channel=="eeu":
-        theFlll_chan = "-3"
+        Fakes_ch = "-3"
     if channel=="eee":
-        theFlll_chan= "-4"
+        Fakes_ch= "-4"
 
 
 
@@ -112,11 +112,11 @@ s = s.replace("[*]", shapeSyst)
 s = s.replace("chan", channel)
 s = s.replace("var",theVar)
 s = s.replace("Flll",theFlll )
-s = s.replace("Flll_chan", theFlll_chan)
+s = s.replace("Fakes_ch", Fakes_ch)
 s = s.replace("FakeRate_type",    theFakeRate_type)
 s = s.replace("filetoread", theFiletoRead)
-s = s.replace("tZq_chan", tZq_chan)
-s = s.replace("ttZ_chan", ttZ_chan)
+s = s.replace("tZq_ch", tZq_ch)
+s = s.replace("ttZ_ch", ttZ_ch)
 s = s.replace("tZqsyst", tZqsyst)
 s = s.replace("ttZsyst", ttZsyst)
 s = s.replace("FakeRate_Numb", FakeRate_Numb)
