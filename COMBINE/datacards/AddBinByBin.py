@@ -17,14 +17,10 @@ if systematics=="y":
 else:
     syst_suffix = "_noSyst"
 
-if signal=="0":
-  signal_name="tZq"
+signal_name = "" #use suffix only when use ttZ as signal
+
 if signal=="1":
-  signal_name="ttZ"
-if signal=="2":
-  signal_name="tZqANDttZ"
-if signal=="3":
-  signal_name="tZqANDFakes"
+  signal_name="_ttZ"
 
 
 
@@ -45,4 +41,4 @@ bbb.AddBinByBin(cmb.cp(), cmb)
 
 # Write the datacard back out. Note that the root file containing the histogram inputs is fully
 # recreated and will now contain all the Up/Down shapes for the bin-by-bin too
-cmb.WriteDatacard('COMBINED_datacard_TemplateFit_'+signal_name+syst_suffix+'_MCstat.txt', '../templates/Combine_Input_'+signal_name+syst_suffix+'_MCstat.root')
+cmb.WriteDatacard('COMBINED_datacard_TemplateFit'+signal_name+syst_suffix+'_MCstat.txt', '../templates/Combine_Input_'+signal_name+syst_suffix+'_MCstat.root')

@@ -315,18 +315,23 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = true;
+    bool use_systematics = false;
 //----------------
 
 
 //--- General names of systematics
     vector<TString> systematics_names_tmp;
-    //--- Affect the variable distributions
+
+    //--- Stored in separate Ntuples (tZq only)
+    systematics_names_tmp.push_back("PSscale");
+    systematics_names_tmp.push_back("Hadron");
+
+    //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
     systematics_names_tmp.push_back("JES");
     systematics_names_tmp.push_back("Fakes");
 
-    //--- Affect the event weight
+    //--- Stored as separate weights
     systematics_names_tmp.push_back("Q2");
     systematics_names_tmp.push_back("pdf");
     systematics_names_tmp.push_back("PU");
@@ -375,16 +380,16 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = true; //Plot input variables
+        bool draw_input_vars = false; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
-        bool postfit = true; //Decide if want prefit OR combine postfit plots (NB : use different files)
+        bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
 //-----------------    OTHER
         bool convert_templates_for_theta = false; //Use this if you already produced template files with Combine conventions, and want to convert them to Theta

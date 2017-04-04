@@ -7,12 +7,13 @@ shapes * var_chan filetoread $CHANNEL__$PROCESS $CHANNEL__$PROCESS__$SYSTEMATIC
 bin             var_chan
 observation     -1
 ----------------------------------------------------------------------------------------------------------------------------------
-bin                 var_chan        var_chan     var_chan     var_chan     var_chan 		var_chan		var_chan	var_chan	var_chan	var_chan
-process             tZq               ZZ           ttZ          ttW	        ttH        		STtWll			FakeLLL		  WZL		   WZB		  WZC
-process            tZq_chNumb         2           ttZ_chNumb     4           5          	  6				FLLL_chNumb	  7	    		 8	     9
-rate                  -1              -1            -1          -1          -1            	  -1 			   -1		  -1			-1		-1
+bin                 var_chan        var_chan     var_chan     var_chan     var_chan 		var_chan		var_chan	var_chan	var_chan	    var_chan
+process             tZq               ZZ           ttZ          ttW	        ttH        		STtWll			Flll		  WZL		   WZB		     WZC
+process            tZq_chan         	2           ttZ_chan     4           5          	  6				Flll_chan	  7	    		 8	         9
+rate                  -1              -1            -1          -1          -1            	  -1 			   -1		  -1			-1		    -1
 ----------------------------------------------------------------------------------------------------------
-lumi          lnN	   1.026	        1.026       1.026       1.026          1.026          1.026				-		 1.026			1.026	1.026
+lumi          lnN	   1.026	        1.026       1.026       1.026          1.026          1.026				-		 1.026			1.026	    1.026
+trigger       lnN     trigsyst          trigsyst    trigsyst     trigsyst       trigsyst	   trigsyst			-		trigsyst		trigsyst	trigsyst
 
 tZq_rate        lnN     tZqsyst          -          -           -            	-             -					-			-			   -		-
 ZZ_rate        lnN      -	            1.3         -           -            	-             -					-			-			   -		-
@@ -33,14 +34,18 @@ FakeBgd_rate  lnN      -	             -	    	  -           -	     		-           
 [*]MuEff		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]EleEff		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]LFcont		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
-[*]HFstats1	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
-[*]HFstats2	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
+[*]HFstats1		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
+[*]HFstats2	 	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]CFerr1		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]CFerr2		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]HFcont		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
-[*]LFstats1	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
-[*]LFstats2	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
+[*]LFstats1	 	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
+[*]LFstats2	 	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
+
 [*]JES			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]JER			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
+
+[*]PSscale		 shape    1 		 	     - 		  	  - 			- 			- 			  -					-			-			   -		-
+[*]Hadron		 shape    1 		 	     - 		  	  - 			- 			- 			  -					-			-			   -		-
 
 [*]Fakes		 shape    - 		 	     - 		  	  - 			-			- 			  -					1			-			   -		-

@@ -8,11 +8,11 @@ import os
 
 fileToSearch = "Template_Datacard.txt"
 
-theFakeLLL = "-"
-theFLLL_chNumb = "-"
+theFlll = "-"
+theFlll_chan = "-"
 theFakeRate_type = "-"
-tZq_chNumb = "-"
-ttZ_chNumb = "-"
+tZq_chan = "-"
+ttZ_chan = "-"
 tZqsyst = "-"
 ttZsyst = "-"
 shapeSyst = ""
@@ -35,21 +35,25 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
     exit()
 
 if channel=="uuu":
-    theFakeLLL = "FakeMuMuMu"
-    theFLLL_chNumb = "10"
+    theFlll = "FakeMuMuMu"
+    theFlll_chan = "10"
     theFakeRate_type = "FakeRate_mu"
+    trigsyst = "1.01"
 if channel=="uue":
-    theFakeLLL = "FakeMuMuEl"
-    theFLLL_chNumb = "11"
+    theFlll = "FakeMuMuEl"
+    theFlll_chan = "11"
     theFakeRate_type = "FakeRate_el"
+    trigsyst = "1.01"
 if channel=="eeu":
-    theFakeLLL = "FakeElElMu"
-    theFLLL_chNumb = "12"
+    theFlll = "FakeElElMu"
+    theFlll_chan = "12"
     theFakeRate_type = "FakeRate_mu"
+    trigsyst = "1.01"
 if channel=="eee":
-    theFakeLLL = "FakeElElEl"
-    theFLLL_chNumb= "13"
+    theFlll = "FakeElElEl"
+    theFlll_chan= "13"
     theFakeRate_type = "FakeRate_el"
+    trigsyst = "1.02"
 
 FakeRate_Numb = "5.0"
 FakeBgd_Numb = "1.3"
@@ -68,36 +72,36 @@ if(Signal!="tZq" and Signal!="ttZ" and Signal!="tZqANDttZ" and Signal!="tZqANDFa
     print "Wrong Signal value ! should be tZq or ttZ or tZqANDttZ or tZqANDFakes"
     exit()
 if Signal=="tZq":
-    tZq_chNumb = "0"
-    ttZ_chNumb = "3"
+    tZq_chan = "0"
+    ttZ_chan = "3"
     tZqsyst = "-"
     ttZsyst = "1.3"
 if Signal=="ttZ":
-    tZq_chNumb = "3"
-    ttZ_chNumb = "0"
+    tZq_chan = "3"
+    ttZ_chan = "0"
     tZqsyst = "1.3"
     ttZsyst = "-"
 if Signal=="tZqANDttZ":
-    tZq_chNumb = "0"
-    ttZ_chNumb = "-1"
+    tZq_chan = "0"
+    ttZ_chan = "-1"
     tZqsyst = "-"
     ttZsyst = "-"
 if Signal=="tZqANDFakes":
-    tZq_chNumb = "0"
+    tZq_chan = "0"
     tZqsyst = "-"
-    ttZ_chNumb = "3"
+    ttZ_chan = "3"
     ttZsyst = "1.3"
     FakeRate_Numb = "-"
     FakeBgd_Numb = "-"
 
     if channel=="uuu":
-        theFLLL_chNumb = "-1"
+        theFlll_chan = "-1"
     if channel=="uue":
-        theFLLL_chNumb = "-2"
+        theFlll_chan = "-2"
     if channel=="eeu":
-        theFLLL_chNumb = "-3"
+        theFlll_chan = "-3"
     if channel=="eee":
-        theFLLL_chNumb= "-4"
+        theFlll_chan= "-4"
 
 
 
@@ -107,16 +111,17 @@ s = open( fileToSearch).read()
 s = s.replace("[*]", shapeSyst)
 s = s.replace("chan", channel)
 s = s.replace("var",theVar)
-s = s.replace("FakeLLL",theFakeLLL )
-s = s.replace("FLLL_chNumb", theFLLL_chNumb)
+s = s.replace("Flll",theFlll )
+s = s.replace("Flll_chan", theFlll_chan)
 s = s.replace("FakeRate_type",    theFakeRate_type)
 s = s.replace("filetoread", theFiletoRead)
-s = s.replace("tZq_chNumb", tZq_chNumb)
-s = s.replace("ttZ_chNumb", ttZ_chNumb)
+s = s.replace("tZq_chan", tZq_chan)
+s = s.replace("ttZ_chan", ttZ_chan)
 s = s.replace("tZqsyst", tZqsyst)
 s = s.replace("ttZsyst", ttZsyst)
 s = s.replace("FakeRate_Numb", FakeRate_Numb)
 s = s.replace("FakeBgd_Numb", FakeBgd_Numb)
+s = s.replace("trigsyst", trigsyst)
 
 print 'datacard created'
 

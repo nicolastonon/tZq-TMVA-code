@@ -141,7 +141,8 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice)
 	else if(signal_choice == 2) {signal = "tZqANDttZ";}
 	else if(signal_choice == 3) {signal = "tZqANDFakes";}
 
-	TString file_histos = "../templates/Combine_Input_"+signal+".root";
+	TString file_histos = "../templates/Combine_Input.root";
+	if(signal == "ttZ") file_histos = "../templates/Combine_Input_ttZ.root";
 
 	cout<<"---> Will use filepath : "<<file_histos<<endl<<endl;
 
