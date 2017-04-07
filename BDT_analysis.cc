@@ -33,6 +33,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // double set_luminosity = 35.68 - 8.605; //Moriond 2017 without Run H
     // double set_luminosity = 8.605; //Run H only
 
+    //Matrix Element Method
+    bool include_MEM_variables = false;
+
+
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
 
@@ -71,9 +75,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     std::vector<bool > set_v_cut_IsUsedForBDT;
 
 //-------------------
-set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");            set_v_cut_IsUsedForBDT.push_back(false);
-// set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back("<280919");            set_v_cut_IsUsedForBDT.push_back(false); //Without Run H
-// set_v_cut_name.push_back("RunNr");      set_v_cut_def.push_back(">280919 || ==1");            set_v_cut_IsUsedForBDT.push_back(false); //Run H only
+    // set_v_cut_name.push_back("");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);}
+
 //-------------------
 
 
@@ -142,15 +145,19 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
 
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
-    //--- CIEMAT : Default Ntuples
-    dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-    t_name = "Default";
 
-    //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    // if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    // else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    // t_name = "Tree";
+    if(include_MEM_variables) //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
+    {
+        if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+        else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+        t_name = "Tree";
+    }
 
+    else //--- CIEMAT : Default Ntuples
+    {
+        dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+        t_name = "Default";
+    }
 
 
 
@@ -188,7 +195,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
     thesamplelist.push_back("Data");
 
     //Signal --- must be placed before backgrounds
-    thesamplelist.push_back("tZq");             v_color.push_back(kGreen+2);
+    thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
@@ -243,14 +250,23 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
     thevarlist.push_back("ptQ");
     thevarlist.push_back("tZq_pT");
 
-    // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
-    // thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
-    // thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
+    if(include_MEM_variables){
+    // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor //FIXME --use it instead of (6)
+    thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
+    thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
+
+    //--- NEW VARIABLES
+    thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score
+    thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
+    thevarlist.push_back("MEMvar_6"); //Likelihood ratio of MEM weigt (S/S+B ?) with WZ weight, with x-sec scaling factor
+    }
 
     // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
     // thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
     // thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
-
+    // thevarlist.push_back("log(mc_mem_wzjj_weight)"); //MEMvar_4
+    // thevarlist.push_back("log(mc_mem_wzjj_weight_kinmaxint)"); //MEMvar_5
+    // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))");//MEMvar_6
 
 
 //------------------------ for ttZ
@@ -273,9 +289,11 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
     thevarlist_ttZ.push_back("dRZTop");
     thevarlist_ttZ.push_back("tZq_pT");
 
-    // thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
-    // thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
-    // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
+    if(include_MEM_variables){
+    thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
+    thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
+    thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
+    }
 
     // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
     // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
@@ -301,7 +319,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
 
     vector<TString> v_add_var_names;
     v_add_var_names.push_back("mTW");
-    v_add_var_names.push_back("METpt");
+    if(!include_MEM_variables) v_add_var_names.push_back("METpt");
 
 
 
@@ -380,7 +398,7 @@ set_v_cut_name.push_back("passTrig");      set_v_cut_def.push_back("==1");      
         bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !

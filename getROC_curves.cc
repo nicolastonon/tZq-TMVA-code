@@ -36,7 +36,7 @@ using namespace std;
 
 TH1D* GetHistoWeight(TTree* t, string variable, int nbins, double xmin, double xmax, string cut, string name)
 {
-	cout<<"GetHistoWeight"<<endl;
+	// cout<<"GetHistoWeight"<<endl;
 
 	string sxmin, sxmax, snbins;
 	stringstream ss[3];
@@ -88,9 +88,10 @@ TH1D* GetHistoWeight(TTree* t, string variable, int nbins, double xmin, double x
 	return histo;
 }
 
-TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, string var, double valmin, double valmax, int npoints, string TitleGraph){
+TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, string var, double valmin, double valmax, int npoints, string TitleGraph)
+{
 
-	cout << "GetEffSvsEffB_Optim"<<endl;
+	// cout << "GetEffSvsEffB_Optim"<<endl;
 
 	int nbins = npoints;
 
@@ -146,9 +147,10 @@ TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, str
 }
 
 
-TGraph* GetEffSvsEffB_Optim_SameSample(TTree* Sample, string presel_sig, string presel_bkg, string var, double valmin, double valmax, int npoints, string TitleGraph){
+TGraph* GetEffSvsEffB_Optim_SameSample(TTree* Sample, string presel_sig, string presel_bkg, string var, double valmin, double valmax, int npoints, string TitleGraph)
+{
 
-	cout << "GetEffSvsEffB_Optim_SameSample"<<endl;
+	// cout << "GetEffSvsEffB_Optim_SameSample"<<endl;
 
 	int nbins = npoints;
 
@@ -205,9 +207,10 @@ TGraph* GetEffSvsEffB_Optim_SameSample(TTree* Sample, string presel_sig, string 
 	return GraphEff;
 }
 
-TCanvas* Plot1RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, string selection, string legendtitle, string PicName){
+TCanvas* Plot1RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, string selection, string legendtitle, string PicName)
+{
 
-	cout << "Plot1RocCurves"<<endl;
+	// cout << "Plot1RocCurves"<<endl;
 
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_1 = GetEffSvsEffB_Optim(ts1, tb1, selection, discrim1, -1, 701, 700, "EffSvsRejB_MEMdiscrim_1");
 
@@ -239,7 +242,8 @@ TCanvas* Plot1RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1,
 	return CanvasEffSvsRejB;
 }
 
-TCanvas* Plot2RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2, string selection, int windowtype, string legentitle, string PicName){
+TCanvas* Plot2RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2, string selection, int windowtype, string legentitle, string PicName)
+{
 
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_1;
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_2;
@@ -284,7 +288,8 @@ TCanvas* Plot2RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1,
 }
 
 
-TCanvas* Plot3RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2,TTree* ts3, TTree* tb3, string discrim3, string legend3, string selection, int windowtype, string legendtitle, string PicName){
+TCanvas* Plot3RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2,TTree* ts3, TTree* tb3, string discrim3, string legend3, string selection, int windowtype, string legendtitle, string PicName)
+{
 
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_1 = GetEffSvsEffB_Optim(ts1, tb1, selection, discrim1, -1, 701, 700, "EffSvsRejB_MEMdiscrim_1");
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_2 = GetEffSvsEffB_Optim(ts2, tb2, selection, discrim2, -1, 701, 700, "EffSvsRejB_MEMdiscrim_2");
@@ -333,8 +338,8 @@ TCanvas* Plot3RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1,
 	return CanvasEffSvsRejB;
 }
 
-TCanvas* Plot4RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2,TTree* ts3, TTree* tb3, string discrim3, string legend3, TTree* ts4, TTree* tb4, string discrim4, string legend4, string selection, string legendtitle, string PicName){
-
+TCanvas* Plot4RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2,TTree* ts3, TTree* tb3, string discrim3, string legend3, TTree* ts4, TTree* tb4, string discrim4, string legend4, string selection, string legendtitle, string PicName)
+{
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_1 = GetEffSvsEffB_Optim(ts1, tb1, selection, discrim1, -1, 701, 700, "EffSvsRejB_MEMdiscrim_1");
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_2 = GetEffSvsEffB_Optim(ts2, tb2, selection, discrim2, -1, 701, 700, "EffSvsRejB_MEMdiscrim_2");
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_3 = GetEffSvsEffB_Optim(ts3, tb3, selection, discrim3, -1, 701, 700, "EffSvsRejB_MEMdiscrim_3");
@@ -387,8 +392,8 @@ TCanvas* Plot4RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1,
 }
 
 
-TCanvas* Plot5RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2,TTree* ts3, TTree* tb3, string discrim3, string legend3, TTree* ts4, TTree* tb4, string discrim4, string legend4, TTree* ts5, TTree* tb5, string discrim5, string legend5, string selection, string legendtitle, string PicName){
-
+TCanvas* Plot5RocCurves(TTree* ts1, TTree* tb1, string discrim1, string legend1, TTree* ts2, TTree* tb2, string discrim2, string legend2,TTree* ts3, TTree* tb3, string discrim3, string legend3, TTree* ts4, TTree* tb4, string discrim4, string legend4, TTree* ts5, TTree* tb5, string discrim5, string legend5, string selection, string legendtitle, string PicName)
+{
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_1 = GetEffSvsEffB_Optim(ts1, tb1, selection, discrim1, -1, 701, 700, "EffSvsRejB_MEMdiscrim_1");
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_2 = GetEffSvsEffB_Optim(ts2, tb2, selection, discrim2, -1, 701, 700, "EffSvsRejB_MEMdiscrim_2");
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_3 = GetEffSvsEffB_Optim(ts3, tb3, selection, discrim3, -1, 701, 700, "EffSvsRejB_MEMdiscrim_3");
@@ -788,11 +793,11 @@ int main()
 
 		setTDRStyle();
 
-	    string channel[4];
-		channel[0] = "uuu";
-		channel[1] = "uue";
-		channel[2] = "eeu";
-		channel[3] = "eee";
+		vector<string> channel;
+		channel.push_back("uuu");
+		channel.push_back("eeu");
+		channel.push_back("uue");
+		channel.push_back("eee");
 
 		TFile* file1[4]; string name1; string label1;
 		TFile* file2[4]; string name2; string label2;
@@ -810,16 +815,16 @@ int main()
 
 		string selection = "1";
 
-		name1 = dir + "/files_noMEM/"; label1 = "BDTG";
-		name2 = dir + "/"; label2 = "BDTG MEM";
-		name3 = dir + "/"; label3 = "BDTG MEM(+WZ)";
-		name4 = dir + "/"; label4 = "";
-		name5 = dir + "/"; label5 = "";
+		name1 = dir + "files_noMEM"; label1 = "BDTG";
+		name2 = dir + "BDT_training/default/files_newMEM"; label2 = "BDTG MEM(+WZ)";
+		name3 = dir + "BDT_training/uuu_pairNegWeights"; label3 = "BDTAda MEM(+WZ) pairNegWeights";
+		name4 = dir + "BDT_training/adaboost"; label4 = "";
+		name5 = dir + ""; label5 = "";
 
-		for (int i=0; i<4; i++)
+		for (int i=0; i<channel.size(); i++)
 		{
-			string suffix_tZq = "BDT_"+ channel[i]+ "_NJetsMin1Max4_NBJetsEq1.root";
-			string suffix_ttZ = "BDTttZ_"+ channel[i]+ "_NJetsMin1_NBJetsMin1.root";
+			string suffix_tZq = "/BDT_"+ channel[i]+ "_NJetsMin1Max4_NBJetsEq1.root";
+			string suffix_ttZ = "/BDTttZ_"+ channel[i]+ "_NJetsMin1_NBJetsMin1.root";
 
 			//--- tZq SR
 			name = name1 + suffix_tZq;
@@ -856,6 +861,7 @@ int main()
 			name = channel[i]+"_NJetsMin1Max4_NBJetsEq1";
 			picname = "CompareBDT_"+ channel[i]+"_SignalRegion.png";
 			legendtitle = "tZq Signal Region - "+ channel[i];
+
 			// Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
 			Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
 			// Plot4RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, selection, 0, legendtitle, picname);
@@ -897,6 +903,7 @@ int main()
 			name = channel[i]+"_NJetsMin1_NBJetsMin1";
 			picname = "CompareBDT_"+ channel[i]+"_ttZControlRegion.png";
 			legendtitle = "ttZ Control Region - "+ channel[i];
+
 			// Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
 			Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
 			// Plot4RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, selection, 0, legendtitle, picname);

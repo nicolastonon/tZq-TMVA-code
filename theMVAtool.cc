@@ -240,6 +240,11 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
     // This loads the TMVA libraries
     TMVA::Tools::Instance();
 
+	//Allows to bypass a protection in TMVA::TransformationHandler, cf. description in source file:
+	// if there are too many input variables, the creation of correlations plots blows up memory and basically kills the TMVA execution --> avoid above critical number (which can be user defined)
+	(TMVA::gConfig().GetVariablePlotting()).fMaxNumOfAllowedVariablesForScatterPlots = 300;
+
+
 	mkdir("outputs",0777);
 
 	TString output_file_name = "outputs/" + bdt_type;
@@ -275,10 +280,6 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 
 	for(int isample=0; isample<sample_list.size(); isample++)
     {
-
-		//FIXME -- old backgrounds
-		// if(sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("Data") || sample_list[isample].Contains("Fakes") ) {cout<<"Train only on MC without fakes -- ignore sample : "<<sample_list[isample]<<endl; continue;} //Train only on MC
-
 		if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
 
         // Read training and test data
@@ -304,25 +305,26 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
         Double_t signalWeight     = 1.0;
         Double_t backgroundWeight = 1.0;
 
-        //CHANGED -- Choose between absolute/relative weights for training
-		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+    //-- Choose between absolute/relative weights for training
+		// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
         // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
 
-		// if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+		// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
         // else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+
 
 		//Use relative weights in signal region & absolute weights in ttZ CR (needed to avoid overtraining !)
 		if(isttZ && !isWZ)
 		{
-			if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
 			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
 			cout<<FYEL("-- Using *ABSOLUTE* weights (BDTttZ) --")<<endl;
 		}
 		else if(!isWZ && !isttZ)
 		{
-			if(sample_list[isample] == "tZq") {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
 			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
-			cout<<FYEL("-- Using *ABSOLUTE* weights (BDTttZ) --")<<endl;
+			cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
 		}
 		else {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the wrong region ! Abort"))<<endl; return;}
     }
@@ -409,10 +411,13 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 
 //--- TO TAKE NEGATIVE WEIGHTS INTO ACCOUNT (ttZ aMC@NLO) (From Mathias) - Need to use option IgnoreEventsWithNegWeightsInTraining ?
 	//Adaboost
-	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:BoostType=AdaBoost:AdaBoostBeta=0.4:PruneMethod=CostComplexity:PruneStrength=7:SeparationType=CrossEntropy:MaxDepth=3:nCuts=40:NodePurityLimit=0.5:NTrees=1000:MinNodeSize=1%:NegWeightTreatment=InverseBoostNegWeights" );
+	// factory->BookMethod( TMVA::Types::kBDT, method_title.Data(), "!H:!V:BoostType=AdaBoost:AdaBoostBeta=0.4:PruneMethod=CostComplexity:PruneStrength=7:SeparationType=CrossEntropy:MaxDepth=3:nCuts=40:NodePurityLimit=0.5:NTrees=1000:MinNodeSize=1%:NegWeightTreatment=InverseBoostNegWeights" ); //Negweight treatment -> much longer
 
-	//NOTE : to be used for now
+
+	// NOTE : to be used for now
 	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
+
+
 
 	output_file->cd();
 
@@ -550,7 +555,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
 
   TFractionFitter* fit = new TFractionFitter(hdata, mc, "Q"); //'Q' for quiet
 
-  //FIXME : constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
+  //Constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
   double fracmc = hsum->Integral()/hdata->Integral() ;
   fit->Constrain(0, 0.001, pow(10,6) ); //Constrain param 0 (fakes integral) between 0 & 1
   if(fracmc>0) fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain param 1 (other MC samples integrals)
@@ -807,7 +812,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TFile* file_input;
 	TTree* tree(0);
-	TTree* tree_passTrig = 0; //CHANGED -- hard-coded, to remove
+	TTree* tree_passTrig = 0;
 
 	TH1F *hist_uuu = 0, *hist_uue = 0, *hist_eeu = 0, *hist_eee = 0;
 	TH1F *h_sum_fake = 0;
@@ -833,15 +838,15 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
-			if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && sample_list[isample] != "tZq") {continue;} //available for signal only
+			if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 
 			//For these systematics, info stored in separate ntuples ! (events are not the same)
-			if(sample_list[isample] == "tZq" && syst_list[isyst] == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
-			if(sample_list[isample] == "tZq" && syst_list[isyst] == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
-			else if(sample_list[isample] == "tZq" && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqmcNLO.root";} //For minus, take nominal
+			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
+			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
+			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal
 
 
 			file_input = 0;
@@ -870,7 +875,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			tree = 0;
-			tree_passTrig = 0; //CHANGED
+			tree_passTrig = 0;
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
@@ -945,7 +950,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
         		bool isChannelToKeep = false;
 
 				// NOTE -- Can simulate signal strength here
-				// if(sample_list[isample] == "tZq") {weight*=3;}
+				// if(sample_list[isample].Contains("tZq")) {weight*=3;}
 
 		        for(unsigned int ichan=0; ichan < channel_list.size(); ichan++)
 				{
@@ -1318,7 +1323,7 @@ float theMVAtool::Determine_Control_Cut()
 
 			h_tmp = (TH1F*) f->Get(input_histo_name.Data())->Clone();
 
-			if(sample_list[isample] == "tZq")
+			if(sample_list[isample].Contains("tZq"))
 			{
 				if(h_sig == 0) {h_sig = (TH1F*) h_tmp->Clone();}
 				else {h_sig->Add(h_tmp);}
@@ -1351,7 +1356,7 @@ float theMVAtool::Determine_Control_Cut()
 	{
 		// cout<<"ibin = "<<ibin<<" / (h_sig->Integral(1, ibin) / h_sig->Integral()) = "<<(h_sig->Integral(1, ibin) / h_sig->Integral())<<endl;
 
-		//Search the bin w/ lowest sig/total, while keeping enough bkg events (criterion needs to be optimized/tuned) //FIXME
+		//Search the bin w/ lowest sig/total, while keeping enough bkg events (criterion needs to be optimized/tuned)
 		// if( (h_sig->Integral(1, ibin) / h_total->Integral(1, ibin)) < sig_over_total && (h_sum_bkg->Integral(1, ibin) / h_sum_bkg->Integral()) >= 0.6 )
 		if( (h_sig->Integral(1, ibin) / h_sig->Integral()) <= 0.15 ) //If reject at least 85% signal => CUT
 		{
@@ -1541,15 +1546,15 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 
 			if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") )   {continue;} //Fake syst. only for "fakes" samples
 
-			if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && sample_list[isample] != "tZq") {continue;} //available for signal only
+			if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 
 			//For these systematics, info stored in separate ntuples ! (events are not the same)
-			if(sample_list[isample] == "tZq" && syst_list[isyst] == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
-			if(sample_list[isample] == "tZq" && syst_list[isyst] == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
-			else if(sample_list[isample] == "tZq" && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqmcNLO.root";} //For minus, take nominal
+			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
+			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
+			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal
 
 
 			file_input = 0;
@@ -1811,8 +1816,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 		restart_loop = false;
 		for(int i=0; i<total_var_list.size(); i++)
 		{
-			if(total_var_list[i] == "passTrig") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
-			// if(total_var_list[i] == "passTrig" || total_var_list[i] == "RunNr") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
+			if(total_var_list[i] == "passTrig" || total_var_list[i] == "RunNr") {total_var_list.erase(total_var_list.begin() + i); restart_loop = true; break;} //Useless vars
 		}
 	} while (restart_loop);
 
@@ -1875,7 +1879,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
-					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && sample_list[isample] != "tZq") {continue;} //available for signal only
+					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 					if(i_hist_created%100==0 && i_hist_created != 0) {cout<<"--- "<<i_hist_created<<"/"<<nof_histos_to_create<<endl;}
 
@@ -1972,17 +1976,17 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 
 					// //FIXME -- remove negative values/ERRORS
-					// // if(sample_list[isample] == "tZq" && total_var_list[ivar] == "NJets" && channel_list[ichan]=="uuu") cout<<"BEfore / bincontent(5) = "<<h_tmp->GetBinContent(5)<<" , binErrorLow(5) = "<<h_tmp->GetBinErrorLow(5)<<endl;
+					// // if(sample_list[isample].Contains("tZq") && total_var_list[ivar] == "NJets" && channel_list[ichan]=="uuu") cout<<"BEfore / bincontent(5) = "<<h_tmp->GetBinContent(5)<<" , binErrorLow(5) = "<<h_tmp->GetBinErrorLow(5)<<endl;
 					// for(int ibin=1; ibin<h_tmp->GetNbinsX()+1; ibin++)
 					// {
-					// 	if(h_tmp->GetBinContent(ibin) < 0) h_tmp->SetBinContent(ibin, 0); //FIXME
+					// 	if(h_tmp->GetBinContent(ibin) < 0) h_tmp->SetBinContent(ibin, 0);
 					// 	if(h_tmp->GetBinContent(ibin) - h_tmp->GetBinErrorLow(ibin) < 0 )
 					// 	{
-					// 		h_tmp->SetBinError(ibin, h_tmp->GetBinContent(ibin)); //FIXME
+					// 		h_tmp->SetBinError(ibin, h_tmp->GetBinContent(ibin));
 					// 	}
 					// }
 
-					// if(sample_list[isample] == "tZq" && total_var_list[ivar] == "NJets" && channel_list[ichan]=="uuu") cout<<"AFTER / bincontent(5) = "<<h_tmp->GetBinContent(5)<<" , binErrorLow(4) = "<<h_tmp->GetBinErrorLow(5)<<endl;
+					// if(sample_list[isample].Contains("tZq") && total_var_list[ivar] == "NJets" && channel_list[ichan]=="uuu") cout<<"AFTER / bincontent(5) = "<<h_tmp->GetBinContent(5)<<" , binErrorLow(4) = "<<h_tmp->GetBinErrorLow(5)<<endl;
 
 
 
@@ -2468,7 +2472,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					if(isample-1-nof_missing_samples < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address (need at least 2 samples)! Exit !"))<<endl; return 0;}
 					// cout<<"isample-1-nof_missing_samples = "<<isample-1-nof_missing_samples<<endl;
 
-					if(postfit && sample_list[isample] == "tZq") {h_tmp->Scale(sig_strength);} //Need to rescale signal manually, not done by CombineHarvester !!
+					if(postfit && sample_list[isample].Contains("tZq")) {h_tmp->Scale(sig_strength);} //Need to rescale signal manually, not done by CombineHarvester !!
 
 					//Use color vector filled in main()
 					h_tmp->SetFillStyle(1001);
@@ -2506,7 +2510,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
-					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && sample_list[isample] != "tZq") {continue;} //available for signal only
+					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 					if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
 
@@ -2565,7 +2569,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			//cout << "**********************  "<< histo_total_MC->Integral() << endl;
 
 			//ADD LEGEND ENTRIES
-			if(MC_samples_legend[i] != "ttH" && MC_samples_legend[i] != "ttZ" && MC_samples_legend[i] != "ttW") {qw->AddEntry(v_MC_histo[i], MC_samples_legend[i].Data() , "f");}
+			if(MC_samples_legend[i] != "ttH" && MC_samples_legend[i] != "ttZ" && MC_samples_legend[i] != "ttW" && !MC_samples_legend[i].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], MC_samples_legend[i].Data() , "f");}
+			else if(MC_samples_legend[i].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], "tZq" , "f");}
 			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV" , "f");} //Single entry for ttZ+ttW+ttH
 		}
 
@@ -2940,7 +2945,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		else {stack_MC->Add(v_MC_histo[i]); histo_total_MC->Add(v_MC_histo[i]);}
 
 		//ADD LEGEND ENTRIES
-		if(!sample_list[i+1].Contains("ttH") && !sample_list[i+1].Contains("ttZ") && !sample_list[i+1].Contains("ttW")) {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
+		if(!sample_list[i+1].Contains("ttH") && !sample_list[i+1].Contains("ttZ") && !sample_list[i+1].Contains("ttW") && !sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
+		else if(sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], "tZq" , "f");}
 		else if(sample_list[i+1] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV" , "f");} //Single entry for ttZ+ttW+ttH
 	}
 
@@ -3224,7 +3230,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		else {stack_MC->Add(v_MC_histo[i]); histo_total_MC->Add(v_MC_histo[i]);}
 
 		//ADD LEGEND ENTRIES
-		if(!sample_list[i+1].Contains("ttH") && !sample_list[i+1].Contains("ttZ") && !sample_list[i+1].Contains("ttW")) {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
+		if(!sample_list[i+1].Contains("ttH") && !sample_list[i+1].Contains("ttZ") && !sample_list[i+1].Contains("ttW") && !sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
+		else if(sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], "tZq" , "f");}
 		else if(sample_list[i+1] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV" , "f");} //Single entry for ttZ+ttW+ttH
 	}
 
@@ -3621,7 +3628,7 @@ void theMVAtool::Convert_Templates_Theta()
 				if(sample_list[isample].Contains("Fakes") && syst_list[isyst] != "" && !syst_list[isyst].Contains("Fake") ) {continue;}
 				if(syst_list[isyst].Contains("Fakes") && sample_list[isample] != "Fakes") {continue;}
 				if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf")) ) {continue;}
-				if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && sample_list[isample] != "tZq") {continue;} //available for signal only
+				if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 				TString histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
 				if(sample_list[isample].Contains("Data") )
@@ -3796,7 +3803,7 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 
 	//3 main samples we want to check
 	vector<TString> samples;
-	samples.push_back("tZq");
+	samples.push_back("tZqmcNLO");
 	// samples.push_back("WZjets"); //CHANGED
 	samples.push_back("WZl");
 	samples.push_back("WZb");

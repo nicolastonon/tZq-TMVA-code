@@ -68,6 +68,8 @@
 // #include "TMVA/TMVAGui.h"
 #include "TMVA/Reader.h"
 #include "TMVA/MethodCuts.h"
+#include "TMVA/Config.h"
+
 
 using namespace std;
 

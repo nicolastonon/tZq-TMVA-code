@@ -930,7 +930,7 @@ int main()
   v_samplenames.push_back("WZL");
   v_samplenames.push_back("WZC");
   v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("tZq");
+  v_samplenames.push_back("tZqmcNLO");
   v_samplenames.push_back("ZZ");
   v_samplenames.push_back("ttH");
   v_samplenames.push_back("ttW");

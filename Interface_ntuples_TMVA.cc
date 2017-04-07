@@ -69,10 +69,11 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	TString input_filename;
 
 	// FIXME -- Use "withMEM" ntuples in ttZ/tZq regions
-	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
+	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
 	// FIXME -- Use "readyForMEM" (no MEM) in ttZ/tZq regions
 	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
 
+	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/FCNCNTuple_" + sample +  ".root";
 	// else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
 
 	TFile* f_input = 0;
@@ -141,30 +142,14 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		{
 			if(sample.Contains("Data") || sample.Contains("Fakes") || tree_syst_list[itreesyst] != "Tree") break; //No weight syst
 
-
-			//--- Copy systematic name & modify it for Combine conventions
-
-			// TString systname_tmp = weight_syst_list[isyst];
-			// if(systname_tmp.Contains("__plus"))
-			// {
-			// 	int i = systname_tmp.Index("__plus"); //Find index of substring
-			// 	systname_tmp.Remove(i); //Remove substring
-			// 	systname_tmp+= "Up"; //Add Combine syst. suffix
-			// }
-			// else if(systname_tmp.Contains("__minus"))
-			// {
-			// 	int i = systname_tmp.Index("__minus"); //Find index of substring
-			// 	systname_tmp.Remove(i); //Remove substring
-			// 	systname_tmp+= "Down"; //Add Combine syst. suffix
-			// }
-
-			// tree_modif->Branch(systname_tmp.Data(),&v_floats_syst[isyst],(systname_tmp+"/F").Data());
 			tree_modif->Branch(weight_syst_list[isyst].Data(),&v_floats_syst[isyst],(weight_syst_list[isyst]+"/F").Data());
 		}
 
 		//Set Branch Addresses
 		TTree* t_input = 0;
-		t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data()); if(!t_input) {cout<<"Tree not found !"<<endl; return;}
+		if(MEM_or_WZ == "MEM") {t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data()); if(!t_input) {cout<<"Tree not found !"<<endl; return;} }
+		else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Default"); if(!t_input) {cout<<"Tree 'Default' not found !"<<endl; return;} }
+
 
 		for(int ivar=0; ivar<thevarlist.size(); ivar++)
 		{
@@ -195,24 +180,43 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			if(MEM_or_WZ == "MEM")
 			{
 				//NOTE : MEMvar list is :
-				// MEMvarlist.push_back("mc_mem_ttz_weight");
-				// MEMvarlist.push_back("mc_mem_tllj_weight");
-				// MEMvarlist.push_back("mc_mem_tllj_weight_kinmaxint");
-				// MEMvarlist.push_back("mc_mem_ttz_weight_kinmaxint");
-				// MEMvarlist.push_back("mc_mem_ttz_tllj_likelihood");
+				// MEMvarlist.push_back("mc_mem_ttz_weight"); //0
+				// MEMvarlist.push_back("mc_mem_tllj_weight"); //1
+				// MEMvarlist.push_back("mc_mem_tllj_weight_kinmaxint"); //2
+				// MEMvarlist.push_back("mc_mem_ttz_weight_kinmaxint"); //3
+				// MEMvarlist.push_back("mc_mem_ttz_tllj_likelihood"); //4
+				// MEMvarlist.push_back("mc_mem_wzjj_weight"); //5
+				// MEMvarlist.push_back("mc_mem_wzjj_weight_kinmaxint"); //6
+
+//-------------------
 
 				// thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //0
 				// thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //1
 				// thevarlist.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //2
 
+				// thevarlist.push_back("log(mc_mem_wzjj_weight)"); //4
+			    // thevarlist.push_back("log(mc_mem_wzjj_weight_kinmaxint)"); //5
+			    // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //6
+
 				// thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //3
 				// thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //1
 				// thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //2
+
+//-------------------
 
 				v_floats_modif[0] = -log( (3.89464e-13*v_double_MEM[0]) / (3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
 				v_floats_modif[1] = log(v_double_MEM[2]);
 				v_floats_modif[2] = log(v_double_MEM[3]);
 				v_floats_modif[3] = -log(v_double_MEM[4]);
+
+				v_floats_modif[4] = log(v_double_MEM[5]);
+				v_floats_modif[5] = log(v_double_MEM[6]);
+
+				//FIXME -- seem to be an error bc of some events ~ -700
+				if(v_floats_modif[4] < -600) v_floats_modif[4] = 0;
+				if(v_floats_modif[5] < -600) v_floats_modif[5] = 0;
+
+				v_floats_modif[6] = -log( (0.017*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0]) / (0.17*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
 
 				for(int i=0; i<v_double_MEM.size(); i++)
 				{
@@ -254,10 +258,10 @@ int main()
 
 	vector<TString> sample_list;
 	sample_list.push_back("Data");
-	sample_list.push_back("tZq");
-	sample_list.push_back("WZl");
-	sample_list.push_back("WZb");
-	sample_list.push_back("WZc");
+	sample_list.push_back("tZqmcNLO");
+	sample_list.push_back("WZL");
+	sample_list.push_back("WZB");
+	sample_list.push_back("WZC");
 	sample_list.push_back("ttZ");
 	sample_list.push_back("ttW");
 	sample_list.push_back("ttH");
@@ -265,9 +269,6 @@ int main()
 	sample_list.push_back("Fakes");
 	sample_list.push_back("STtWll")	;
 
-	// sample_list.push_back("ttZMad");
-	// sample_list.push_back("WZjets");
-	// sample_list.push_back("");
 
 
 //---------------------------------------------------------------------------
@@ -312,7 +313,7 @@ int main()
 	thevarlist.push_back("m3l");
 	thevarlist.push_back("dRZTop");
 
-	//--- New vars
+/*	//--- New vars
 	thevarlist.push_back("MAddLepB");
 	thevarlist.push_back("LeadJetPT");
 	thevarlist.push_back("dPhiZMET");
@@ -346,7 +347,7 @@ int main()
 	thevarlist.push_back("dupECALcl");
 	thevarlist.push_back("hitsNotRep");
 	thevarlist.push_back("badMuon");
-	thevarlist.push_back("duplMuon");
+	thevarlist.push_back("duplMuon");*/
 
 
 	//--- MEM variables (weights, ...) which we modify into new variables in the code
@@ -357,6 +358,9 @@ int main()
 	MEMvarlist.push_back("mc_mem_ttz_weight_kinmaxint");
 	MEMvarlist.push_back("mc_mem_ttz_tllj_likelihood");
 
+	MEMvarlist.push_back("mc_mem_wzjj_weight");
+	MEMvarlist.push_back("mc_mem_wzjj_weight_kinmaxint");
+
 
 	//--- Names of new MEM variable (used directly in BDT)
 	vector<TString> MEMvarlist_new;
@@ -364,6 +368,10 @@ int main()
 	MEMvarlist_new.push_back("MEMvar_1");
 	MEMvarlist_new.push_back("MEMvar_2");
 	MEMvarlist_new.push_back("MEMvar_3");
+
+	MEMvarlist_new.push_back("MEMvar_4");
+	MEMvarlist_new.push_back("MEMvar_5");
+	MEMvarlist_new.push_back("MEMvar_6");
 
 
 
@@ -376,7 +384,7 @@ int main()
 // ##    ##    ##    ##    ##    ##    ##       ##     ## ##     ##    ##     ##  ##    ## ##    ##
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
-//--- Affect the variable distributions
+//--- Stored in different trees
 	vector<TString> tree_syst_list;
 	tree_syst_list.push_back("Tree"); //NOTE -- KEEP THIS LINE : nominal
 
@@ -384,13 +392,9 @@ int main()
 	tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
 	tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
 
-	// tree_syst_list.push_back("JERUp"); tree_syst_list.push_back("JERDown");
-	// tree_syst_list.push_back("JESUp"); tree_syst_list.push_back("JESDown");
-	// tree_syst_list.push_back("FakesUp"); tree_syst_list.push_back("FakesDown");
-
 
 	vector<TString> weight_syst_list;
-//--- Affect the event weight
+//--- Stored as separate weights
 	weight_syst_list.push_back("Q2__plus"); weight_syst_list.push_back("Q2__minus");
 	weight_syst_list.push_back("PU__plus"); weight_syst_list.push_back("PU__minus");
 	weight_syst_list.push_back("MuEff__plus"); weight_syst_list.push_back("MuEff__minus");
@@ -404,27 +408,45 @@ int main()
 	weight_syst_list.push_back("HFcont__plus"); weight_syst_list.push_back("HFcont__minus");
 	weight_syst_list.push_back("LFstats1__plus"); weight_syst_list.push_back("LFstats1__minus");
 	weight_syst_list.push_back("LFstats2__plus"); weight_syst_list.push_back("LFstats2__minus");
-	weight_syst_list.push_back("Weight_noTag"); weight_syst_list.push_back("Weight_noPU");
 
 
 
+
+//-----------------------------------------
+ // ####### #     # #     #  #####  ####### ### ####### #     #     #####     #    #       #        #####
+ // #       #     # ##    # #     #    #     #  #     # ##    #    #     #   # #   #       #       #     #
+ // #       #     # # #   # #          #     #  #     # # #   #    #        #   #  #       #       #
+ // #####   #     # #  #  # #          #     #  #     # #  #  #    #       #     # #       #        #####
+ // #       #     # #   # # #          #     #  #     # #   # #    #       ####### #       #             #
+ // #       #     # #    ## #     #    #     #  #     # #    ##    #     # #     # #       #       #     #
+ // #        #####  #     #  #####     #    ### ####### #     #     #####  #     # ####### #######  #####
+//-----------------------------------------
+
+	bool do_MEM_regions = true;
+	bool do_WZ_region = false;
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples
 	TString MEM_or_WZ;
 
 //--- Produce ntuples for MEM (ttZ/tZq regions)
-	MEM_or_WZ = "MEM";
-	for(int isample=0; isample<sample_list.size(); isample++)
+	if(do_MEM_regions)
 	{
-		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
+		MEM_or_WZ = "MEM";
+		for(int isample=0; isample<sample_list.size(); isample++)
+		{
+			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
+		}
 	}
 
-//--- Interface ntuples for WZ CR study (mTW template fit)
-	MEM_or_WZ = "WZ";
-	for(int isample=0; isample<sample_list.size(); isample++)
+//--- Interface ntuples for WZ CR study (mTW template fit) -- NOTE : NOT NEEDED ANYMORE ??
+	if(do_WZ_region)
 	{
-		Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
+		MEM_or_WZ = "WZ";
+		for(int isample=0; isample<sample_list.size(); isample++)
+		{
+			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
+		}
 	}
 
 	return 0;
