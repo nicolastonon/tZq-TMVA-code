@@ -2,6 +2,7 @@
 #define Func_other_h
 
 #include <sstream>
+#include <fstream>
 
 #include "TStyle.h"
 
@@ -208,5 +209,37 @@ TString Theta_Naming_Convention(TString name)
 	return name;
 }
 
+void Extract_Ranking_Info(TString TMVA_output_file)
+{
+	ifstream file_in(TMVA_output_file.Data() );
+
+	ofstream file_out("ranking_tmp.txt");
+
+	string string_start = "Ranking input variables (method specific)...";
+	string string_stop = "--- Factory";
+
+	string line;
+	bool start_found = false;
+	bool stop_found = false;
+
+	while(!start_found && !file_in.eof( ) )
+	{
+		getline(file_in, line);
+
+		if(line.find(string_start) != std::string::npos) {start_found = true;}
+	}
+
+	while(!stop_found && !file_in.eof( ) )
+	{
+		file_out<<line<<endl;
+
+		getline(file_in, line);
+
+		if(line.find(string_stop) != std::string::npos) {stop_found = true;}
+	}
+
+
+	return;
+}
 
 #endif

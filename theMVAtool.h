@@ -62,6 +62,7 @@
 #include <string>
 #include <cmath>
 #include <sstream>
+#include <fstream>
 
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"

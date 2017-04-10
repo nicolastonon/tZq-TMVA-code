@@ -196,6 +196,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Signal --- must be placed before backgrounds
     thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
+    // thesamplelist.push_back("tZqhwpp");             v_color.push_back(kGreen+2);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
@@ -251,14 +252,15 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist.push_back("tZq_pT");
 
     if(include_MEM_variables){
-    // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor //FIXME --use it instead of (6)
+    thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor //FIXME --use it instead of (6)
     thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
     thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
 
     //--- NEW VARIABLES
-    thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score
+    // thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
     thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
-    thevarlist.push_back("MEMvar_6"); //Likelihood ratio of MEM weigt (S/S+B ?) with WZ weight, with x-sec scaling factor
+    // thevarlist.push_back("MEMvar_6"); //try 0 + 7 instead
+    thevarlist.push_back("MEMvar_7");
     }
 
     // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
@@ -267,6 +269,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // thevarlist.push_back("log(mc_mem_wzjj_weight)"); //MEMvar_4
     // thevarlist.push_back("log(mc_mem_wzjj_weight_kinmaxint)"); //MEMvar_5
     // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))");//MEMvar_6
+    // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight) / (0.017*mc_mem_wzjj_weight + 0.17993*mc_mem_tllj_weight) )"); //MEMvar_7
 
 
 //------------------------ for ttZ
@@ -398,7 +401,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !

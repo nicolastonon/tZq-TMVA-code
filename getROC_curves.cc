@@ -815,10 +815,10 @@ int main()
 
 		string selection = "1";
 
-		name1 = dir + "files_noMEM"; label1 = "BDTG";
-		name2 = dir + "BDT_training/default/files_newMEM"; label2 = "BDTG MEM(+WZ)";
-		name3 = dir + "BDT_training/uuu_pairNegWeights"; label3 = "BDTAda MEM(+WZ) pairNegWeights";
-		name4 = dir + "BDT_training/adaboost"; label4 = "";
+		name1 = dir + "files_noMEM_hwpp"; label1 = "BDTG";
+		name2 = dir + "BDT_training/new_ntuples"; label2 = "BDTG MEM(+WZ)";
+		name3 = dir + ""; label3 = "";
+		name4 = dir + ""; label4 = "";
 		name5 = dir + ""; label5 = "";
 
 		for (int i=0; i<channel.size(); i++)
@@ -862,8 +862,8 @@ int main()
 			picname = "CompareBDT_"+ channel[i]+"_SignalRegion.png";
 			legendtitle = "tZq Signal Region - "+ channel[i];
 
-			// Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
-			Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
+			Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
+			// Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
 			// Plot4RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, selection, 0, legendtitle, picname);
 			// Plot5RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, tree5[i], name, label5, selection, 0, legendtitle, picname);
 
@@ -904,8 +904,8 @@ int main()
 			picname = "CompareBDT_"+ channel[i]+"_ttZControlRegion.png";
 			legendtitle = "ttZ Control Region - "+ channel[i];
 
-			// Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
-			Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
+			Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
+			// Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
 			// Plot4RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, selection, 0, legendtitle, picname);
 			// Plot5RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, tree5[i], name, label5, selection, 0, legendtitle, picname);
 		}

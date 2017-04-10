@@ -419,12 +419,36 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 
 
 
+
+//--------------------------------------
 	output_file->cd();
+
+
+	mkdir("outputs/Rankings", 0777); //Dir. containing variable ranking infos
+	if(!isWZ && !isttZ) mkdir("outputs/Rankings/BDT", 0777);
+	else if(!isWZ && isttZ) mkdir("outputs/Rankings/BDTttZ", 0777);
+
+	TString ranking_file_path;
+	if(!isWZ && !isttZ) ranking_file_path = "outputs/Rankings/BDT/RANKING_" + bdt_type + "_" + channel + ".txt";
+	else if(!isWZ && isttZ) ranking_file_path = "outputs/Rankings/BDTttZ/RANKING_" + bdt_type + "_" + channel + ".txt";
+
+	cout<<endl<<endl<<endl<<FBLU("NB : Temporarily redirecting standard output to file '"<<ranking_file_path<<"' in order to save Ranking Info !!")<<endl<<endl<<endl;
+
+	std::ofstream out(ranking_file_path.Data() );
+	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+	std::cout.rdbuf(out.rdbuf()); //redirect std::cout to text file --> Ranking info will be saved !
 
     // Train MVAs using the set of training events
     factory->TrainAllMethods();
+
+
+	std::cout.rdbuf(coutbuf); //reset to standard output again
+
     // ---- Evaluate all MVAs using the set of test events
     factory->TestAllMethods();
+
+
+
     // ----- Evaluate and compare performance of all configured MVAs
     factory->EvaluateAllMethods();
 	//NB : Test & Evaluation recap in the output files
@@ -442,8 +466,10 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	for(unsigned int i=0; i<files_to_close.size(); i++) {files_to_close[i]->Close(); delete files_to_close[i];}
 
 
-    // Launch the GUI for the root macros    //NB : write interactively in the ROOT environment --> TMVA::TMVAGui("output.root")
-    //TMVA::TMVAGui(output_file_name);
+    Extract_Ranking_Info(ranking_file_path); //Extract only ranking info from TMVA output
+
+	TString mv_command = "mv ranking_tmp.txt " + ranking_file_path;
+	system(mv_command.Data() ); //Replace TMVA output textfile by modified textfile !
 }
 
 
@@ -846,7 +872,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			//For these systematics, info stored in separate ntuples ! (events are not the same)
 			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
 			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
-			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal
+			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal //FIXME
 
 
 			file_input = 0;
@@ -1554,7 +1580,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			//For these systematics, info stored in separate ntuples ! (events are not the same)
 			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
 			if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
-			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal
+			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal //FIXME
 
 
 			file_input = 0;
@@ -2361,8 +2387,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		if (postfit && !f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) ) continue; //Check histo exists
 
 		TString histo_name = "";
-		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZq"; //For postfit file only !
-		else histo_name = total_var_list[ivar] + "_uuu__tZq"; //For prefit file
+		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqhwpp"; //For postfit file only ! //FIXME
+		// else histo_name = total_var_list[ivar] + "_uuu__tZqmcNLO"; //For prefit file
+		else histo_name = total_var_list[ivar] + "_uuu__tZqhwpp"; //For prefit file //FIXME
 
 		//NOTE -- How to use GetListOfKeys when histos are in a directory ?
 		if(!postfit && !f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<__LINE__<<" : "<<histo_name<<" : not found ! Continue !"<<endl; continue;}
@@ -3803,7 +3830,7 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 
 	//3 main samples we want to check
 	vector<TString> samples;
-	samples.push_back("tZqmcNLO");
+	samples.push_back("tZqmcNLO"); //FIXME
 	// samples.push_back("WZjets"); //CHANGED
 	samples.push_back("WZl");
 	samples.push_back("WZb");

@@ -197,6 +197,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				// thevarlist.push_back("log(mc_mem_wzjj_weight)"); //4
 			    // thevarlist.push_back("log(mc_mem_wzjj_weight_kinmaxint)"); //5
 			    // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //6
+				// thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight) / (0.017*mc_mem_wzjj_weight + 0.17993*mc_mem_tllj_weight) )"); //7
 
 				// thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //3
 				// thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //1
@@ -217,6 +218,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				if(v_floats_modif[5] < -600) v_floats_modif[5] = 0;
 
 				v_floats_modif[6] = -log( (0.017*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0]) / (0.17*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
+
+				v_floats_modif[7] = -log((0.017*v_double_MEM[5]) / (0.017*v_double_MEM[5] + 0.17993*v_double_MEM[1]) );
 
 				for(int i=0; i<v_double_MEM.size(); i++)
 				{
@@ -258,7 +261,11 @@ int main()
 
 	vector<TString> sample_list;
 	sample_list.push_back("Data");
+
+	sample_list.push_back("tZq");
+	sample_list.push_back("tZqhwpp");
 	sample_list.push_back("tZqmcNLO");
+
 	sample_list.push_back("WZL");
 	sample_list.push_back("WZB");
 	sample_list.push_back("WZC");
@@ -372,6 +379,7 @@ int main()
 	MEMvarlist_new.push_back("MEMvar_4");
 	MEMvarlist_new.push_back("MEMvar_5");
 	MEMvarlist_new.push_back("MEMvar_6");
+	MEMvarlist_new.push_back("MEMvar_7");
 
 
 
@@ -388,9 +396,9 @@ int main()
 	vector<TString> tree_syst_list;
 	tree_syst_list.push_back("Tree"); //NOTE -- KEEP THIS LINE : nominal
 
-	tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
-	tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
-	tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
+	// tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
+	// tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
+	// tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
 
 
 	vector<TString> weight_syst_list;
@@ -423,7 +431,7 @@ int main()
 //-----------------------------------------
 
 	bool do_MEM_regions = true;
-	bool do_WZ_region = false;
+	bool do_WZ_region = true;
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples
