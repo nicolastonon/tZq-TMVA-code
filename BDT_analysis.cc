@@ -26,7 +26,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_cuts = false;
-    bool do_optimization_input_variables = true;
+    bool do_optimization_input_variables = false;
 
 
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
@@ -399,7 +399,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
         bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
@@ -499,6 +499,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
         // MVAtool->Rescale_Fake_Histograms("FileToRescale.root"); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
+
+        //FIXME
+        cout<<endl<<endl<<"Signficance = "<<MVAtool->Compute_Combine_tZq_Expected_Significance_From_TemplateFile(".Combine_Input.root")<<endl;
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
@@ -678,7 +681,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 
-
+/*
 
 //---------------------------------------------------------------------------
  // # #    # #####  #    # #####    #    #   ##   #####  #   ##   #####  #      ######  ####
@@ -838,6 +841,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             }
         }
     } //End optimization Scan
-
+*/
   return 0;
 }

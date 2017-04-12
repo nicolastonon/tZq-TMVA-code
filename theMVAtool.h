@@ -99,6 +99,7 @@ class theMVAtool
 	int Fit_Fake_Templates(TString, TString); //Fit the fake templates
 	int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
 	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
+	float Compute_Combine_tZq_Expected_Significance_From_TemplateFile(TString);
 	// void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members

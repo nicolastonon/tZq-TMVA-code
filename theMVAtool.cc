@@ -3950,3 +3950,37 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 	return;
 }
 */
+
+
+
+float theMVAtool::Compute_Combine_tZq_Expected_Significance_From_TemplateFile(TString path_templatefile)
+{
+	system( ("cp "+path_templatefile+" ./COMBINE/templates/Combine_Input.root").Data() ); //Copy file to templates dir.
+
+	system("cd ./COMBINE/datacards/");
+
+	std::ofstream file_out("significance_expected_info_tmp.txt"); //Temporary file
+	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+	if(write_ranking_info) std::cout.rdbuf(file_out.rdbuf()); //redirect std::cout to text file --> Ranking info will be saved !
+
+	system("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 COMBINED_datacard_TemplateFit_tZq_noSyst.txt");
+
+	std::cout.rdbuf(coutbuf); //reset to standard output again
+	file_out.close();
+
+	ifstream file_in("significance_expected_info_tmp.txt");
+	string line;
+	while(!file_in.eof())
+	{
+		getline(file_in, line);
+
+		TString ts = line;
+		if(ts.Contains("Significance")) {continue;}
+
+		int index = ts.First(' ');
+		ts.Remove(0, index);
+		break;
+	}
+
+	return Convert_TString_To_Number(ts);
+}
