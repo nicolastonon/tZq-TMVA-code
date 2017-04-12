@@ -37,9 +37,9 @@ $(INTERFACE) :	Interface_ntuples_TMVA.o
 	@$(CC) Interface_ntuples_TMVA.o -o $@ $(ROOTFLAGS) $(LFLAGS)
 	@echo "-- Done --"
 
-$(BDT_AN): BDT_analysis.o theMVAtool.o
+$(BDT_AN):  BDT_analysis.o Func_other.o theMVAtool.o
 	@echo "-- Creating executable ./$(BDT_AN) --"
-	@$(CC) BDT_analysis.o theMVAtool.o -o $@ $(ROOTFLAGS) $(LFLAGS)
+	@$(CC) BDT_analysis.o Func_other.o theMVAtool.o -o $@ $(ROOTFLAGS) $(LFLAGS)
 	@echo "-- Done --"
 
 

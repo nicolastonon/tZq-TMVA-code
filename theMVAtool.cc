@@ -10,7 +10,8 @@
 //by Nicolas Tonon (IPHC)
 
 #include "theMVAtool.h"
-#include "Func_other.h" //Helper functions
+// #include "Func_other.h" //Helper functions
+
 
 #include <cassert> 	//Can be used to terminate program if argument is not true. Ex : assert(test > 0 && "Error message");
 #include <sys/stat.h> // to be able to use mkdir
@@ -107,7 +108,6 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	{
 		colorVector.push_back(v_color[i]);
 	}
-	// for(int i=0; i<102; i++) {theWeights_PDF.push_back(0);}
 
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
@@ -217,12 +217,12 @@ void theMVAtool::Set_Luminosity(double desired_luminosity)
 /////////////////////////////////////////////////////////
 /**
  * Train, test and evaluate the BDT with signal and bkg MC
- * @param channel              Channel name (if single)
- * @param bdt_type             Differentiate BDT & BDTttZ (SR & ttZ CR)
+ * @param channel
+ * @param bdt_type           [BDT or BDT_ttZ (SR or CR)]
+ * @param use_ttZaMCatNLO    [Use ttZmc@NLO sample for training (even if contains negative weights)]
+ * @param write_ranking_info [Save variable ranking info in file or not (must set to false if optimizing BDT variable list)]
  */
-
-
-void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", bool use_ttZaMCatNLO=true)
+void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use_ttZaMCatNLO, bool write_ranking_info)
 {
 	if(isWZ) {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the WZ Control Region ! Abort"))<<endl; return;}
 
@@ -418,8 +418,6 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
 
 
-
-
 //--------------------------------------
 	output_file->cd();
 
@@ -431,24 +429,19 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
 	TString ranking_file_path;
 	if(!isWZ && !isttZ) ranking_file_path = "outputs/Rankings/BDT/RANKING_" + bdt_type + "_" + channel + ".txt";
 	else if(!isWZ && isttZ) ranking_file_path = "outputs/Rankings/BDTttZ/RANKING_" + bdt_type + "_" + channel + ".txt";
+	if(write_ranking_info) cout<<endl<<endl<<endl<<FBLU("NB : Temporarily redirecting standard output to file '"<<ranking_file_path<<"' in order to save Ranking Info !!")<<endl<<endl<<endl;
 
-	cout<<endl<<endl<<endl<<FBLU("NB : Temporarily redirecting standard output to file '"<<ranking_file_path<<"' in order to save Ranking Info !!")<<endl<<endl<<endl;
-
-	std::ofstream out(ranking_file_path.Data() );
+	std::ofstream out("ranking_info_tmp.txt"); //Temporary name
 	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-	std::cout.rdbuf(out.rdbuf()); //redirect std::cout to text file --> Ranking info will be saved !
+	if(write_ranking_info) std::cout.rdbuf(out.rdbuf()); //redirect std::cout to text file --> Ranking info will be saved !
 
     // Train MVAs using the set of training events
     factory->TrainAllMethods();
 
-
-	std::cout.rdbuf(coutbuf); //reset to standard output again
+	if(write_ranking_info) std::cout.rdbuf(coutbuf); //reset to standard output again
 
     // ---- Evaluate all MVAs using the set of test events
     factory->TestAllMethods();
-
-
-
     // ----- Evaluate and compare performance of all configured MVAs
     factory->EvaluateAllMethods();
 	//NB : Test & Evaluation recap in the output files
@@ -459,17 +452,20 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type = "BDT", 
     std::cout << "==> Wrote root file: " << output_file->GetName() << std::endl;
     std::cout << "==> TMVA is done!" << std::endl;
 
-
     delete output_file;
     delete factory;
 
 	for(unsigned int i=0; i<files_to_close.size(); i++) {files_to_close[i]->Close(); delete files_to_close[i];}
 
 
-    Extract_Ranking_Info(ranking_file_path); //Extract only ranking info from TMVA output
+	if(write_ranking_info)
+	{
+		MoveFile("./ranking_info_tmp.txt", ranking_file_path);
+		Extract_Ranking_Info(ranking_file_path, bdt_type, channel); //Extract only ranking info from TMVA output
+	}
+	else {system("rm ./ranking_info_tmp.txt");} //Else remove the temporary ranking file
 
-	TString mv_command = "mv ranking_tmp.txt " + ranking_file_path;
-	system(mv_command.Data() ); //Replace TMVA output textfile by modified textfile !
+	return;
 }
 
 
@@ -794,7 +790,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TH1::SetDefaultSumw2();
 
-
 	mkdir("outputs",0777);
 
 	delete reader; //Free any previous allocated memory, and re-initialize reader
@@ -825,13 +820,13 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 		for(int ichan=0; ichan<channel_list.size(); ichan++) //Book the method for each channel (separate BDTs)
 		{
-			if(dbgMode) cout << "channel considered " << channel_list[ichan] << endl;
 			TString template_name_MVA = template_name; //BDT or BDTttZ
 
 			if(cut_on_BDT && !template_name.Contains("BDT")) {template_name_MVA = "BDT";} //Even if template is mTW, need to book BDT method if want to apply cut on BDT!
 
 			MVA_method_name = template_name_MVA + "_" + channel_list[ichan] + this->filename_suffix + TString(" method");
 			weightfile = dir + template_name_MVA + "_" + channel_list[ichan] + this->filename_suffix + TString(".weights.xml");
+
 			reader->BookMVA(MVA_method_name, weightfile);
 		}
 	}
@@ -2387,9 +2382,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		if (postfit && !f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) ) continue; //Check histo exists
 
 		TString histo_name = "";
-		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqhwpp"; //For postfit file only ! //FIXME
-		// else histo_name = total_var_list[ivar] + "_uuu__tZqmcNLO"; //For prefit file
-		else histo_name = total_var_list[ivar] + "_uuu__tZqhwpp"; //For prefit file //FIXME
+		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqmcNLO"; //For postfit file only ! //FIXME
+		// if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqhwpp"; //For postfit file only ! //FIXME
+		else histo_name = total_var_list[ivar] + "_uuu__tZqmcNLO"; //For prefit file
+		// else histo_name = total_var_list[ivar] + "_uuu__tZqhwpp"; //For prefit file //FIXME
 
 		//NOTE -- How to use GetListOfKeys when histos are in a directory ?
 		if(!postfit && !f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<__LINE__<<" : "<<histo_name<<" : not found ! Continue !"<<endl; continue;}

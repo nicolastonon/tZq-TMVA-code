@@ -68,11 +68,11 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	//Input
 	TString input_filename;
 
-	// FIXME -- Use "withMEM" ntuples in ttZ/tZq regions
+	// FIXME -- Path of Ntuples with MEM
 	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
-	// FIXME -- Use "readyForMEM" (no MEM) in ttZ/tZq regions
 	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
 
+	//Path of Ntuples for WZ CR
 	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/FCNCNTuple_" + sample +  ".root";
 	// else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
 
@@ -179,7 +179,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			//FIXME -- Change Here if want to use "readyForMEM" (no MEM) rather than "withMEM" ntuples in ttZ/tZq regions
 			if(MEM_or_WZ == "MEM")
 			{
-				//NOTE : MEMvar list is :
+//-------------------
+				//NOTE : v_double_MEM numbering scheme :
 				// MEMvarlist.push_back("mc_mem_ttz_weight"); //0
 				// MEMvarlist.push_back("mc_mem_tllj_weight"); //1
 				// MEMvarlist.push_back("mc_mem_tllj_weight_kinmaxint"); //2
@@ -189,6 +190,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				// MEMvarlist.push_back("mc_mem_wzjj_weight_kinmaxint"); //6
 
 //-------------------
+				//---  BDT variables numbering scheme :
 
 				// thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //0
 				// thevarlist.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //1
@@ -202,7 +204,6 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				// thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //3
 				// thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //1
 				// thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //2
-
 //-------------------
 
 				v_floats_modif[0] = -log( (3.89464e-13*v_double_MEM[0]) / (3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );

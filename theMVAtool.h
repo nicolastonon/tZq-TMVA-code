@@ -1,5 +1,4 @@
 #ifndef theMVAtool_h
-
 #define theMVAtool_h
 
 /* BASH COLORS */
@@ -66,10 +65,11 @@
 
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
-// #include "TMVA/TMVAGui.h"
 #include "TMVA/Reader.h"
 #include "TMVA/MethodCuts.h"
 #include "TMVA/Config.h"
+
+#include "Func_other.h" //Helper functions
 
 
 using namespace std;
@@ -84,7 +84,7 @@ class theMVAtool
 	~theMVAtool() {delete reader;}; //Free memory
 
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
-	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
+	void Train_Test_Evaluate(TString, TString, bool, bool); //Train, Test, Evaluate BDT with MC samples
 	double Compute_Fake_SF(TFile*, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
 	void Rescale_Fake_Histograms(TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
 	int Read(TString, bool, bool, bool, bool = false, double = 999); //Produce templates of BDT or mTW

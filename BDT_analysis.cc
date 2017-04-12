@@ -1,4 +1,5 @@
 #include "theMVAtool.h"
+#include "Func_other.h" //Helper functions
 
 using namespace std;
 
@@ -24,7 +25,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //If true, activates only the "optimization" part (@ end of file)
-    bool do_optimization_scan = false;
+    bool do_optimization_cuts = false;
+    bool do_optimization_input_variables = true;
 
 
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
@@ -196,7 +198,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Signal --- must be placed before backgrounds
     thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
-    // thesamplelist.push_back("tZqhwpp");             v_color.push_back(kGreen+2);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
@@ -252,15 +253,15 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist.push_back("tZq_pT");
 
     if(include_MEM_variables){
-    thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor //FIXME --use it instead of (6)
+    // thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor //FIXME --use it instead of (6)
     thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
     thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
 
     //--- NEW VARIABLES
-    // thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
+    thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
     thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
-    // thevarlist.push_back("MEMvar_6"); //try 0 + 7 instead
-    thevarlist.push_back("MEMvar_7");
+    thevarlist.push_back("MEMvar_6"); //try 0 + 7 instead
+    // thevarlist.push_back("MEMvar_7");
     }
 
     // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
@@ -392,7 +393,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
 
 
-    if(!do_optimization_scan)
+    if(!do_optimization_cuts && !do_optimization_input_variables)
     {
 
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
@@ -444,7 +445,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             if(train_BDT && !isWZ)
             {
-                MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training);
+                MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training, true);
             }
         }
 
@@ -546,7 +547,17 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 
-    if(do_optimization_scan)
+//---------------------------------------------------------------------------
+ //  ####  #    # #####  ####
+ // #    # #    #   #   #
+ // #      #    #   #    ####
+ // #      #    #   #        #
+ // #    # #    #   #   #    #
+ //  ####   ####    #    ####
+//---------------------------------------------------------------------------
+
+
+    if(do_optimization_cuts)
     {
         //#############################################
         //  SET THE CUT DEFINITIONS ON WHICH YOU WANT TO LOOP
@@ -575,23 +586,23 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     	    for(int icut2 = 0; icut2 < v_cut2_values.size(); icut2++)
     	    {
                 //--- Add the default cuts which don't depend on the loop : regions definitions, etc. (defined at top of code)
-                vector<TString> set_v_cut_name_optim, set_v_cut_def_optim; vector<bool> set_v_cut_IsUsedForBDT_optim;
+                vector<TString> set_v_cut_name_optim, set_v_cut_def_optim; vector<bool> set_v_cut_IsUsedForoptim_BDTvar;
                 for(int icut=0; icut<set_v_cut_name.size(); icut++)
                 {
                     set_v_cut_name_optim.push_back(set_v_cut_name[icut]);
                     set_v_cut_def_optim.push_back(set_v_cut_def[icut]);
-                    set_v_cut_IsUsedForBDT_optim.push_back(set_v_cut_IsUsedForBDT[icut]);
+                    set_v_cut_IsUsedForoptim_BDTvar.push_back(set_v_cut_IsUsedForBDT[icut]);
                 }
 
                 //--- Add the temporary cuts defined by the loop
                 //Cut 1
                 set_v_cut_name_optim.push_back(cut1_name);
                 set_v_cut_def_optim.push_back(v_cut1_values[icut1]);
-                set_v_cut_IsUsedForBDT_optim.push_back(false);
+                set_v_cut_IsUsedForoptim_BDTvar.push_back(false);
                 //Cut 2
                 set_v_cut_name_optim.push_back(cut2_name);
                 set_v_cut_def_optim.push_back(v_cut2_values[icut2]);
-                set_v_cut_IsUsedForBDT_optim.push_back(false);
+                set_v_cut_IsUsedForoptim_BDTvar.push_back(false);
 
 
 
@@ -616,7 +627,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 std::vector<TString > thevarlist_tmp;
                 if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
                 else       thevarlist_tmp = thevarlist;
-                theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name_optim, set_v_cut_def_optim, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name_optim, set_v_cut_def_optim, set_v_cut_IsUsedForoptim_BDTvar, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
                 MVAtool->Set_Luminosity(set_luminosity);
 
 
@@ -635,7 +646,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                     if(train_BDT && !isWZ)
                     {
-                        MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training);
+                        MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training, false);
                     }
                 }
 
@@ -661,6 +672,172 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     } //End optimization Scan
 
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------
+ // # #    # #####  #    # #####    #    #   ##   #####  #   ##   #####  #      ######  ####
+ // # ##   # #    # #    #   #      #    #  #  #  #    # #  #  #  #    # #      #      #
+ // # # #  # #    # #    #   #      #    # #    # #    # # #    # #####  #      #####   ####
+ // # #  # # #####  #    #   #      #    # ###### #####  # ###### #    # #      #           #
+ // # #   ## #      #    #   #       #  #  #    # #   #  # #    # #    # #      #      #    #
+ // # #    # #       ####    #        ##   #    # #    # # #    # #####  ###### ######  ####
+//---------------------------------------------------------------------------
+//First, need to train on complete variable set to create the ranking info file which will be used !
+
+    if(do_optimization_input_variables)
+    {
+        if(isWZ) {cout<<"No BDT in WZ Control Region !"<<endl; return 0;}
+
+        if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") )
+        {
+            cout<<endl<<BOLD(FGRN("First need to create mTW template file (to compute data Fakes SF) ! "))<<endl<<endl;
+
+            std::vector<TString > thevarlist_tmp;
+            theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+            MVAtool->Set_Luminosity(set_luminosity);
+
+            MVAtool->Read("mTW", fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+
+            MoveFile("./outputs/Reader_mTW"+MVAtool->filename_suffix+"_unScaled.root", "./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"); //Need to add expected suffix, not current region one !
+
+            MVAtool->Rescale_Fake_Histograms("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root");
+        }
+
+        int nmax_vars_to_remove = 4;
+        bool remove_vars_two_by_two = true;
+
+        TString bdt_type = "BDT";
+        if(!isWZ && isttZ) bdt_type = "BDTttZ";
+
+        mkdir("outputs",0777);
+        mkdir("outputs/optim_BDTvar",0777);
+
+
+        //#############################################
+        //
+        //#############################################
+
+        if(remove_vars_two_by_two && nmax_vars_to_remove%2 != 0) {nmax_vars_to_remove--;}
+        int count = 0;
+        for(int ivar=0; ivar<nmax_vars_to_remove; ivar++)
+        {
+            if(remove_vars_two_by_two) {ivar++;}
+
+            count++; //Count effective number of set of BDT variables
+
+
+            for(int ichan=0; ichan<thechannellist.size(); ichan++)
+            {
+                vector<TString> v_BDTvar_name; vector<double> v_BDTvar_importance;
+
+                Get_Ranking_Vectors(bdt_type, "uuu", v_BDTvar_name, v_BDTvar_importance);
+                // Get_Ranking_Vectors(bdt_type, thechannellist[ichan], v_BDTvar_name, v_BDTvar_importance);
+
+                vector<TString> v_BDTvariables_tmp;
+                for(int ivar=0; ivar<v_BDTvar_name.size(); ivar++)
+                {
+                    v_BDTvariables_tmp.push_back(v_BDTvar_name[ivar]);
+                }
+
+                v_BDTvariables_tmp.erase(v_BDTvariables_tmp.begin() + v_BDTvariables_tmp.size() -ivar -1);
+
+                if(ichan==0)
+                {
+                    mkdir( ("outputs/optim_BDTvar/BDTfiles_"+Convert_Number_To_TString(count)).Data(),0777);
+                    TString f_varlist_info_path = "./outputs/optim_BDTvar/BDTfiles_"+Convert_Number_To_TString(count)+"/BDT_varlist_info.txt";
+                    ofstream f_varlist_info(f_varlist_info_path.Data());
+                    f_varlist_info<<"++ List of variables used for training this BDT :"<<endl<<endl;
+                    for(int k=0; k<v_BDTvariables_tmp.size(); k++) {f_varlist_info<<v_BDTvariables_tmp[k]<<endl;}
+                    f_varlist_info<<endl<<endl<<"-- Variables which were removed compared to full list :"<<endl;
+                    for(int k=v_BDTvariables_tmp.size(); k<v_BDTvar_name.size(); k++) {f_varlist_info<<v_BDTvar_name[k]<<endl;}
+                }
+
+                // cout<<endl<<"-----------------"<<endl;
+                // cout<<"ivar = "<<ivar<<endl<<endl;
+                //
+                // for(int j=0; j<v_BDTvariables_tmp.size(); j++)
+                // {
+                //     cout<<v_BDTvariables_tmp[j]<<endl;
+                // }
+                // cout<<"-----------------"<<endl;
+
+
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+
+                theMVAtool* MVAtool = new theMVAtool(v_BDTvariables_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
+
+                float cut_BDT_value = -99;  if(isWZ || isttZ)  cut_on_BDT = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
+
+                //#############################################
+                // TRAINING
+                //#############################################
+
+                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, use_ttZaMCatNLO_training, false);
+
+                mkdir("./weights/optim_BDTvar", 0777);
+                mkdir(("./weights/optim_BDTvar/weights_"+Convert_Number_To_TString(count)).Data(), 0777);
+
+                MoveFile( ("./outputs/"+bdt_type+"_"+thechannellist[ichan]+"*.root"), ("./outputs/optim_BDTvar/BDTfiles_"+Convert_Number_To_TString(count)) ); //Move file
+                MoveFile( ("./weights/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".class.C"), ("./weights/optim_BDTvar/weights_"+Convert_Number_To_TString(count)+"/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".class.C") ); //Move weight file to specific dir.
+                MoveFile( ("./weights/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/optim_BDTvar/weights_"+Convert_Number_To_TString(count)+"/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".weights.xml") ); //Move weight file to specific dir.
+
+                //------------------------
+                MVAtool->~theMVAtool(); //Delete object
+            }
+
+            for(int ichan=0; ichan<thechannellist.size(); ichan++)
+            {
+                vector<TString> v_BDTvar_name; vector<double> v_BDTvar_importance;
+
+                Get_Ranking_Vectors(bdt_type, "uuu", v_BDTvar_name, v_BDTvar_importance);
+                // Get_Ranking_Vectors(bdt_type, thechannellist[ichan], v_BDTvar_name, v_BDTvar_importance);
+
+                vector<TString> v_BDTvariables_tmp;
+                for(int ivar=0; ivar<v_BDTvar_name.size(); ivar++)
+                {
+                    v_BDTvariables_tmp.push_back(v_BDTvar_name[ivar]);
+                }
+
+                v_BDTvariables_tmp.erase(v_BDTvariables_tmp.begin() + v_BDTvariables_tmp.size() -ivar -1);
+
+
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+
+                theMVAtool* MVAtool = new theMVAtool(v_BDTvariables_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
+
+                //#############################################
+                //  TEMPLATES CREATION
+                //#############################################
+
+                //Reader needs weight files from ALL FOUR channels -> make sure they are all available in dir. weights/
+                for(int jchan=0; jchan<thechannellist.size(); jchan++)
+                {
+                    CopyFile( ("./weights/optim_BDTvar/weights_"+Convert_Number_To_TString(count)+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".class.C"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".class.C") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
+                    CopyFile( ("./weights/optim_BDTvar/weights_"+Convert_Number_To_TString(count)+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
+                }
+
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+
+                MoveFile( ("./outputs/Reader_"+bdt_type+"*.root"), ("./outputs/optim_BDTvar/BDTfiles_"+Convert_Number_To_TString(count)) ); //Move file
+
+                //------------------------
+                //------------------------
+                MVAtool->~theMVAtool(); //Delete object
+            }
+        }
+    } //End optimization Scan
 
   return 0;
 }
