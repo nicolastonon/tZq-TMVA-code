@@ -8,6 +8,8 @@ cp ../*.txt .
 
 cp ../other/getROC_curves.cc .
 
+cp ../outputs/Reader* ./outputs/
+
 cp ../COMBINE/README_Combine.txt ./COMBINE/
 
 cp ../COMBINE/templates/Combine_Input.root ./COMBINE/templates/.

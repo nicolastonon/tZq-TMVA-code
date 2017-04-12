@@ -3952,35 +3952,48 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 */
 
 
-
-float theMVAtool::Compute_Combine_tZq_Expected_Significance_From_TemplateFile(TString path_templatefile)
+/**
+ * Run Combine on template file (arg), using datacard corresponding to tZq signal
+ * @param  path_templatefile path of the templatefile on which to run Combine
+ * @return                   computed significance value
+ */
+float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, bool expected, bool use_syst)
 {
-	system( ("cp "+path_templatefile+" ./COMBINE/templates/Combine_Input.root").Data() ); //Copy file to templates dir.
+	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
 
-	system("cd ./COMBINE/datacards/");
+	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_";
+	if(signal=="tZq" || signal=="ttZ" || signal=="tZqANDttZ" || signal=="tZqANDFakes")
+	{
+		datacard_path+= signal;
+	}
+	else {cout<<"Wrong signal name ! Abort"<<endl; return 0;}
 
-	std::ofstream file_out("significance_expected_info_tmp.txt"); //Temporary file
-	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-	if(write_ranking_info) std::cout.rdbuf(file_out.rdbuf()); //redirect std::cout to text file --> Ranking info will be saved !
+	if(!use_syst) datacard_path+= "_noSyst";
 
-	system("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 COMBINED_datacard_TemplateFit_tZq_noSyst.txt");
+	datacard_path+=".txt";
 
-	std::cout.rdbuf(coutbuf); //reset to standard output again
-	file_out.close();
+	TString f_tmp_name = "significance_expected_info_tmp.txt";
 
-	ifstream file_in("significance_expected_info_tmp.txt");
+	if(expected) {system( ("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Expected a-priori
+	else {system( ("combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Observed
+
+
+	ifstream file_in(f_tmp_name.Data());
 	string line;
+	TString ts;
 	while(!file_in.eof())
 	{
 		getline(file_in, line);
+		ts = line;
 
-		TString ts = line;
-		if(ts.Contains("Significance")) {continue;}
+		if(!ts.Contains("Significance")) {continue;}
 
 		int index = ts.First(' ');
 		ts.Remove(0, index);
 		break;
 	}
+
+	system( ("rm "+f_tmp_name).Data() ); //Remove tmp file
 
 	return Convert_TString_To_Number(ts);
 }

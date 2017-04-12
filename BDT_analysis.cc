@@ -26,7 +26,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_cuts = false;
-    bool do_optimization_input_variables = false;
+    bool remove_BDTvars_and_create_templates = true; bool compute_signif_BDTvar_optim = true;
 
 
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
@@ -393,7 +393,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
 
 
-    if(!do_optimization_cuts && !do_optimization_input_variables)
+    if(!do_optimization_cuts && !remove_BDTvars_and_create_templates && !compute_signif_BDTvar_optim)
     {
 
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
@@ -499,9 +499,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
         // MVAtool->Rescale_Fake_Histograms("FileToRescale.root"); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
-
-        //FIXME
-        cout<<endl<<endl<<"Signficance = "<<MVAtool->Compute_Combine_tZq_Expected_Significance_From_TemplateFile(".Combine_Input.root")<<endl;
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
@@ -674,6 +671,203 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         } //end first scanned variable loop
 
     } //End optimization Scan
+
+
+
+
+//---------------------------------------------------------------------------
+ // # #    # #####  #    # #####    #    #   ##   #####  #   ##   #####  #      ######  ####
+ // # ##   # #    # #    #   #      #    #  #  #  #    # #  #  #  #    # #      #      #
+ // # # #  # #    # #    #   #      #    # #    # #    # # #    # #####  #      #####   ####
+ // # #  # # #####  #    #   #      #    # ###### #####  # ###### #    # #      #           #
+ // # #   ## #      #    #   #       #  #  #    # #   #  # #    # #    # #      #      #    #
+ // # #    # #       ####    #        ##   #    # #    # # #    # #####  ###### ######  ####
+//---------------------------------------------------------------------------
+
+    if(remove_BDTvars_and_create_templates)
+    {
+        vector<TString > thevarlist_tmp;
+        if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
+        else       thevarlist_tmp = thevarlist;
+
+        TString bdt_type = "BDT";
+        if(isttZ) bdt_type = "BDTttZ";
+
+        TString dir_name;
+
+        for(int ivar=0; ivar<thevarlist_tmp.size(); ivar++)
+        {
+            TString removed_var_name;
+
+            vector<TString > varlist_optim;
+            for(int j=0; j<thevarlist_tmp.size(); j++)
+            {
+                if(j==ivar) {removed_var_name = thevarlist_tmp[j]; continue;} //Remove var this way
+                varlist_optim.push_back(thevarlist_tmp[j]);
+            }
+
+            for(int ichan=0; ichan<thechannellist.size(); ichan++)
+            {
+                dir_name = "outputs/optim_BDTvar";
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "outputs/optim_BDTvar/"+bdt_type;
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name;
+                mkdir(dir_name.Data() , 0777);
+
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
+
+                //#############################################
+                // TRAINING
+                //#############################################
+
+                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, use_ttZaMCatNLO_training, false);
+
+                dir_name = "weights/optim_BDTvar";
+                mkdir(dir_name.Data() , 0777);
+
+                mkdir(("./weights/optim_BDTvar/weights_without_"+removed_var_name).Data(), 0777);
+
+                MoveFile( ("./outputs/"+bdt_type+"_"+thechannellist[ichan]+"*.root"), ("./outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name) ); //Move file
+
+                MoveFile( ("./weights/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".class.C"), ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".class.C") ); //Move weight file to specific dir.
+                MoveFile( ("./weights/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".weights.xml") ); //Move weight file to specific dir.
+
+                //------------------------
+                MVAtool->~theMVAtool(); //Delete object
+            }
+
+            for(int ichan=0; ichan<thechannellist.size(); ichan++)
+            {
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
+
+                //#############################################
+                //  TEMPLATES CREATION
+                //#############################################
+
+                //Reader needs weight files from ALL FOUR channels -> make sure they are all available in dir. weights/
+                for(int jchan=0; jchan<thechannellist.size(); jchan++)
+                {
+                    CopyFile( ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".class.C"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".class.C") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
+                    CopyFile( ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
+                }
+
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+
+                MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("./outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name) ); //Move file
+
+                //------------------------
+                //------------------------
+                MVAtool->~theMVAtool(); //Delete object
+            }// end chan loop
+
+        } //end var removal loop
+
+    } //end optimization loop
+
+
+
+
+    if(compute_signif_BDTvar_optim)
+    {
+        bool use_syst = false;
+        bool expected = true;
+        TString signal = "tZq";
+
+        vector<TString > thevarlist_tmp;
+        if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
+        else       thevarlist_tmp = thevarlist;
+
+        ofstream file_out("BDT_OPTIM_SIGNIFICANCES.txt");
+        file_out<<" -- Significances computed from Combine, obtained by removing the BDT vars one by one --"<<endl;
+        file_out<<"use_syst = "<<use_syst<<endl;
+        file_out<<"expected = "<<expected<<endl;
+        file_out<<"signal = "<<signal<<endl<<endl<<endl;
+
+        //#############################################
+        //  CREATE INSTANCE OF CLASS & INITIALIZE
+        //#############################################
+
+        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+        MVAtool->Set_Luminosity(set_luminosity);
+
+        for(int ivar=0; ivar<thevarlist_tmp.size(); ivar++)
+        {
+            if(!isWZ && !isttZ)
+            {
+                system( ("hadd -f ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root").Data() );
+
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, expected, use_syst);
+
+                file_out<<thevarlist_tmp[ivar]<<" ---> "<<signif<<endl;
+            }
+            else if(!isWZ && isttZ)
+            {
+                system( ("hadd -f ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root").Data() );
+
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, expected, use_syst);
+
+                file_out<<thevarlist_tmp[ivar]<<" ---> "<<signif<<endl;
+            }
+        }
+
+        delete MVAtool;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

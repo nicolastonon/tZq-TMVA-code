@@ -1,0 +1,8 @@
+ -- Significances computed from Combine, obtained by removing the BDT vars one by one --
+use_syst = 0
+expected = 1
+signal = tZq
+
+
+btagDiscri ---> 0
+dRAddLepQ ---> 0
