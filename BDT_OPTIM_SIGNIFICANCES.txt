@@ -4,5 +4,19 @@ expected = 1
 signal = tZq
 
 
-btagDiscri ---> 0
-dRAddLepQ ---> 0
+btagDiscri ---> 2.67704
+AddLepETA ---> 2.64966
+dPhiAddLepB ---> 2.6429
+tZq_pT ---> 2.63799
+Zpt ---> 2.63764
+dRAddLepQ ---> 2.61987
+dPhiZAddLep ---> 2.61948
+ZEta ---> 2.61904
+dRAddLepClosestJet ---> 2.61717
+dRZAddLep ---> 2.60986
+LeadJetEta ---> 2.59356
+AddLepAsym ---> 2.59226
+ptQ ---> 2.58024
+etaQ ---> 2.56191
+dRjj ---> 2.52885
+mtop ---> 2.46052

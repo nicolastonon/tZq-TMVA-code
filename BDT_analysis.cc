@@ -26,7 +26,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_cuts = false;
-    bool remove_BDTvars_and_create_templates = true; bool compute_signif_BDTvar_optim = true;
+    bool remove_BDTvars_and_create_templates = false; bool compute_signif_BDTvar_optim = true;
 
 
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
@@ -780,6 +780,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     if(compute_signif_BDTvar_optim)
     {
+
         bool use_syst = false;
         bool expected = true;
         TString signal = "tZq";
@@ -788,7 +789,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
         else       thevarlist_tmp = thevarlist;
 
-        ofstream file_out("BDT_OPTIM_SIGNIFICANCES.txt");
+        TString file_significances = "BDT_OPTIM_SIGNIFICANCES.txt";
+        if(isttZ) file_significances = "BDTttZ_OPTIM_SIGNIFICANCES.txt";
+/*        ofstream file_out(file_significances.Data() );
         file_out<<" -- Significances computed from Combine, obtained by removing the BDT vars one by one --"<<endl;
         file_out<<"use_syst = "<<use_syst<<endl;
         file_out<<"expected = "<<expected<<endl;
@@ -822,6 +825,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
         delete MVAtool;
+*/
+        Order_BDTvars_By_Decreasing_Signif_Loss(file_significances.Data() );
     }
 
 

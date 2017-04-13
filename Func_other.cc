@@ -355,3 +355,79 @@ void Get_Ranking_Vectors(TString bdt_type, TString channel, vector<TString> &v_B
 
 	return;
 }
+
+//Order the variables from file created via BDT-optimization sectrion of the main(), by decreasing significance loss caused by the removal of corresponding Variable
+//--> the variable which affects the most the final significance will be ranked first
+void Order_BDTvars_By_Decreasing_Signif_Loss(TString file_path)
+{
+	ifstream file_in(file_path.Data() );
+
+	ofstream file_out( (file_path+"_tmp") );
+
+	vector<TString> v_variables; vector<float> v_signif;
+
+	string line; TString ts;
+	int count_line=0;
+	while(!file_in.eof() )
+	{
+		getline(file_in, line); count_line++; ts = line;
+		if(count_line<7) {file_out<<ts<<endl; continue;}
+
+		TString var_name_tmp;
+		for(int ichar=0; ichar<line.size(); ichar++)
+		{
+			if(ts[ichar] != ' ') {var_name_tmp+= ts[ichar];}
+			else {break;}
+		}
+
+		v_variables.push_back(var_name_tmp);
+
+		int index = ts.First(">");
+		ts.Remove(0, index+2);
+
+		v_signif.push_back(Convert_TString_To_Number(ts) );
+	}
+	file_in.close();
+
+	//Because while loop on 'eof' --> one line too many at the end --> erase last entry
+	v_variables.erase(v_variables.begin() + v_variables.size()-1);
+	v_signif.erase(v_signif.begin() + v_signif.size()-1);
+
+
+	//--- Ordering
+	vector<TString> v_variables_ordered; vector<float> v_signif_ordered;
+
+	float signif_max = -999; int index_signif_max = -999;
+
+	while(v_variables.size() != 0)
+	{
+		signif_max = -999; index_signif_max = -999;
+
+		for(int i=0; i<v_signif.size(); i++)
+		{
+			if(v_signif[i] > signif_max)
+			{
+				signif_max = v_signif[i];
+				index_signif_max = i;
+			}
+		}
+
+		v_variables_ordered.push_back(v_variables[index_signif_max]);
+		v_signif_ordered.push_back(v_signif[index_signif_max]);
+
+		v_variables.erase(v_variables.begin() + index_signif_max);
+		v_signif.erase(v_signif.begin() + index_signif_max);
+	}
+
+	//--- Write ordered vars into output file
+	for(int i=0; i<v_variables_ordered.size(); i++)
+	{
+		file_out<<v_variables_ordered[i]<<" ---> "<<v_signif_ordered[i]<<endl;
+	}
+
+	//--- Replace old file by new one
+	MoveFile( (file_path+"_tmp"), file_path );
+
+
+	return;
+}
