@@ -561,9 +561,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     if(do_optimization_cuts)
     {
         if(isWZ) {cout<<endl<<BOLD(FRED("No MET/mTW cuts in the WZ control region ! Abort"))<<endl<<endl; return 0;}
+        if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+        if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
 
 
-        if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling
+        if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling, etc.
         {
             cout<<endl<<BOLD(FGRN("First need to create mTW template file (to compute data Fakes SF) ! "))<<endl<<endl;
 
@@ -815,6 +817,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     if(RemoveBDTvars_CreateTemplates_ExtractSignif)
     {
         if(isWZ) {cout<<BOLD(FRED("No BDT in WZ Control Region !"))<<endl; return 0;}
+        if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+        if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
 
         vector<TString > thevarlist_tmp;
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
