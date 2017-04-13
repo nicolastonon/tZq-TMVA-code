@@ -8,7 +8,7 @@ cp ../*.txt .
 
 cp ../other/getROC_curves.cc .
 
-cp ../outputs/Reader* ./outputs/
+#cp ../outputs/Reader* ./outputs/
 
 cp ../COMBINE/README_Combine.txt ./COMBINE/
 
