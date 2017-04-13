@@ -69,6 +69,9 @@
 #include "TMVA/MethodCuts.h"
 #include "TMVA/Config.h"
 
+#include <cassert> 	//Can be used to terminate program if argument is not true. Ex : assert(test > 0 && "Error message");
+#include <sys/stat.h> // to be able to use mkdir
+
 #include "Func_other.h" //Helper functions
 
 

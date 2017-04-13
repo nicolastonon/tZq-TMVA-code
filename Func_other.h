@@ -19,10 +19,12 @@
 	TString Theta_Naming_Convention(TString);
 	void Extract_Ranking_Info(TString, TString, TString);
 	void Get_Ranking_Vectors(TString, TString, std::vector<TString>&, std::vector<double>&);
-	bool Check_File_Existence(const std::string&);
+	// bool Check_File_Existence(const std::string&);
+	bool Check_File_Existence(const TString&);
 	void MoveFile(TString, TString);
 	void CopyFile(TString, TString);
 	void Order_BDTvars_By_Decreasing_Signif_Loss(TString);
+	void Order_Cuts_By_Decreasing_Signif_Loss(TString);
 
 
 #endif

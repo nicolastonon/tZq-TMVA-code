@@ -3,10 +3,10 @@
 using namespace std;
 
 //Use stat function (from library sys/stat) to check if a file exists
-bool Check_File_Existence(const std::string& name)
+bool Check_File_Existence(const TString& name)
 {
   struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0); //true if file exists
+  return (stat (name.Data(), &buffer) == 0); //true if file exists
 }
 
 //Move file with bash command 'mv'
@@ -134,7 +134,7 @@ float Find_Number_In_TString(TString ts)
 			{
 				tmp += ts[i];
 				i++;
-			} while(isdigit(ts[i]) || ts[i] == '.'); //NB : "a" creates a 2-char array (letter+terminator) -> string. 'a' identifies a single character !
+			} while(isdigit(ts[i]) || ts[i] == '.'); //NB : Pay attention to quotes : "a" creates a 2-char array (letter+terminator) -> string. 'a' identifies a single character !
 
 		  break;
 		}
@@ -356,7 +356,7 @@ void Get_Ranking_Vectors(TString bdt_type, TString channel, vector<TString> &v_B
 	return;
 }
 
-//Order the variables from file created via BDT-optimization sectrion of the main(), by decreasing significance loss caused by the removal of corresponding Variable
+//Order the variables from file created via BDT-optimization sectrion of the main(), by decreasing significance LOSS caused by the removal of corresponding Variable
 //--> the variable which affects the most the final significance will be ranked first
 void Order_BDTvars_By_Decreasing_Signif_Loss(TString file_path)
 {
@@ -397,9 +397,85 @@ void Order_BDTvars_By_Decreasing_Signif_Loss(TString file_path)
 	//--- Ordering
 	vector<TString> v_variables_ordered; vector<float> v_signif_ordered;
 
-	float signif_max = -999; int index_signif_max = -999;
+	float signif_min = 999; int index_signif_min = 999;
 
 	while(v_variables.size() != 0)
+	{
+		signif_min = 999; index_signif_min = 999;
+
+		for(int i=0; i<v_signif.size(); i++)
+		{
+			if(v_signif[i] < signif_min)
+			{
+				signif_min = v_signif[i];
+				index_signif_min = i;
+			}
+		}
+
+		v_variables_ordered.push_back(v_variables[index_signif_min]);
+		v_signif_ordered.push_back(v_signif[index_signif_min]);
+
+		v_variables.erase(v_variables.begin() + index_signif_min);
+		v_signif.erase(v_signif.begin() + index_signif_min);
+	}
+
+	//--- Write ordered vars into output file
+	for(int i=0; i<v_variables_ordered.size(); i++)
+	{
+		file_out<<v_variables_ordered[i]<<" "<<v_signif_ordered[i]<<endl;
+	}
+
+	//--- Replace old file by new one
+	MoveFile( (file_path+"_tmp"), file_path );
+
+
+	return;
+}
+
+
+//Order the sets of cuts from file created via cut-optimization section of the main(), by decreasing significance
+void Order_Cuts_By_Decreasing_Signif_Loss(TString file_path)
+{
+	ifstream file_in(file_path.Data() );
+
+	ofstream file_out( (file_path+"_tmp") );
+
+	vector<TString> v_cuts; vector<float> v_signif;
+
+	string line; TString ts;
+	int count_line=0;
+	while(!file_in.eof() )
+	{
+		getline(file_in, line); count_line++; ts = line;
+		if(count_line<9) {file_out<<ts<<endl; continue;} //first lines useless
+
+		TString cut_name_tmp;
+		for(int ichar=0; ichar<line.size(); ichar++)
+		{
+			if(ts[ichar] != ' ') {cut_name_tmp+= ts[ichar];}
+			else {break;}
+		}
+
+		v_cuts.push_back(cut_name_tmp);
+
+		int index = ts.First(">");
+		ts.Remove(0, index+2);
+
+		v_signif.push_back(Convert_TString_To_Number(ts) );
+	}
+	file_in.close();
+
+	//Because while loop on 'eof' --> one line too many at the end --> erase last entry
+	v_cuts.erase(v_cuts.begin() + v_cuts.size()-1);
+	v_signif.erase(v_signif.begin() + v_signif.size()-1);
+
+
+	//--- Ordering
+	vector<TString> v_cuts_ordered; vector<float> v_signif_ordered;
+
+	float signif_max = -999; int index_signif_max = -999;
+
+	while(v_cuts.size() != 0)
 	{
 		signif_max = -999; index_signif_max = -999;
 
@@ -412,17 +488,17 @@ void Order_BDTvars_By_Decreasing_Signif_Loss(TString file_path)
 			}
 		}
 
-		v_variables_ordered.push_back(v_variables[index_signif_max]);
+		v_cuts_ordered.push_back(v_cuts[index_signif_max]);
 		v_signif_ordered.push_back(v_signif[index_signif_max]);
 
-		v_variables.erase(v_variables.begin() + index_signif_max);
+		v_cuts.erase(v_cuts.begin() + index_signif_max);
 		v_signif.erase(v_signif.begin() + index_signif_max);
 	}
 
 	//--- Write ordered vars into output file
-	for(int i=0; i<v_variables_ordered.size(); i++)
+	for(int i=0; i<v_cuts_ordered.size(); i++)
 	{
-		file_out<<v_variables_ordered[i]<<" ---> "<<v_signif_ordered[i]<<endl;
+		file_out<<v_cuts_ordered[i]<<" "<<v_signif_ordered[i]<<endl;
 	}
 
 	//--- Replace old file by new one

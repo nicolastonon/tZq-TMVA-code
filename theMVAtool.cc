@@ -10,11 +10,6 @@
 //by Nicolas Tonon (IPHC)
 
 #include "theMVAtool.h"
-// #include "Func_other.h" //Helper functions
-
-
-#include <cassert> 	//Can be used to terminate program if argument is not true. Ex : assert(test > 0 && "Error message");
-#include <sys/stat.h> // to be able to use mkdir
 
 using namespace std;
 
@@ -134,7 +129,6 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 	{
 		if( (v_cut_name[ivar]=="METpt" || v_cut_name[ivar]=="mTW") && v_cut_def[ivar] == ">0") {continue;} //Useless cuts
-		if(v_cut_name[ivar] == "passTrig" || v_cut_name[ivar] == "RunNr") {continue;} //Useless cuts
 
 		if(v_cut_def[ivar] != "")
 		{
@@ -416,6 +410,11 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 
 	// NOTE : to be used for now
 	factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=200:nCuts=200:MaxDepth=2:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
+
+
+
+	//FIXME
+	// factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=300:nCuts=300:MaxDepth=3:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
 
 
 //--------------------------------------
