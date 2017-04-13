@@ -779,6 +779,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	if(fakes_summed_channels) {cout<<FYEL("--- Fakes : summing channels 2 by 2 (artificial stat. increase) ---")<<endl<<endl;}
 	if(cut_on_BDT) {cout<<FYEL("--- Creating templates WITH cut on BDT value // Cut value = "<<BDT_cut_value<<" ----")<<endl; if(BDT_cut_value==-99) {return 1;} }
 
+	mkdir("outputs",0777);
+
 	TString output_file_name = "outputs/Reader_" + template_name + this->filename_suffix;
 	if(cut_on_BDT) output_file_name+= "_CutBDT";
 	//Cf. Fakes rescaling function : need to have an 'unscaled' version of the mTW template to compute the Fakes SFs
@@ -788,8 +790,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
 
 	TH1::SetDefaultSumw2();
-
-	mkdir("outputs",0777);
 
 	delete reader; //Free any previous allocated memory, and re-initialize reader
 	reader = new TMVA::Reader( "!Color:!Silent" ); //CHANGED

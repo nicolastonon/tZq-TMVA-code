@@ -338,7 +338,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 
@@ -347,7 +347,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //--- Stored in separate Ntuples (tZq only)
     systematics_names_tmp.push_back("PSscale");
-    systematics_names_tmp.push_back("Hadron");
+    // systematics_names_tmp.push_back("Hadron"); //FIXME
 
     //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
@@ -400,10 +400,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -616,6 +616,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
     	    for(int icut2 = 0; icut2 < v_cut2_values.size(); icut2++)
     	    {
+                if( ((cut1_name=="mTW" || cut1_name=="METpt") && v_cut1_values[icut1]==">0") && ((cut2_name=="mTW" || cut2_name=="METpt") && v_cut2_values[icut2]==">0") )
+                {
+                    continue; //This is equivalent to the "nominal" samples without cuts
+                }
+
                 //--- Add the default cuts which don't depend on the loop : regions definitions, etc. (defined at top of code)
                 vector<TString> set_v_cut_name_optim, set_v_cut_def_optim; vector<bool> set_v_cut_IsUsedForOptim_BDTvar;
                 for(int icut=0; icut<set_v_cut_name.size(); icut++)
@@ -752,6 +757,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
     	    for(int icut2 = 0; icut2 < v_cut2_values.size(); icut2++)
     	    {
+                if( ((cut1_name=="mTW" || cut1_name=="METpt") && v_cut1_values[icut1]==">0") && ((cut2_name=="mTW" || cut2_name=="METpt") && v_cut2_values[icut2]==">0") )
+                {
+                    continue; //This is equivalent to the "nominal" samples without cuts
+                }
+
                 TString filename_suffix_tmp;
                 TString tmp = "";
                 vector<TString> v_cut_name_sufix; vector<TString> v_cut_def_sufix;

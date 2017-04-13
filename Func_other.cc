@@ -447,7 +447,7 @@ void Order_Cuts_By_Decreasing_Signif_Loss(TString file_path)
 	while(!file_in.eof() )
 	{
 		getline(file_in, line); count_line++; ts = line;
-		if(count_line<9) {file_out<<ts<<endl; continue;} //first lines useless
+		if(count_line<10) {file_out<<ts<<endl; continue;} //first lines useless
 
 		TString cut_name_tmp;
 		for(int ichar=0; ichar<line.size(); ichar++)
@@ -458,8 +458,8 @@ void Order_Cuts_By_Decreasing_Signif_Loss(TString file_path)
 
 		v_cuts.push_back(cut_name_tmp);
 
-		int index = ts.First(">");
-		ts.Remove(0, index+2);
+		int index = ts.Index("->");
+		ts.Remove(0, index+3);
 
 		v_signif.push_back(Convert_TString_To_Number(ts) );
 	}
