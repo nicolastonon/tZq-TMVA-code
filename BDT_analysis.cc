@@ -560,7 +560,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     if(do_optimization_cuts)
     {
-        if(isWZ) {cout<<endl<<FBOLD(FRED("No MET/mTW cuts in the WZ control region ! Abort"))<<endl<<endl; return 0;}
+        if(isWZ) {cout<<endl<<BOLD(FRED("No MET/mTW cuts in the WZ control region ! Abort"))<<endl<<endl; return 0;}
 
 
         if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling
@@ -586,13 +586,13 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         TString cut1_name = "METpt";
         vector<TString> v_cut1_values;
-        v_cut1_values.pus_back(">0");
-        v_cut1_values.pus_back(">10");
+        v_cut1_values.push_back(">0");
+        v_cut1_values.push_back(">10");
 
 
         TString cut2_name = "mTW";
         vector<TString> v_cut2_values;
-        v_cut2_values.pus_back(">0");
+        v_cut2_values.push_back(">0");
 
         //-- 2D scan of MET & mTW
         // for(int icut=0; icut<=100; icut+=10)
@@ -814,7 +814,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     if(RemoveBDTvars_CreateTemplates_ExtractSignif)
     {
-        if(isWZ) {cout<<FBOLD(FRED("No BDT in WZ Control Region !"))<<endl; return 0;}
+        if(isWZ) {cout<<BOLD(FRED("No BDT in WZ Control Region !"))<<endl; return 0;}
 
         vector<TString > thevarlist_tmp;
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
