@@ -28,7 +28,7 @@ WZc_rate       lnN     -                 -           -           -	    		-      
 FakeRate_type lnN      -		  	 	 -	    	  -           -	     		-             -					FakeRate_Numb			-			   -		-
 FakeBgd_rate  lnN      -	             -	    	  -           -	     		-             -					FakeBgd_Numb			-			   -		-
 
-#[*]Q2 			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1
+[*]Q2 			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1
 [*]pdf			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1
 [*]PU 			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]MuEff		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1

@@ -1515,23 +1515,23 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	}
 
 
-	bool create_syst_histos = false; //NOTE : for now ,simply disactivate systematics for control plots (too long)
-	// if(syst_list.size() != 1)
-	// {
-	// 	string answer = "";
-	// 	cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
-	// 	cin>>answer;
-	//
-	// 	while(answer != "yes" && answer!= "no")
-	// 	{
-	// 		cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
-	// 		cin.clear();
-	// 		cin.ignore(1000, '\n');
-	// 		cin>>answer;
-	// 	}
-	//
-	// 	if(answer == "yes") create_syst_histos = true;
-	// }
+	bool create_syst_histos = false; //FIXME : for now ,simply disactivate systematics for control plots (too long)
+	if(syst_list.size() != 1)
+	{
+		string answer = "";
+		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+		cin>>answer;
+
+		while(answer != "yes" && answer!= "no")
+		{
+			cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+			cin.clear();
+			cin.ignore(1000, '\n');
+			cin>>answer;
+		}
+
+		if(answer == "yes") create_syst_histos = true;
+	}
 
 	TFile* file_input;
 	TTree* tree = 0;
@@ -1742,8 +1742,10 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			TString output_tree_name = "Control_" + sample_list[isample];
 			if (syst_list[isyst] != "")
 			{
-				if(combine_naming_convention) output_tree_name+= "_" + Combine_Naming_Convention(syst_list[isyst]);
-				else output_tree_name+= "_" + Theta_Naming_Convention(syst_list[isyst]);
+				// if(combine_naming_convention) output_tree_name+= "_" + Combine_Naming_Convention(syst_list[isyst]);
+				// else output_tree_name+= "_" + Theta_Naming_Convention(syst_list[isyst]);
+
+				output_tree_name+= "_" + Theta_Naming_Convention(syst_list[isyst]);
 			}
 
 			tree_control->Write(output_tree_name.Data(), TObject::kOverwrite);
@@ -1842,22 +1844,22 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 
 	bool create_syst_histos = false; //FIXME -- allow user to choose ?
-	// if(syst_list.size() != 1)
-	// {
-	// 	string answer = "";
-	// 	cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
-	// 	cin>>answer;
-	//
-	// 	while(answer != "yes" && answer!= "no")
-	// 	{
-	// 		cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
-	// 		cin.clear();
-	// 		cin.ignore(1000, '\n');
-	// 		cin>>answer;
-	// 	}
-	//
-	// 	if(answer == "yes") create_syst_histos = true;
-	// }
+	if(syst_list.size() != 1)
+	{
+		string answer = "";
+		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+		cin>>answer;
+
+		while(answer != "yes" && answer!= "no")
+		{
+			cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+			cin.clear();
+			cin.ignore(1000, '\n');
+			cin>>answer;
+		}
+
+		if(answer == "yes") create_syst_histos = true;
+	}
 
 	int nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() * syst_list.size()) + total_var_list.size();
 	if(!create_syst_histos) nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() ) + total_var_list.size();
@@ -1875,7 +1877,6 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 		for(int ivar=0; ivar<total_var_list.size(); ivar++)
 		{
-			if(dbgMode) cout<<"--- Processing variable : "<<total_var_list[ivar]<<endl;
 			//Info contained in tree leaves. Need to create histograms first
 			for(int isample = 0; isample < sample_list.size(); isample++)
 			{
@@ -1901,7 +1902,10 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
+					if(syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") ) {continue;}
+
 					if(i_hist_created%100==0 && i_hist_created != 0) {cout<<"--- "<<i_hist_created<<"/"<<nof_histos_to_create<<endl;}
+
 
 					TH1F* h_tmp = 0;
 					if(total_var_list[ivar] == "mTW") 								{h_tmp = new TH1F( "","", binning, 0, 250 );}
@@ -1949,7 +1953,12 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					TString tree_name = "Control_" + sample_list[isample];
 					if(syst_list[isyst] != "") {tree_name+= "_" + syst_list[isyst];}
-					if( !f_input->GetListOfKeys()->Contains(tree_name.Data()) && sample_list[isample] != "Data" ) {if(isyst==0 && ivar==0) {cout<<__LINE__<<" : "<<tree_name<<" not found (missing sample?) -- [Stop error messages]"<<endl;} continue;}
+					if( !f_input->GetListOfKeys()->Contains(tree_name.Data()) && sample_list[isample] != "Data" )
+					{
+						// if(isyst==0 && ivar==0) {cout<<__LINE__<<" : "<<tree_name<<" not found (missing sample?) -- [Stop error messages]"<<endl;}
+						cout<<__LINE__<<" : "<<tree_name<<" not found -- Check Control_Tree file content !"<<endl;
+						continue;
+					}
 					tree = (TTree*) f_input->Get(tree_name.Data());
 					// cout<<__LINE__<<endl;
 
@@ -2039,6 +2048,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					f_output->cd();
 					h_tmp->Write(output_histo_name.Data());
+					cout<<"Wrote "<<output_histo_name<<endl;
 
 					delete h_tmp; delete tree; //FRee memory
 
