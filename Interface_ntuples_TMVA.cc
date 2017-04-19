@@ -103,6 +103,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		TTree* tree_modif = 0;
 		tree_modif = new TTree(tree_syst_list[itreesyst].Data(), "");
 
+
 		//Allocate memory/elements to vectors
 		//NOTE : don't do it in same loop as Branch() !! (push_back can change vector address -->segfault)
 		for(int i=0; i<thevarlist.size(); i++)
@@ -176,7 +177,15 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 			// cout<<"v_floats[0] / "<<thevarlist[0].Data()<<" = "<<v_floats[0]<<endl;
 
-			//FIXME -- Change Here if want to use "readyForMEM" (no MEM) rather than "withMEM" ntuples in ttZ/tZq regions
+			//Retrieve number of jets/bjets to be able to determine to which region an event belongs (see protections below)
+			int njets = 0, nbjets = 0;
+			for(int k=0; k<thevarlist.size(); k++)
+			{
+				if(thevarlist[k] == "NJets") njets = v_floats[k];
+				else if(thevarlist[k] == "NBJets") nbjets = v_floats[k];
+			}
+
+
 			if(MEM_or_WZ == "MEM")
 			{
 //-------------------
@@ -214,18 +223,47 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				v_floats_modif[4] = log(v_double_MEM[5]);
 				v_floats_modif[5] = log(v_double_MEM[6]);
 
+				v_floats_modif[6] = -log( (0.017*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0]) / (0.17*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
+
+				v_floats_modif[7] = -log((0.017*v_double_MEM[5]) / (0.017*v_double_MEM[5] + 0.17993*v_double_MEM[1]) );
+
 				//FIXME -- seem to be an error bc of some events ~ -700
 				if(v_floats_modif[4] < -600) v_floats_modif[4] = 0;
 				if(v_floats_modif[5] < -600) v_floats_modif[5] = 0;
 
-				v_floats_modif[6] = -log( (0.017*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0]) / (0.17*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
+				//Protection against inf and nan
+				bool event_problem = false;
+				for(int k=0; k<v_floats_modif.size(); k++)
+				{
+					if(njets>1 && njets<4 && nbjets==1 && (k==0 || k==1 || k==2 || k==4 || k==5 || k==6 || k==7))
+					{
+						if(isinf(v_floats_modif[k]) || isnan(v_floats_modif[k]) )
+						{
+							cout<<BOLD(FRED("PROBLEM (tZq region event) !  : v_floats_modif["<<k<<"] = "))<<v_floats_modif[k]<<" -- Ignore event !"<<endl;
 
-				v_floats_modif[7] = -log((0.017*v_double_MEM[5]) / (0.017*v_double_MEM[5] + 0.17993*v_double_MEM[1]) );
+							event_problem = true;
+							break;
+						}
+					}
+					else if(njets>1 && nbjets>1 && (k==1 || k==2 || k==3) )
+					{
+						if(isinf(v_floats_modif[k]) || isnan(v_floats_modif[k]) )
+						{
+							cout<<BOLD(FRED("PROBLEM (ttZ region event) !  : v_floats_modif["<<k<<"] = "))<<v_floats_modif[k]<<" -- Ignore event !"<<endl;
+
+							event_problem = true;
+							break;
+						}
+					}
+				}
+				if(event_problem) {continue;}
+
 
 				for(int i=0; i<v_double_MEM.size(); i++)
 				{
 					v_floats_MEM[i] = (float) v_double_MEM[i]; //Convert from doubles to float --> Store as floats in output ntuple
 				}
+
 			}
 
 			tree_modif->Fill();
@@ -261,21 +299,22 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	sample_list.push_back("Data");
+	// sample_list.push_back("Data");
 
 	sample_list.push_back("tZq");
-	sample_list.push_back("tZqhwpp");
 	sample_list.push_back("tZqmcNLO");
 
-	sample_list.push_back("WZL");
-	sample_list.push_back("WZB");
-	sample_list.push_back("WZC");
-	sample_list.push_back("ttZ");
-	sample_list.push_back("ttW");
-	sample_list.push_back("ttH");
-	sample_list.push_back("ZZ");
-	sample_list.push_back("Fakes");
-	sample_list.push_back("STtWll")	;
+	// sample_list.push_back("WZL");
+	// sample_list.push_back("WZB");
+	// sample_list.push_back("WZC");
+	// sample_list.push_back("ttZ");
+	// sample_list.push_back("ttW");
+	// sample_list.push_back("ttH");
+	// sample_list.push_back("ZZ");
+	// sample_list.push_back("Fakes");
+	//
+	// sample_list.push_back("STtWll");
+	// sample_list.push_back("tWZ");
 
 
 
@@ -397,9 +436,9 @@ int main()
 	vector<TString> tree_syst_list;
 	tree_syst_list.push_back("Tree"); //NOTE -- KEEP THIS LINE : nominal
 
-	// tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
-	// tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
-	// tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
+	tree_syst_list.push_back("JER__plus"); tree_syst_list.push_back("JER__minus");
+	tree_syst_list.push_back("JES__plus"); tree_syst_list.push_back("JES__minus");
+	tree_syst_list.push_back("Fakes__plus"); tree_syst_list.push_back("Fakes__minus");
 
 
 	vector<TString> weight_syst_list;
@@ -432,7 +471,7 @@ int main()
 //-----------------------------------------
 
 	bool do_MEM_regions = true;
-	bool do_WZ_region = true;
+	bool do_WZ_region = false;
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples

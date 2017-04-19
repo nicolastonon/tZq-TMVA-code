@@ -362,7 +362,7 @@ void Order_BDTvars_By_Decreasing_Signif_Loss(TString file_path)
 {
 	ifstream file_in(file_path.Data() );
 
-	ofstream file_out( (file_path+"_tmp") );
+	ofstream file_out( (file_path+"_ordered") );
 
 	vector<TString> v_variables; vector<float> v_signif;
 
@@ -426,7 +426,7 @@ void Order_BDTvars_By_Decreasing_Signif_Loss(TString file_path)
 	}
 
 	//--- Replace old file by new one
-	MoveFile( (file_path+"_tmp"), file_path );
+	// MoveFile( (file_path+"_ordered"), file_path );
 
 
 	return;
@@ -438,7 +438,7 @@ void Order_Cuts_By_Decreasing_Signif_Loss(TString file_path)
 {
 	ifstream file_in(file_path.Data() );
 
-	ofstream file_out( (file_path+"_tmp") );
+	ofstream file_out( (file_path+"_ordered") );
 
 	vector<TString> v_cuts; vector<float> v_signif;
 
@@ -502,7 +502,7 @@ void Order_Cuts_By_Decreasing_Signif_Loss(TString file_path)
 	}
 
 	//--- Replace old file by new one
-	MoveFile( (file_path+"_tmp"), file_path );
+	// MoveFile( (file_path+"_ordered"), file_path );
 
 
 	return;

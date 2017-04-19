@@ -123,6 +123,7 @@ class theMVAtool
  	bool isttZ; //Work in ttZ CR
 	bool isWZ;
 	TString filename_suffix; //add sufix to filename for clarity
+	TString filename_suffix_noJet; //suffix without NJet variables
 	TString dir_ntuples; //path to input ntuples
 	TString t_name; //name of tree to be used in input ntuples
 

@@ -815,14 +815,15 @@ int main()
 
 		string selection = "1";
 
-		name1 = dir + "files_noMEM_hwpp"; label1 = "BDTG";
-		name2 = dir + "BDT_training/new_ntuples"; label2 = "BDTG MEM(+WZ)";
+		name1 = dir + "files_noMEM_noCuts"; label1 = "BDTG";
+		name2 = dir + "files_MEM"; label2 = "BDTG + MEM";
 		name3 = dir + ""; label3 = "";
 		name4 = dir + ""; label4 = "";
 		name5 = dir + ""; label5 = "";
 
 		for (int i=0; i<channel.size(); i++)
 		{
+			//FIXME -- no cuts taken into account in filenames here -- (ex : MET10mTW10)
 			string suffix_tZq = "/BDT_"+ channel[i]+ "_NJetsMin1Max4_NBJetsEq1.root";
 			string suffix_ttZ = "/BDTttZ_"+ channel[i]+ "_NJetsMin1_NBJetsMin1.root";
 

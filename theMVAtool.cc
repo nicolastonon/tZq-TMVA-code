@@ -148,6 +148,32 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 		}
 	}
 
+	//Store the "cut name" that will be written as a suffix in the name of each output file
+	this->filename_suffix_noJet = "";
+	tmp = "";
+	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+	{
+		if( (v_cut_name[ivar]=="METpt" || v_cut_name[ivar]=="mTW") && v_cut_def[ivar] == ">0") {continue;} //Useless cuts
+		if(v_cut_name[ivar]=="NJets" || v_cut_name[ivar]=="NBJets") {continue;}
+
+		if(v_cut_def[ivar] != "")
+		{
+			if(v_cut_def[ivar].Contains("||") ) {continue;} //Don't add the 'or' conditions in filename
+			else if(!v_cut_def[ivar].Contains("&&")) //Single condition
+			{
+				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(v_cut_def[ivar]));
+			}
+			else //Double '&&' condition
+			{
+				TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first, cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
+				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut1) + Convert_Number_To_TString(Find_Number_In_TString(cut1));
+				//tmp+= "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+				tmp+= Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+			}
+			this->filename_suffix_noJet+= tmp;
+		}
+	}
+
 	if(dbgMode) cout<<"suffix = "<<this->filename_suffix<<endl;
 
 	isttZ = in_isttZ;
@@ -414,7 +440,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 
 
 	//FIXME
-	// factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=300:nCuts=300:MaxDepth=3:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True");
+	// factory->BookMethod(TMVA::Types::kBDT,method_title.Data(),"!H:!V:NTrees=300:nCuts=300:MaxDepth=3:BoostType=Grad:Shrinkage=0.4:IgnoreNegWeightsInTraining=True"); //Nicolas' method
 
 
 //--------------------------------------
@@ -620,7 +646,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 	TString file_mTW_templates_unscaled_PATH;
 	Long_t *id,*size,*flags,*modtime;
-	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
+	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW"+filename_suffix_noJet+"_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
 
 	file_mTW_templates_unscaled = TFile::Open(file_mTW_templates_unscaled_PATH, "READ"); //File containing the templates, from which can compute fake ratio
 	if(!file_mTW_templates_unscaled) {cout<<FRED(<<file_mTW_templates_unscaled_PATH.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
@@ -832,7 +858,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TFile* file_input;
 	TTree* tree(0);
-	TTree* tree_passTrig = 0;
+	// TTree* tree_passTrig = 0;
 
 	TH1F *hist_uuu = 0, *hist_uue = 0, *hist_eeu = 0, *hist_eee = 0;
 	TH1F *h_sum_fake = 0;
@@ -895,14 +921,14 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			tree = 0;
-			tree_passTrig = 0;
+			// tree_passTrig = 0;
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
 			{
 				tree = (TTree*) file_input->Get(syst_list[isyst].Data());
 
-				tree_passTrig = (TTree*) file_input->Get(t_name.Data()); //passTrig info is in Default Tree only
+				// tree_passTrig = (TTree*) file_input->Get(t_name.Data()); //passTrig info is in Default Tree only
 			}
 			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
@@ -911,34 +937,34 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			for(int i=0; i<v_add_var_names.size(); i++)
 			{
-				if(v_add_var_names[i] == "passTrig" || v_add_var_names[i] == "RunNr") {continue;} //special vars
+				// if(v_add_var_names[i] == "passTrig" || v_add_var_names[i] == "RunNr") {continue;} //special vars
 				tree->SetBranchAddress(v_add_var_names[i].Data(), &v_add_var_floats[i]);
 			}
 			for(int i=0; i<var_list.size(); i++)
 			{
-				if(var_list[i] == "passTrig" || var_list[i] == "RunNr") {continue;}
+				// if(var_list[i] == "passTrig" || var_list[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(var_list[i].Data(), &var_list_floats[i]);
 			}
 			for(int i=0; i<v_cut_name.size(); i++)
 			{
-				if(v_cut_name[i] == "passTrig" || v_cut_name[i] == "RunNr") {continue;}
+				// if(v_cut_name[i] == "passTrig" || v_cut_name[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(v_cut_name[i].Data(), &v_cut_float[i]);
 			}
 
 			float mTW = -666; tree->SetBranchAddress("mTW", &mTW);
 			float i_channel = 9; tree->SetBranchAddress("Channel", &i_channel);
 
-			float passTrig = -999;
+			// float passTrig = -999;
 			float RunNr = -999;
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes"))
 			{
-				tree_passTrig->SetBranchAddress("passTrig", &passTrig);
-				tree_passTrig->SetBranchAddress("RunNr", &RunNr);
+				// tree_passTrig->SetBranchAddress("passTrig", &passTrig);
+				// tree_passTrig->SetBranchAddress("RunNr", &RunNr);
 			}
 			else
 			{
-				tree->SetBranchAddress("passTrig", &passTrig);
-				tree->SetBranchAddress("RunNr", &RunNr);
+				// tree->SetBranchAddress("passTrig", &passTrig);
+				// tree->SetBranchAddress("RunNr", &RunNr);
 			}
 
 			float weight;
@@ -962,10 +988,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				if(dbgMode) {cout<<endl<<"--- Syst "<<syst_list[isyst]<<" / Sample : "<<sample_list[isample]<<endl;}
 
 				weight = 0; i_channel = 9; mTW=-666;
-				passTrig = -999; RunNr = -999;
+				// passTrig = -999; RunNr = -999;
 
 				tree->GetEntry(ievt);
-				if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes")) {tree_passTrig->GetEntry(ievt);}
+				// if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes")) {tree_passTrig->GetEntry(ievt);}
 
         		bool isChannelToKeep = false;
 
@@ -1003,8 +1029,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					if(v_cut_name[ivar] == "mTW") {v_cut_float[ivar] = mTW;}
 					//Idem for channel value
 					if(v_cut_name[ivar] == "Channel") {v_cut_float[ivar] = i_channel;}
-					if(v_cut_name[ivar] == "passTrig") {v_cut_float[ivar] = passTrig;}
-					if(v_cut_name[ivar] == "RunNr") {v_cut_float[ivar] = RunNr;}
+					// if(v_cut_name[ivar] == "passTrig") {v_cut_float[ivar] = passTrig;}
+					// if(v_cut_name[ivar] == "RunNr") {v_cut_float[ivar] = RunNr;}
 
 					// cout<<v_cut_name[ivar]<<" "<<v_cut_float[ivar]<<endl;
 
@@ -1066,11 +1092,15 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 				if(!pass_all_cuts) {continue;}
 
-				TString MVA_method_name = template_name + "_" + channel_list[i_channel] + this->filename_suffix + " method";
-				if(cut_on_BDT && !template_name.Contains("BDT")) {MVA_method_name = "BDT_" + channel_list[i_channel] + this->filename_suffix + " method";}
+				TString chan_name = "uuu";
+				if(i_channel == 1) chan_name = "uue";
+				else if(i_channel == 2) chan_name = "eeu";
+				else if(i_channel == 3) chan_name = "eee";
 
-				if(cut_on_BDT && reader->EvaluateMVA(MVA_method_name.Data() ) > BDT_cut_value) {continue;} //Cut on BDT value
+				TString MVA_method_name = template_name + "_" + chan_name + this->filename_suffix + " method";
+				if(cut_on_BDT && !template_name.Contains("BDT")) {MVA_method_name = "BDT_" + chan_name + this->filename_suffix + " method";} //For mTW templates with cut on BDT
 
+				if(cut_on_BDT && reader->EvaluateMVA(MVA_method_name.Data() ) >= BDT_cut_value) {continue;} //Cut on BDT value
 
 //------------------------------------------------------------
 //------------------------------------------------------------
@@ -1254,7 +1284,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 
 			delete tree; //Free memory
-			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") ) {delete tree_passTrig;}
+			// if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") ) {delete tree_passTrig;}
 			delete hist_uuu; delete hist_uue; delete hist_eeu; delete hist_eee; //Free memory
 			delete file_input; //CHANGED -- free memory
 		} //end sample loop
@@ -1305,15 +1335,13 @@ float theMVAtool::Determine_Control_Cut()
 	cout<<FYEL("--- Determine Control Cut ---")<<endl;
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
-	TString input_file_name;
-	// if(isttZ) input_file_name = "outputs/Reader_BDTttZ" + this->filename_suffix + ".root";
-	// else input_file_name = "outputs/Reader_BDT" + this->filename_suffix + ".root";
+	TString input_file_name = "outputs/Reader_BDT" + this->filename_suffix + ".root";
 
-	input_file_name = "outputs/Combine_Input.root"; //CHANGED
+	if(!Check_File_Existence(input_file_name)) {input_file_name = "outputs/Combine_Input.root";}
 
 	TFile* f = 0;
 	f = TFile::Open(input_file_name.Data());
-	if(f == 0) {cout<<endl<<"--- No templates "<<input_file_name.Data()<<" found -- Can't determine BDT CR cut value !"<<endl<<endl; return 0;}
+	if(f == 0) {cout<<endl<<"--- No template file "<<input_file_name.Data()<<" found -- Can't determine BDT CR cut value !"<<endl<<endl; return 0;}
 
 	TH1F *h_sum_bkg(0), *h_sig(0), *h_tmp(0);
 
@@ -1465,7 +1493,7 @@ float theMVAtool::Determine_Control_Cut()
 /**
  * Creates output with trees containing only events verifying BDT<cut (mainly bkg events) --> Then can create histogram with these events for further control studies
  * @param fakes_from_data [If true, use fakes from data sample]
- * @param cut_on_BDT      [If true, cut on BDT to go ton a Control Region]
+ * @param cut_on_BDT      [If true, cut on BDT to go to a Control Region]
  * @param cut             [Cut value]
  * @param use_pseudodata  [If true, use pseudodata rather than real data]
  */
@@ -3715,6 +3743,66 @@ void theMVAtool::Convert_Templates_Theta()
 
 
 
+//-----------------------------------------------------------------------------------------
+//  ######   #######  ##     ## ########  #### ##    ## ########     ######  ####  ######   ##    ## #### ########
+// ##    ## ##     ## ###   ### ##     ##  ##  ###   ## ##          ##    ##  ##  ##    ##  ###   ##  ##  ##
+// ##       ##     ## #### #### ##     ##  ##  ####  ## ##          ##        ##  ##        ####  ##  ##  ##
+// ##       ##     ## ## ### ## ########   ##  ## ## ## ######       ######   ##  ##   #### ## ## ##  ##  ######
+// ##       ##     ## ##     ## ##     ##  ##  ##  #### ##                ##  ##  ##    ##  ##  ####  ##  ##
+// ##    ## ##     ## ##     ## ##     ##  ##  ##   ### ##          ##    ##  ##  ##    ##  ##   ###  ##  ##
+//  ######   #######  ##     ## ########  #### ##    ## ########     ######  ####  ######   ##    ## #### ##
+//-----------------------------------------------------------------------------------------
+/**
+ * Run Combine on template file (arg), using datacard corresponding to tZq signal
+ * @param  path_templatefile path of the templatefile on which to run Combine
+ * @return                   computed significance value
+ */
+float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, bool expected, bool use_syst)
+{
+	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
+
+	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_";
+	if(signal=="tZq" || signal=="ttZ" || signal=="tZqANDttZ" || signal=="tZqANDFakes")
+	{
+		datacard_path+= signal;
+	}
+	else {cout<<"Wrong signal name ! Abort"<<endl; return 0;}
+
+	if(!use_syst) datacard_path+= "_noSyst";
+
+	datacard_path+=".txt";
+
+	TString f_tmp_name = "significance_expected_info_tmp.txt";
+
+	if(expected) {system( ("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Expected a-priori
+	else {system( ("combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Observed
+
+
+	ifstream file_in(f_tmp_name.Data());
+	string line;
+	TString ts;
+	while(!file_in.eof())
+	{
+		getline(file_in, line);
+		ts = line;
+
+		if(!ts.Contains("Significance")) {continue;}
+
+		int index = ts.First(' ');
+		ts.Remove(0, index);
+		break;
+	}
+
+	system( ("rm "+f_tmp_name).Data() ); //Remove tmp file
+
+	return Convert_TString_To_Number(ts);
+}
+
+
+
+
+
+
 
 
 
@@ -3959,50 +4047,3 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 	return;
 }
 */
-
-
-/**
- * Run Combine on template file (arg), using datacard corresponding to tZq signal
- * @param  path_templatefile path of the templatefile on which to run Combine
- * @return                   computed significance value
- */
-float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, bool expected, bool use_syst)
-{
-	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
-
-	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_";
-	if(signal=="tZq" || signal=="ttZ" || signal=="tZqANDttZ" || signal=="tZqANDFakes")
-	{
-		datacard_path+= signal;
-	}
-	else {cout<<"Wrong signal name ! Abort"<<endl; return 0;}
-
-	if(!use_syst) datacard_path+= "_noSyst";
-
-	datacard_path+=".txt";
-
-	TString f_tmp_name = "significance_expected_info_tmp.txt";
-
-	if(expected) {system( ("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Expected a-priori
-	else {system( ("combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Observed
-
-
-	ifstream file_in(f_tmp_name.Data());
-	string line;
-	TString ts;
-	while(!file_in.eof())
-	{
-		getline(file_in, line);
-		ts = line;
-
-		if(!ts.Contains("Significance")) {continue;}
-
-		int index = ts.First(' ');
-		ts.Remove(0, index);
-		break;
-	}
-
-	system( ("rm "+f_tmp_name).Data() ); //Remove tmp file
-
-	return Convert_TString_To_Number(ts);
-}
