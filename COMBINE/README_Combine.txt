@@ -110,6 +110,15 @@ NB : need to create outputs dir. first to avoid segfault ;
 
 
 
+11) TO DO THE BREAKDOWN OF SYSTEMATICS : (Complete instructions here : https://indico.cern.ch/event/577649/contributions/2388797/attachments/1380376/2098158/HComb-Tutorial-Nov16-Impacts.pdf)
+
+- The commands are :
+
+text2workspace.py COMBINED_datacard_TemplateFit.txt
+combineTool.py -M Impacts -d COMBINED_datacard_TemplateFit.root -m 125 --doInitialFit
+combineTool.py -M Impacts -d COMBINED_datacard_TemplateFit.root -m 125 --doFits --parallel 4
+combineTool.py -M Impacts -d COMBINED_datacard_TemplateFit.root -m 125 -o impacts.json
+plotImpacts.py -i impacts.json -o impacts
 
 
 

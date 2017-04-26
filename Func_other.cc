@@ -507,3 +507,17 @@ void Order_Cuts_By_Decreasing_Signif_Loss(TString file_path)
 
 	return;
 }
+
+void Fill_Last_Bin_TH1F(TH1F* h, double weight)
+{
+	h->Fill(h->GetXaxis()->GetXmax() - (h->GetXaxis()->GetBinWidth(1) / 2), weight);
+
+	return;
+}
+
+void Fill_First_Bin_TH1F(TH1F* h, double weight)
+{
+	h->Fill(h->GetXaxis()->GetXmin(), weight);
+
+	return;
+}

@@ -73,8 +73,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
 
 	//Path of Ntuples for WZ CR
-	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/FCNCNTuple_" + sample +  ".root";
-	// else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
+	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
+	// else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/FCNCNTuple_" + sample +  ".root";
 
 	TFile* f_input = 0;
   	f_input = new TFile(input_filename.Data()); if(!f_input || f_input->IsZombie() ) {cout<<"Can't find input file !"<<endl; return;}
@@ -149,12 +149,21 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		//Set Branch Addresses
 		TTree* t_input = 0;
 		if(MEM_or_WZ == "MEM") {t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data()); if(!t_input) {cout<<"Tree not found !"<<endl; return;} }
-		else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Default"); if(!t_input) {cout<<"Tree 'Default' not found !"<<endl; return;} }
+		// else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Default"); if(!t_input) {cout<<"Tree 'Default' not found !"<<endl; return;} }
+		else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Tree"); if(!t_input) {cout<<"Tree 'Tree' not found !"<<endl; return;} }
 
+
+		TLorentzVector* v_MET = new TLorentzVector; int index_MET_float = -99;
+		t_input->SetBranchAddress("multilepton_mET", &v_MET); //FIXME -- need to find MET somewhere else for now
 
 		for(int ivar=0; ivar<thevarlist.size(); ivar++)
 		{
-			t_input->SetBranchAddress(thevarlist[ivar].Data(), &v_floats[ivar]);
+			if(thevarlist[ivar] == "METpt")
+			{
+				index_MET_float = ivar;
+				continue;
+			}
+			else t_input->SetBranchAddress(thevarlist[ivar].Data(), &v_floats[ivar]);
 		}
 		for(int ivar=0; ivar<MEMvarlist.size(); ivar++)
 		{
@@ -167,6 +176,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			t_input->SetBranchAddress(weight_syst_list[ivar].Data(), &v_floats_syst[ivar]); //NOTE : new syst branches have different names (but associated to same floats)
 		}
 
+
+
 		//Event loop : modify vars, fill output tree
 		int nentries = t_input->GetEntries();
 		for(int ientry=0; ientry<nentries; ientry++)
@@ -174,6 +185,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			if(ientry%10000==0) {cout<<ientry<<" / "<<nentries<<endl;}
 
 			t_input->GetEntry(ientry);
+
+			v_floats[index_MET_float] = v_MET->Energy(); //MET stored in a TLorentzVector
 
 			// cout<<"v_floats[0] / "<<thevarlist[0].Data()<<" = "<<v_floats[0]<<endl;
 
@@ -300,10 +313,8 @@ int main()
 
 	vector<TString> sample_list;
 	// sample_list.push_back("Data");
-
-	sample_list.push_back("tZq");
-	sample_list.push_back("tZqmcNLO");
-
+	// sample_list.push_back("tZq");
+	// sample_list.push_back("tZqmcNLO");
 	// sample_list.push_back("WZL");
 	// sample_list.push_back("WZB");
 	// sample_list.push_back("WZC");
@@ -311,8 +322,7 @@ int main()
 	// sample_list.push_back("ttW");
 	// sample_list.push_back("ttH");
 	// sample_list.push_back("ZZ");
-	// sample_list.push_back("Fakes");
-	//
+	sample_list.push_back("Fakes");
 	// sample_list.push_back("STtWll");
 	// sample_list.push_back("tWZ");
 
@@ -471,7 +481,7 @@ int main()
 //-----------------------------------------
 
 	bool do_MEM_regions = true;
-	bool do_WZ_region = false;
+	bool do_WZ_region = true;
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples
@@ -487,7 +497,7 @@ int main()
 		}
 	}
 
-//--- Interface ntuples for WZ CR study (mTW template fit) -- NOTE : NOT NEEDED ANYMORE ??
+//--- Interface ntuples for WZ CR study (mTW template fit)
 	if(do_WZ_region)
 	{
 		MEM_or_WZ = "WZ";

@@ -31,6 +31,11 @@ using namespace std;
  */
 theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, vector<TString> v_add_vars, int nofbin_templates, bool in_isttZ, bool in_isWZ, TString extension_format, bool set_combine_naming_convention, TString set_dir_ntuples, TString set_t_name)
 {
+	//Each time a TF1 is created, this automatically creates a structure to store the sum of the squared weights of the entries (used to compute final bin errors)
+	//NOTE : apparently, if a bin has already been incremented via Fill(), then AddBinContent() & SetBinContent() do not modify it's error !!
+	//NOTE : this is why we exclusively modify the bin contents (e.g. put underflow in first bin) using the Fill() function !
+	TH1::SetDefaultSumw2();
+
 	cout<<endl<<endl;
 
 	if(extension_format==".png" || extension_format==".pdf") {this->format = extension_format;}
@@ -895,9 +900,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal //FIXME
 
 
-			file_input = 0;
+			if(!Check_File_Existence(inputfile) ) {cout<<inputfile.Data()<<" not found!"<<endl; continue;}
 			file_input = TFile::Open( inputfile.Data() );
-			if(!file_input) {cout<<inputfile.Data()<<" not found!"<<endl; continue;}
 			if(dbgMode) std::cout << "--- Select "<<sample_list[isample]<<" sample" << __LINE__ <<std::endl;
 
 			if(fakes_from_data || (!fakes_from_data && isample <= (sample_list.size() - 3)) ) //MC Fakes : Don't reinitialize histos -> sum !
@@ -1130,21 +1134,21 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_uuu"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_uuu->Fill(mva_value, weight);}
-							else {hist_uuu->SetBinContent(lastbin_h, (hist_uuu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uuu, weight);} //Put overflow in last bin (no info lost)
 
 							mva_value = reader->EvaluateMVA( template_name+"_eeu"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_eeu->Fill(mva_value, weight);}
-							else {hist_eeu->SetBinContent(lastbin_h, (hist_eeu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 1 || i_channel == 3) //eee & uue
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_eee"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_eee->Fill(mva_value, weight);}
-							else {hist_eee->SetBinContent(lastbin_h, (hist_eee->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eee, weight);} //Put overflow in last bin (no info lost)
 
 							mva_value = reader->EvaluateMVA( template_name+"_uue"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_uue->Fill(mva_value, weight);}
-							else {hist_uue->SetBinContent(lastbin_h, (hist_uue->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
 						}
 						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
 					}
@@ -1155,25 +1159,25 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_uuu"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_uuu->Fill(mva_value, weight);}
-							else {hist_uuu->SetBinContent(lastbin_h, (hist_uuu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uuu, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 1)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_uue"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_uue->Fill(mva_value, weight);}
-							else {hist_uue->SetBinContent(lastbin_h, (hist_uue->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 2)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_eeu"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_eeu->Fill(mva_value, weight);}
-							else {hist_eeu->SetBinContent(lastbin_h, (hist_eeu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 3)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_eee"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_eee->Fill(mva_value, weight);}
-							else {hist_eee->SetBinContent(lastbin_h, (hist_eee->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eee, weight);} //Put overflow in last bin (no info lost)
 						}
 
 						else  {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
@@ -1188,12 +1192,12 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						if(i_channel == 0 || i_channel == 2)
 						{
 							if(mTW < xmax_h ) {hist_uuu->Fill(mTW, weight); hist_eeu->Fill(mTW, weight);}
-							else {hist_uuu->SetBinContent(lastbin_h, (hist_uuu->GetBinContent(lastbin_h) + weight) ); hist_eeu->SetBinContent(lastbin_h, (hist_eeu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uuu, weight); Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 1 || i_channel == 3)
 						{
 							if(mTW < xmax_h ) {hist_eee->Fill(mTW, weight); hist_uue->Fill(mTW, weight);}
-							else {hist_eee->SetBinContent(lastbin_h, (hist_eee->GetBinContent(lastbin_h) + weight) ); hist_uue->SetBinContent(lastbin_h, (hist_uue->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eee, weight); Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
 						}
 						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
 					}
@@ -1203,22 +1207,22 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						if(i_channel == 0)
 						{
 							if(mTW < xmax_h ) {hist_uuu->Fill(mTW, weight);}
-							else {hist_uuu->SetBinContent(lastbin_h, (hist_uuu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uuu, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 1)
 						{
 							if(mTW < xmax_h ) {hist_uue->Fill(mTW, weight);}
-							else {hist_uue->SetBinContent(lastbin_h, (hist_uue->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 2)
 						{
 							if(mTW < xmax_h ) {hist_eeu->Fill(mTW, weight);}
-							else {hist_eeu->SetBinContent(lastbin_h, (hist_eeu->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
 						}
 						else if(i_channel == 3)
 						{
 							if(mTW < xmax_h ) {hist_eee->Fill(mTW, weight);}
-							else {hist_eee->SetBinContent(lastbin_h, (hist_eee->GetBinContent(lastbin_h) + weight) );} //Put overflow in last bin (no info lost)
+							else {Fill_Last_Bin_TH1F(hist_eee, weight);} //Put overflow in last bin (no info lost)
 						}
 
 						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
@@ -1337,7 +1341,12 @@ float theMVAtool::Determine_Control_Cut()
 
 	TString input_file_name = "outputs/Reader_BDT" + this->filename_suffix + ".root";
 
-	if(!Check_File_Existence(input_file_name)) {input_file_name = "outputs/Combine_Input.root";}
+	if(!Check_File_Existence(input_file_name))
+	{
+		cout<<BOLD(FRED("outputs/Reader_BDT"<<this->filename_suffix<<".root not found ! Using outputs/Combine_Input.root instead ! MAKE SURE THERE IS NOT ALREADY A CUT ON BDT IN THAT FILE !"))<<endl;
+
+		input_file_name = "outputs/Combine_Input.root";
+	}
 
 	TFile* f = 0;
 	f = TFile::Open(input_file_name.Data());
@@ -1605,17 +1614,14 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			else if(sample_list[isample].Contains("tZq") && syst_list[isyst] == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";} //For minus, take nominal //FIXME
 
 
-			file_input = 0;
+			if(!Check_File_Existence(inputfile) ) {cout<<inputfile.Data()<<" not found!"<<endl; continue;}
 			file_input = TFile::Open( inputfile.Data() );
-			if(!file_input) {cout<<inputfile.Data()<<" not found!"<<endl; continue;}
 
 			file_input->cd();
-			tree = 0;
 			tree = new TTree("tree", "input tree"); //CHANGED
 
 
 			output_file->cd();
-			tree_control = 0;
 			tree_control = new TTree("tree_control", "Control Tree"); //CHANGED
 
 
@@ -1843,6 +1849,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	TTree* tree = 0;
 
 	int binning = 10;
+	int control_binning = 20;
 	TH1::SetDefaultSumw2();
 
 	//Want to plot ALL variables (inside the 2 different variable vectors !)
@@ -1937,45 +1944,50 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					TH1F* h_tmp = 0;
 					if(total_var_list[ivar] == "mTW") 								{h_tmp = new TH1F( "","", binning, 0, 250 );}
-					else if(total_var_list[ivar] == "METpt")						{h_tmp = new TH1F( "","", binning, 0, 200 );}
-					else if(total_var_list[ivar] == "m3l")							{h_tmp = new TH1F( "","", binning, 0., 450. );}
-					else if(total_var_list[ivar] == "ZMass") 						{h_tmp = new TH1F( "","", binning, 75, 105 );}
-					else if(total_var_list[ivar] == "dPhiAddLepB") 					{h_tmp = new TH1F( "","", binning, -3.15, 3.15 );}
-					else if(total_var_list[ivar] == "Zpt") 							{h_tmp = new TH1F( "","", binning, 0, 300 );}
-					else if(total_var_list[ivar] == "ZEta")			 				{h_tmp = new TH1F( "","", binning, -4, 4 );}
-					else if(total_var_list[ivar] == "AddLepAsym") 					{h_tmp = new TH1F( "","", binning, -3, 3 );}
-					else if(total_var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", binning, 60, 500 );}
+					else if(total_var_list[ivar] == "METpt")						{h_tmp = new TH1F( "","", control_binning, 0, 200 );}
+					else if(total_var_list[ivar] == "m3l")							{h_tmp = new TH1F( "","", control_binning, 0., 450. );}
+					else if(total_var_list[ivar] == "ZMass") 						{h_tmp = new TH1F( "","", control_binning, 75, 105 );}
+					else if(total_var_list[ivar] == "dPhiAddLepB") 					{h_tmp = new TH1F( "","", control_binning, -3.15, 3.15 );}
+					else if(total_var_list[ivar] == "Zpt") 							{h_tmp = new TH1F( "","", control_binning, 0, 300 );}
+					else if(total_var_list[ivar] == "ZEta")			 				{h_tmp = new TH1F( "","", control_binning, -4, 4 );}
+					else if(total_var_list[ivar] == "AddLepAsym") 					{h_tmp = new TH1F( "","", control_binning, -3, 3 );}
+					else if(total_var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", control_binning, 60, 500 );}
 					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 10, 0., 1.2 );}
-					else if(total_var_list[ivar] == "etaQ")							{h_tmp = new TH1F( "","", binning, -4.5, 4.5 );}
+					else if(total_var_list[ivar] == "etaQ")							{h_tmp = new TH1F( "","", control_binning, -4.5, 4.5 );}
 					else if(total_var_list[ivar] == "NBJets")						{h_tmp = new TH1F( "","", 5, 0, 5 );}
-					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", binning, 0, 200 );}
-					else if(total_var_list[ivar] == "AddLepETA")					{h_tmp = new TH1F( "","", binning, -2.5, 2.5 );}
-					else if(total_var_list[ivar] == "LeadJetPT")					{h_tmp = new TH1F( "","", binning, 0, 300 );}
-					else if(total_var_list[ivar] == "LeadJetEta")					{h_tmp = new TH1F( "","", binning, -4.5, 4.5 );}
-					else if(total_var_list[ivar] == "dPhiZMET")						{h_tmp = new TH1F( "","", 20, -3.15, 3.15 );}
-					else if(total_var_list[ivar] == "dPhiZAddLep")					{h_tmp = new TH1F( "","", binning, -3.15,3.15 );}
-					else if(total_var_list[ivar] == "dRAddLepB")					{h_tmp = new TH1F( "","", binning, 0, 5 );}
-					else if(total_var_list[ivar] == "dRZAddLep")					{h_tmp = new TH1F( "","", binning, 0, 5 );}
-					else if(total_var_list[ivar] == "dRZTop")						{h_tmp = new TH1F( "","", binning, 0, 5 );}
-					else if(total_var_list[ivar] == "TopPT")						{h_tmp = new TH1F( "","", binning, 0, 500 );}
+					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", control_binning, 0, 200 );}
+					else if(total_var_list[ivar] == "AddLepETA")					{h_tmp = new TH1F( "","", control_binning, -2.5, 2.5 );}
+					else if(total_var_list[ivar] == "LeadJetPT")					{h_tmp = new TH1F( "","", control_binning, 0, 300 );}
+					else if(total_var_list[ivar] == "LeadJetEta")					{h_tmp = new TH1F( "","", control_binning, -4.5, 4.5 );}
+					else if(total_var_list[ivar] == "dPhiZMET")						{h_tmp = new TH1F( "","", control_binning, -3.15, 3.15 );}
+					else if(total_var_list[ivar] == "dPhiZAddLep")					{h_tmp = new TH1F( "","", control_binning, -3.15,3.15 );}
+					else if(total_var_list[ivar] == "dRAddLepB")					{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
+					else if(total_var_list[ivar] == "dRZAddLep")					{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
+					else if(total_var_list[ivar] == "dRZTop")						{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
+					else if(total_var_list[ivar] == "TopPT")						{h_tmp = new TH1F( "","", control_binning, 0, 500 );}
 					else if(total_var_list[ivar] == "NJets")						{h_tmp = new TH1F( "","", 6, 0, 6 );}
-					else if(total_var_list[ivar] == "ptQ")							{h_tmp = new TH1F( "","", binning, 0, 300 );}
-					else if(total_var_list[ivar] == "dRjj")							{h_tmp = new TH1F( "","", binning, 0, 5 );}
-					else if(total_var_list[ivar] == "AdditionalEleIso")				{h_tmp = new TH1F( "","", binning, 0, 0.5 );}
-					else if(total_var_list[ivar] == "AdditionalMuonIso")			{h_tmp = new TH1F( "","", binning, 0, 0.5 );}
-					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", binning, 0, 150 );}
-					else if(total_var_list[ivar] == "dRAddLepQ")					{h_tmp = new TH1F( "","", binning, 0, 5 );}
-					else if(total_var_list[ivar] == "dRAddLepClosestJet")			{h_tmp = new TH1F( "","", binning, 0, 5 );}
-					else if(total_var_list[ivar] == "tZq_pT")						{h_tmp = new TH1F( "","", binning, 0, 300 );}
-					else if(total_var_list[ivar] == "tZq_mass")						{h_tmp = new TH1F( "","", binning, 0, 300 );}
-					else if(total_var_list[ivar] == "leadingLeptonPT")              {h_tmp = new TH1F( "","", binning, 0, 150 );}
-					else if(total_var_list[ivar] == "MAddLepB")                     {h_tmp = new TH1F( "","", binning, 0, 500 );}
-					else if(total_var_list[ivar] == "MEMvar_0")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
-					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
-					else if(total_var_list[ivar] == "MEMvar_2")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
-					else if(total_var_list[ivar] == "MEMvar_3")						{h_tmp = new TH1F( "","", binning, 0, 10 );}
-					else if(total_var_list[ivar] == "RunNr")							{h_tmp = new TH1F( "","", 500, 0, 400000 );}
-					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", binning, 0, 150 );}
+					else if(total_var_list[ivar] == "ptQ")							{h_tmp = new TH1F( "","", control_binning, 0, 300 );}
+					else if(total_var_list[ivar] == "dRjj")							{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
+					else if(total_var_list[ivar] == "AdditionalEleIso")				{h_tmp = new TH1F( "","", control_binning, 0, 0.5 );}
+					else if(total_var_list[ivar] == "AdditionalMuonIso")			{h_tmp = new TH1F( "","", control_binning, 0, 0.5 );}
+					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", control_binning, 0, 150 );}
+					else if(total_var_list[ivar] == "dRAddLepQ")					{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
+					else if(total_var_list[ivar] == "dRAddLepClosestJet")			{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
+					else if(total_var_list[ivar] == "tZq_pT")						{h_tmp = new TH1F( "","", control_binning, 0, 300 );}
+					else if(total_var_list[ivar] == "tZq_mass")						{h_tmp = new TH1F( "","", control_binning, 0, 300 );}
+					else if(total_var_list[ivar] == "leadingLeptonPT")              {h_tmp = new TH1F( "","", control_binning, 0, 150 );}
+					else if(total_var_list[ivar] == "MAddLepB")                     {h_tmp = new TH1F( "","", control_binning, 0, 500 );}
+
+					else if(total_var_list[ivar] == "MEMvar_0")						{h_tmp = new TH1F( "","", binning, 0, 50 );}
+					else if(total_var_list[ivar] == "MEMvar_6")						{h_tmp = new TH1F( "","", binning, 0, 15 );}
+					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, -60, -30 );}
+					else if(total_var_list[ivar] == "MEMvar_2")						{h_tmp = new TH1F( "","", binning, -80, -20 );}
+					else if(total_var_list[ivar] == "MEMvar_3")						{h_tmp = new TH1F( "","", binning, 0, 50 );}
+					else if(total_var_list[ivar] == "MEMvar_4")						{h_tmp = new TH1F( "","", binning, -60, 10 );}
+					else if(total_var_list[ivar] == "MEMvar_5")						{h_tmp = new TH1F( "","", binning, -60, 10 );}
+					else if(total_var_list[ivar] == "MEMvar_7")						{h_tmp = new TH1F( "","", binning, 0, 15 );}
+
+					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", control_binning, 0, 150 );}
 
 					else {cout<<endl<<"theMVAtool.cc - l."<<__LINE__<<BOLD(FRED(" --> !!Unknown variable!! ")) << total_var_list[ivar] << " Correct name or add it here" <<endl<<endl;}
 
@@ -2018,10 +2030,10 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 							else if(channel_list[ichan] == "9") {cout<<__LINE__<<" : problem !"<<endl;}
 						}
 
-
-						if(tmp < h_tmp->GetXaxis()->GetXmax() ) {h_tmp->Fill(tmp, weight);}
-						//CHANGED
-						else  {h_tmp->SetBinContent(h_tmp->GetNbinsX(), (h_tmp->GetBinContent(h_tmp->GetNbinsX() ) + weight) );} //Avoid to get overflow because of inappropriate binning --> Put it into last bin instead!
+						//Avoid to get overflow because of inappropriate binning --> Put it into last bin instead! (underflow in first bin) //FIXME -- do it after loop ?? (mara)
+						if(tmp < h_tmp->GetXaxis()->GetXmax() && tmp > h_tmp->GetXaxis()->GetXmin() ) {h_tmp->Fill(tmp, weight);}
+						else if(tmp > h_tmp->GetXaxis()->GetXmax() ) {Fill_Last_Bin_TH1F(h_tmp, weight);} //overflow
+						else if(tmp < h_tmp->GetXaxis()->GetXmin() ) {Fill_First_Bin_TH1F(h_tmp, weight);} //underflow
 					}
 
 					//Re-scale to desired luminosity, unless it's data
@@ -2076,7 +2088,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					f_output->cd();
 					h_tmp->Write(output_histo_name.Data());
-					cout<<"Wrote "<<output_histo_name<<endl;
+					// cout<<"Wrote "<<output_histo_name<<endl;
 
 					delete h_tmp; delete tree; //FRee memory
 
@@ -2315,6 +2327,9 @@ int theMVAtool::Generate_PseudoData_Templates(TString template_name)
 //-----------------------------------------------------------------------------------------
 
 
+// Mara: 25/April/2017 -- this method was modified to cope with the
+// style requirements from https://twiki.cern.ch/twiki/bin/view/CMS/Internal/FigGuidelines
+// and from the ARC
 
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
@@ -2366,7 +2381,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 	mkdir("plots",0777); //Create directory if inexistant
 
 	TH1F *h_tmp = 0, *h_data = 0;
-	THStack *stack = 0;
 
 	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
 	thechannellist.push_back("uuu");
@@ -2392,21 +2406,20 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		total_var_list.push_back(v_add_var_names[i].Data());
 	}
 
+	stringv_list.resize( total_var_list.size() ); //CHANGED -- new class member
+
 //---------------------
 //Loop on var > chan > sample > syst
 //Retrieve histograms, stack, compare, plot
 	for(int ivar=0; ivar<total_var_list.size(); ivar++)
 	{
-		TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-		c1->SetBottomMargin(0.3); //Leave space for ratio plot
-
-		h_data = 0; stack = 0;
+		h_data = 0;
 		vector<TH1F*> v_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
 
-		//TLegend* qw = new TLegend(.80,.60,.95,.90);
-		TLegend* qw = new TLegend(.85,.7,0.965,.915);
+		// TLegend* qw = new TLegend(.85,.7,0.965,.915);
+		TLegend* qw = new TLegend(.85,.7,0.99,0.99);
 		qw->SetShadowColor(0);
-		qw->SetFillColor(0);
+		// qw->SetFillColor(0);
 		qw->SetLineColor(0);
 
 		//---------------------------
@@ -2419,10 +2432,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		if (postfit && !f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) ) continue; //Check histo exists
 
 		TString histo_name = "";
-		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqmcNLO"; //For postfit file only ! //FIXME
-		// if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqhwpp"; //For postfit file only ! //FIXME
+		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqmcNLO"; //For postfit file only !
 		else histo_name = total_var_list[ivar] + "_uuu__tZqmcNLO"; //For prefit file
-		// else histo_name = total_var_list[ivar] + "_uuu__tZqhwpp"; //For prefit file //FIXME
 
 		//NOTE -- How to use GetListOfKeys when histos are in a directory ?
 		if(!postfit && !f->GetListOfKeys()->Contains(histo_name.Data())) {cout<<__LINE__<<" : "<<histo_name<<" : not found ! Continue !"<<endl; continue;}
@@ -2509,7 +2520,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 				if(!h_tmp) continue;
 				// cout<<"h_tmp = "<<h_tmp<<endl;
 
-				if(!isData && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once
+				if(!isData && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
 
 				//Protection against TH1Fs with nAn/inf values (messes up plots in weird way, better to prevent it)
 				bool containsNAN = false;
@@ -2537,7 +2548,11 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					//Use color vector filled in main()
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(colorVector[isample-1]);
+					h_tmp->SetLineColor(kBlack);
+					if( (isample+1) < sample_list.size())
+					{
+						if(sample_list[isample+1].Contains("tt")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples
+					}
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else
@@ -2550,8 +2565,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
 					{
-						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.062, 2); //Lumi error = 6.2%
-						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.062, 2);
+						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.026, 2); //Lumi error = 2.6%
+						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.026, 2);
 						//MC Stat error
 						v_eyl[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
 						v_eyh[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
@@ -2615,24 +2630,51 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//---------------------------
 		//CREATE STACK (MC)
 		//---------------------------
+
+		THStack *stack = 0;
 		TH1F* histo_total_MC = 0; //Sum of all MC samples
+
+		//CHANGED -- ARC request : plot tZq signal above stack
+		int index_tZq_sample = -99;
 
 		//Stack all the MC nominal histograms (contained in v_MC_histo)
 		for(int i=0; i<v_MC_histo.size(); i++)
 		{
-			if(stack == 0) {stack = new THStack; stack->Add(v_MC_histo[i]);}
-			else {stack->Add(v_MC_histo[i]);}
+			if(MC_samples_legend[i].Contains("tZq"))
+			{
+				index_tZq_sample = i;
+			}
+			else
+			{
+				if(stack == 0) {stack = new THStack; stack->Add(v_MC_histo[i]);}
+				else {stack->Add(v_MC_histo[i]);}
+			}
 
-			//if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
-			if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+			if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+			// if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
 			else {histo_total_MC->Add(v_MC_histo[i]);}
 			//cout << "**********************  "<< histo_total_MC->Integral() << endl;
 
 			//ADD LEGEND ENTRIES
-			if(MC_samples_legend[i] != "ttH" && MC_samples_legend[i] != "ttZ" && MC_samples_legend[i] != "ttW" && !MC_samples_legend[i].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], MC_samples_legend[i].Data() , "f");}
-			else if(MC_samples_legend[i].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], "tZq" , "f");}
-			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV" , "f");} //Single entry for ttZ+ttW+ttH
+			if(MC_samples_legend[i] == "ttH" || MC_samples_legend[i] == "ttW" ) {continue;}
+			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
+			else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
+			else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
+			else if(MC_samples_legend[i] == "WZC") {qw->AddEntry(v_MC_histo[i], "WZ+c" , "f");}
+			else if(MC_samples_legend[i] == "ZZ") {qw->AddEntry(v_MC_histo[i], "ZZ" , "f");}
+			else if(MC_samples_legend[i].Contains("Fakes") ) {qw->AddEntry(v_MC_histo[i], "Non-prompt" , "f");}
+			else if(MC_samples_legend[i] == "WZC") {qw->AddEntry(v_MC_histo[i], "WZ+c" , "f");}
+			else if(MC_samples_legend[i].Contains("ST") ) {qw->AddEntry(v_MC_histo[i], "tWZ" , "f");}
+			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 		}
+
+		if(index_tZq_sample >= 0) //Put tZq on top
+		{
+			stack->Add(v_MC_histo[index_tZq_sample]);
+			qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
+		}
+		else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
+
 
 		if(h_data != 0) {qw->AddEntry(h_data, "Data" , "ep");}
 		else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
@@ -2642,6 +2684,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//---------------------------
 		//DRAW HISTOS
 		//---------------------------
+
+		TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+		c1->SetBottomMargin(0.3); //Leave space for ratio plot
 
 		c1->cd();
 
@@ -2694,11 +2739,17 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		gr->SetFillStyle(3005);
 		gr->SetFillColor(1);
 		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
-		//cout << __LINE__ << endl;
+
+
 
 		//-------------------
 		//CAPTIONS
 		//-------------------
+
+/*
+
+//--- old graphics style ---
+
 		TLatex* latex = new TLatex();
 		latex->SetNDC();
 		latex->SetTextSize(0.04);
@@ -2716,6 +2767,72 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 		latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
 		//------------------
+*/
+
+
+// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines //CHANGED
+		//
+		TString cmsText     = "CMS";
+		float cmsTextFont   = 61;  // default is helvetic-bold
+
+		bool writeExtraText = false;
+		TString extraText   = "Preliminary";
+		float extraTextFont = 52;  // default is helvetica-italics
+
+		// text sizes and text offsets with respect to the top frame
+		// in unit of the top margin size
+		float lumiTextSize     = 0.6;
+		float lumiTextOffset   = 0.2;
+		float cmsTextSize      = 0.75;
+		float cmsTextOffset    = 0.1;  // only used in outOfFrame version
+
+		float relPosX    = 0.045;
+		float relPosY    = 0.035;
+		float relExtraDY = 1.2;
+
+		// ratio of "CMS" and extra text size
+		float extraOverCmsTextSize  = 0.76;
+
+		float lumi = 35.7 * luminosity_rescale; //CHANGED
+		TString lumi_13TeV = Convert_Number_To_TString(lumi);
+		lumi_13TeV += " fb^{-1} (13 TeV)";
+
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+
+		float H = c1->GetWh();
+		float W = c1->GetWw();
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
+		float r = c1->GetRightMargin();
+		float b = c1->GetBottomMargin();
+
+		float extraTextSize = extraOverCmsTextSize*cmsTextSize;
+
+		latex.SetTextFont(42);
+		latex.SetTextAlign(31);
+		latex.SetTextSize(lumiTextSize*t);
+		//	Change position w.r.t. CMS recommendation, only for control plots
+		//      latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumi_13TeV);
+		latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
+
+		latex.SetTextFont(cmsTextFont);
+		latex.SetTextAlign(11);
+		latex.SetTextSize(cmsTextSize*t);
+		latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
+
+		//float posX_ =   l +  relPosX*(1-l-r);
+		//float posY_ =   1-t+lumiTextOffset*t;
+
+		latex.SetTextFont(extraTextFont);
+		//latex.SetTextAlign(align_);
+		latex.SetTextSize(extraTextSize*t);
+		latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+
+
+//------------------
 
 		TString info_data;
 		if (channel=="eee")    info_data = "eee channel";
@@ -2723,7 +2840,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else if (channel=="uue")  info_data = "#mu#mu e channel";
 		else if (channel=="uuu") info_data = "#mu#mu #mu channel";
 		else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
-
+/*
 		TLatex* text2 = new TLatex(0.45,0.98, info_data);
 		text2->SetNDC();
 		text2->SetTextAlign(13);
@@ -2733,11 +2850,80 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		text2->SetTextSize(0.0610687);
 		//text2->SetTextSizePixels(24);// dflt=28
 		text2->Draw();
-		qw->Draw();
+*/
+
+		TString extrainfo_data;
+		if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
+		else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
+		else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+
+		TLatex text2 ; //= new TLatex(0, 0, info_data);
+		text2.SetNDC();
+		text2.SetTextAlign(13);
+		text2.SetTextFont(42);
+		text2.SetTextSize(0.04);
+		text2.DrawLatex(0.195,0.91,info_data);
+
+		text2.SetTextFont(62);
+		text2.DrawLatex(0.63,0.9,extrainfo_data);
+
+		qw->Draw(); //Draw legend
+
+
+
+		//--------------------------
+		//SET VARIABLES LABELS
+		//--------------------------
+
+
+		if(total_var_list[ivar] == "mTW") 			{	stringv_list[ivar] = "M_{T}_{W} [GeV]"; }
+		else if(total_var_list[ivar] == "METpt")		{	stringv_list[ivar] = "E_{T}^{miss} [GeV]"; }
+		else if(total_var_list[ivar] == "m3l")		{	stringv_list[ivar] = "Trilepton mass [GeV]"; }
+		else if(total_var_list[ivar] == "ZMass") 		{	stringv_list[ivar] = "M_{Z} [GeV]"; }
+		else if(total_var_list[ivar] == "dPhiAddLepB") 	{	stringv_list[ivar] = "#Delta#Phi(l_{W},b)"; }
+		else if(total_var_list[ivar] == "Zpt") 		{	stringv_list[ivar] = "Z p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "ZEta")		{	stringv_list[ivar] = "Z #eta"; }
+		else if(total_var_list[ivar] == "AddLepAsym") 	{	stringv_list[ivar] = "l_{W} asymmetry"; }
+		else if(total_var_list[ivar] == "mtop") 		{	stringv_list[ivar] = "M_{top} [GeV]"; }
+		else if(total_var_list[ivar] == "btagDiscri") 	{	stringv_list[ivar] = "btag discriminant"; }
+		else if(total_var_list[ivar] == "etaQ")		{	stringv_list[ivar] = "Forward jet #eta"; }
+		else if(total_var_list[ivar] == "NBJets")		{	stringv_list[ivar] = "B Jets multiplicity"; }
+		else if(total_var_list[ivar] == "AddLepPT")		{	stringv_list[ivar] = "l_{W} p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "AddLepETA")		{	stringv_list[ivar] = "l_{W} #eta"; }
+		else if(total_var_list[ivar] == "LeadJetPT")		{	stringv_list[ivar] = "Leading jet p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "LeadJetEta")		{	stringv_list[ivar] = "Leading jet #eta"; }
+		else if(total_var_list[ivar] == "dPhiZMET")		{	stringv_list[ivar] = "#Delta#Phi(Z,E_{T}^{miss})"; }
+		else if(total_var_list[ivar] == "dPhiZAddLep")	{	stringv_list[ivar] = "#Delta#Phi(Z,l_{W})"; }
+		else if(total_var_list[ivar] == "dRAddLepB")		{	stringv_list[ivar] = "#Delta R(b,l_{W})"; }
+		else if(total_var_list[ivar] == "dRZAddLep")		{	stringv_list[ivar] = "#Delta R(Z,l_{W})"; }
+		else if(total_var_list[ivar] == "dRZTop")		{	stringv_list[ivar] = "#Delta R(Z,top)"; }
+		else if(total_var_list[ivar] == "TopPT")		{	stringv_list[ivar] = "top p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "NJets")		{	stringv_list[ivar] = "Jets multiplicity"; }
+		else if(total_var_list[ivar] == "ptQ")		{	stringv_list[ivar] = "Forward jet p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "dRjj")		{	stringv_list[ivar] = "#Delta R(b,forward jet)"; }
+		else if(total_var_list[ivar] == "AdditionalEleIso")	{	stringv_list[ivar] = "e_{W} isolation"; }
+		else if(total_var_list[ivar] == "AdditionalMuonIso")	{	stringv_list[ivar] = "#mu_{W} isolation"; }
+		else if(total_var_list[ivar] == "dRAddLepQ")		{	stringv_list[ivar] = "#Delta R(l_{W},forward jet)"; }
+		else if(total_var_list[ivar] == "dRAddLepClosestJet")	{	stringv_list[ivar] = "#Delta R(closest jet, l_{W})"; }
+		else if(total_var_list[ivar] == "tZq_pT")		{	stringv_list[ivar] = "tZq system p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "tZq_mass")		{	stringv_list[ivar] = "tZq system mass [GeV]"; }
+		else if(total_var_list[ivar] == "leadingLeptonPT")    {       stringv_list[ivar] = "Leading lepton p_{T} [GeV]"; }
+		else if(total_var_list[ivar] == "MAddLepB")           {       stringv_list[ivar] = "l_{W}+b system mass "; }
+		else if(total_var_list[ivar] == "MEMvar_0")		{	stringv_list[ivar] = "MEM LR tZq-ttZ"; }
+		else if(total_var_list[ivar] == "MEMvar_1")		{	stringv_list[ivar] = "MEM Kin w_{tZq}"; }
+		else if(total_var_list[ivar] == "MEMvar_2")		{	stringv_list[ivar] = "MEM Kin w_{ttZ}"; }
+		else if(total_var_list[ivar] == "MEMvar_3")		{	stringv_list[ivar] = "MEM LR tZq-ttZ"; }
+		else if(total_var_list[ivar] == "MEMvar_4")		{	stringv_list[ivar] = "MEM w_{WZ}"; }
+		else if(total_var_list[ivar] == "MEMvar_5")		{	stringv_list[ivar] = "MEM Kin w_{WZ}"; }
+		else if(total_var_list[ivar] == "MEMvar_6")		{	stringv_list[ivar] = "MEM LR tZq-ttZ-WZ"; }
+		else if(total_var_list[ivar] == "MEMvar_7")		{	stringv_list[ivar] = "MEM LR tZq-WZ"; }
+		else {       stringv_list[ivar] = total_var_list[ivar] ; }
+
 
 		//--------------------------
 		//DRAW DATA/MC RATIO
 		//--------------------------
+
 		//Create Data/MC ratio plot (bottom of canvas)
 		if(h_data != 0 && v_MC_histo.size() != 0) //Need both data and MC
 		{
@@ -2761,16 +2947,32 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 				if( std::isnan(histo_ratio_data->GetBinContent(ibin)) || std::isinf(histo_ratio_data->GetBinContent(ibin)) ) {histo_ratio_data->SetBinContent(ibin, 1);}
 			}
 
+ 			//CHANGED
+			// histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
+			histo_ratio_data->GetXaxis()->SetTitle(stringv_list[ivar].Data());
+			histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 
-			histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
+			histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
+			histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
+			histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
+			histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+			histo_ratio_data->GetXaxis()->SetLabelFont(42);
+			histo_ratio_data->GetYaxis()->SetLabelFont(42);
+			histo_ratio_data->GetXaxis()->SetTitleFont(42);
+			histo_ratio_data->GetYaxis()->SetTitleFont(42);
+			// histo_ratio_data->GetYaxis()->SetNdivisions(6);
+			histo_ratio_data->GetYaxis()->SetNdivisions(503);
+			histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+
+			histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 
 			histo_ratio_data->SetMinimum(0.0);
-			histo_ratio_data->SetMaximum(2.0);
-			histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
-			histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
-			histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
-			histo_ratio_data->GetYaxis()->SetNdivisions(6);
-			histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
+			histo_ratio_data->SetMaximum(2.999);
+			// histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
+			// histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
+			// histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
+			// histo_ratio_data->GetYaxis()->SetNdivisions(6);
+			// histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
 			histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
 			//Copy previous TGraphAsymmErrors
@@ -2798,7 +3000,18 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		}
 
 		//Yaxis title
-		if(stack!= 0) {stack->GetYaxis()->SetTitleSize(0.04); stack->GetYaxis()->SetTitle("Events");}
+		// if(stack!= 0) {stack->GetYaxis()->SetTitleSize(0.04); stack->GetYaxis()->SetTitle("Events");}
+		if(stack!= 0)
+		{
+			stack->GetXaxis()->SetLabelFont(42);
+			stack->GetYaxis()->SetLabelFont(42);
+			stack->GetYaxis()->SetTitleFont(42);
+			stack->GetYaxis()->SetTitleSize(0.045);
+			stack->GetYaxis()->SetTickLength(0.04);
+			stack->GetXaxis()->SetLabelSize(0.0);
+			stack->GetYaxis()->SetLabelSize(0.048);
+			stack->GetYaxis()->SetTitle("Events");
+		}
 
 		//-------------------
 		//OUTPUT
@@ -2875,6 +3088,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 //    ##    ######## ##     ## ##        ######## ##     ##    ##    ########  ######
 //-----------------------------------------------------------------------------------------
 
+//CHANGED
+// Mara: 25/April/2017 -- this method was modified to cope with the
+// style requirements from https://twiki.cern.ch/twiki/bin/view/CMS/Internal/FigGuidelines
+// and from the ARC
 
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
@@ -2909,8 +3126,10 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	TH1F *h_tmp = 0, *h_sum_data = 0;
 	vector<TH1F*> v_MC_histo;
 
-	//TLegend* qw = new TLegend(.80,.60,.95,.90);
-	TLegend* qw = new TLegend(.85,.7,0.965,.915);
+	vector<TString> MC_samples_legend; //List the MC samples which are actually used (to get correct legend)
+
+	TLegend* qw = new TLegend(.81,.63,.95,.91);
+	//TLegend* qw = new TLegend(.85,.7,0.965,.915);
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
 	qw->SetLineColor(0);
@@ -2923,7 +3142,6 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//--- All MC samples but fakes
 		for(int isample = 0; isample < sample_list.size(); isample++)
 		{
-			// if(sample_list[isample].Contains("Data") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("WW") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("Fakes")) {continue;} //See below for fakes
 			if(sample_list[isample].Contains("Data") ) {continue;}
 
 			h_tmp = 0;
@@ -2933,10 +3151,12 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 			{
 				h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 
+				if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
 				//Use color vector filled in main() (use -1 because first sample should be data)
 				h_tmp->SetFillStyle(1001);
 				h_tmp->SetFillColor(colorVector[isample-1]);
-				h_tmp->SetLineColor(colorVector[isample-1]);
+				h_tmp->SetLineColor(kBlack);
 
 				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 				else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -2958,7 +3178,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(colorVector[isample-1]);
+					h_tmp->SetLineColor(kBlack);
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -2995,20 +3215,49 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		if(h_sum_data->GetBinContent(ibin) < 0) {h_sum_data->SetBinContent(ibin, 0);}
 	}
 
-	//Stack all the MC nominal histograms (contained in v_MC_histo)
+	//--- CREATE STACK
 	THStack* stack_MC = 0;
 	TH1F* histo_total_MC = 0; //Sum of all MC samples
 
+	//CHANGED -- ARC request : plot tZq signal above stack
+	int index_tZq_sample = -99;
+
+	//Stack all the MC nominal histograms (contained in v_MC_histo)
 	for(int i=0; i<v_MC_histo.size(); i++)
 	{
-		if(i == 0) {stack_MC = new THStack; stack_MC->Add(v_MC_histo[i]); histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
-		else {stack_MC->Add(v_MC_histo[i]); histo_total_MC->Add(v_MC_histo[i]);}
+		if(MC_samples_legend[i].Contains("tZq"))
+		{
+			index_tZq_sample = i;
+		}
+		else
+		{
+			if(stack_MC == 0) {stack_MC = new THStack; stack_MC->Add(v_MC_histo[i]);}
+			else {stack_MC->Add(v_MC_histo[i]);}
+		}
+
+		if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+		// if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+		else {histo_total_MC->Add(v_MC_histo[i]);}
 
 		//ADD LEGEND ENTRIES
-		if(!sample_list[i+1].Contains("ttH") && !sample_list[i+1].Contains("ttZ") && !sample_list[i+1].Contains("ttW") && !sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
-		else if(sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], "tZq" , "f");}
-		else if(sample_list[i+1] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV" , "f");} //Single entry for ttZ+ttW+ttH
+		if(MC_samples_legend[i] == "ttH" || MC_samples_legend[i] == "ttW" ) {continue;}
+		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
+		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
+		else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
+		else if(MC_samples_legend[i] == "WZC") {qw->AddEntry(v_MC_histo[i], "WZ+c" , "f");}
+		else if(MC_samples_legend[i] == "ZZ") {qw->AddEntry(v_MC_histo[i], "ZZ" , "f");}
+		else if(MC_samples_legend[i].Contains("Fakes") ) {qw->AddEntry(v_MC_histo[i], "Non-prompt" , "f");}
+		else if(MC_samples_legend[i] == "WZC") {qw->AddEntry(v_MC_histo[i], "WZ+c" , "f");}
+		else if(MC_samples_legend[i].Contains("ST") ) {qw->AddEntry(v_MC_histo[i], "tWZ" , "f");}
+		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 	}
+
+	if(index_tZq_sample >= 0) //Put tZq on top
+	{
+		stack_MC->Add(v_MC_histo[index_tZq_sample]);
+		qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
+	}
+	else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
 
 	qw->AddEntry(h_sum_data, "Data" , "lep");
 
@@ -3026,6 +3275,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//Draw stack & data
 	stack_MC->Draw("hist");
 	h_sum_data->SetMarkerStyle(20);
+	h_sum_data->SetMinimum(0.) ;
 	h_sum_data->Draw("e0psame");
 
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
@@ -3036,29 +3286,50 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	canvas_2->Draw();
 	canvas_2->cd(0);
 
+	//CHANGED
 	TH1F * histo_ratio_data = (TH1F*) h_sum_data->Clone();
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
 	histo_ratio_data->SetMinimum(0.0);
-	histo_ratio_data->SetMaximum(2.0);
-	histo_ratio_data->GetXaxis()->SetTitle(template_name.Data());
-	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
-	histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
+	histo_ratio_data->SetMaximum(1.999);
 
-	histo_ratio_data->GetYaxis()->SetTitle("Data/MC");
-	histo_ratio_data->GetYaxis()->SetTitleOffset(1.4);
-	histo_ratio_data->GetYaxis()->SetLabelSize(0.04);
-	histo_ratio_data->GetYaxis()->SetNdivisions(6);
-	histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
+	// histo_ratio_data->GetXaxis()->SetTickLength(0.22);
+	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
+
+	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
+	histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
+	histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
+	histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	histo_ratio_data->GetXaxis()->SetLabelFont(42);
+	histo_ratio_data->GetYaxis()->SetLabelFont(42);
+	histo_ratio_data->GetXaxis()->SetTitleFont(42);
+	histo_ratio_data->GetYaxis()->SetTitleFont(42);
+	// histo_ratio_data->GetYaxis()->SetNdivisions(6);
+	histo_ratio_data->GetYaxis()->SetNdivisions(503);
+	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+
+	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 	histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
-
+	if (template_name == "BDT" ) histo_ratio_data->GetXaxis()->SetTitle("BDT output (1 tag)") ;
+	else if ( template_name == "BDTttZ" ) histo_ratio_data->GetXaxis()->SetTitle("BDT output (2 tags)");
+	else if ( template_name == "mTW")  histo_ratio_data->GetXaxis()->SetTitle("m_{T}^{W} [GeV]");
 
 	// stack_MC->GetXaxis()->SetTitle(template_name.Data());
+	stack_MC->GetXaxis()->SetLabelFont(42);
+	stack_MC->GetYaxis()->SetLabelFont(42);
+	stack_MC->GetYaxis()->SetTitleFont(42);
+	stack_MC->GetYaxis()->SetTitleSize(0.045);
+	stack_MC->GetYaxis()->SetTickLength(0.04);
 	stack_MC->GetXaxis()->SetLabelSize(0.0);
+	stack_MC->GetYaxis()->SetLabelSize(0.048);
 	stack_MC->GetYaxis()->SetTitle("Events");
 	c1->Modified();
 
+
+/*
+
+//--- old graphics style
 	//-------------------
 	//CAPTIONS
 	//-------------------
@@ -3079,6 +3350,71 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
 	//------------------
+*/
+
+// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines
+
+	TString cmsText     = "CMS";
+	float cmsTextFont   = 61;  // default is helvetic-bold
+
+	bool writeExtraText = false;
+	TString extraText   = "Preliminary";
+	float extraTextFont = 52;  // default is helvetica-italics
+
+	// text sizes and text offsets with respect to the top frame
+	// in unit of the top margin size
+	float lumiTextSize     = 0.6;
+	float lumiTextOffset   = 0.2;
+	float cmsTextSize      = 0.75;
+	float cmsTextOffset    = 0.1;  // only used in outOfFrame version
+
+	float relPosX    = 0.045;
+	float relPosY    = 0.035;
+	float relExtraDY = 1.2;
+
+	// ratio of "CMS" and extra text size
+	float extraOverCmsTextSize  = 0.76;
+
+	float lumi = 35.7 * luminosity_rescale; //CHANGED
+	TString lumi_13TeV = Convert_Number_To_TString(lumi);
+	lumi_13TeV += " fb^{-1} (13 TeV)";
+
+	TLatex latex;
+	latex.SetNDC();
+	latex.SetTextAngle(0);
+	latex.SetTextColor(kBlack);
+
+	float H = c1->GetWh();
+	float W = c1->GetWw();
+	float l = c1->GetLeftMargin();
+	float t = c1->GetTopMargin();
+	float r = c1->GetRightMargin();
+	float b = c1->GetBottomMargin();
+
+	float extraTextSize = extraOverCmsTextSize*cmsTextSize;
+
+	latex.SetTextFont(42);
+	latex.SetTextAlign(31);
+	latex.SetTextSize(lumiTextSize*t);
+	latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumi_13TeV);
+
+
+	latex.SetTextFont(cmsTextFont);
+	latex.SetTextAlign(11);
+	latex.SetTextSize(cmsTextSize*t);
+	latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
+
+	//float posX_ =   l +  relPosX*(1-l-r);
+	//float posY_ =   1-t+lumiTextOffset*t;
+
+	latex.SetTextFont(extraTextFont);
+	//latex.SetTextAlign(align_);
+	latex.SetTextSize(extraTextSize*t);
+	latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+
+
+	//------------------
+
 
 	TString info_data;
 	if (channel=="eee")    info_data = "eee channel";
@@ -3087,6 +3423,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	else if (channel=="uuu") info_data = "#mu#mu #mu channel";
 	else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
+/*
 	if(isWZ) {info_data+= " - CR WZ";}
 	else if(isttZ) {info_data+= " - CR ttZ";}
 	else if(!isWZ && !isttZ) {info_data+= " - SR tZq";}
@@ -3100,6 +3437,22 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	text2->SetTextSize(0.04);
 	//text2->SetTextSizePixels(24);// dflt=28
 	text2->Draw("same");
+*/
+
+	TString extrainfo_data;
+	if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
+	else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
+	else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+
+	TLatex text2 ; //= new TLatex(0, 0, info_data);
+	text2.SetNDC();
+	text2.SetTextAlign(13);
+	text2.SetTextFont(42);
+	text2.SetTextSize(0.04);
+	text2.DrawLatex(0.195,0.91,info_data);
+
+	text2.SetTextFont(62);
+	text2.DrawLatex(0.63,0.9,extrainfo_data);
 	//------------------
 
 
@@ -3109,7 +3462,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	//Output
 	TString output_plot_name = "plots/" + template_name +"_template_" + channel+ this->filename_suffix + this->format;
-	if(channel == "" || allchannels) {output_plot_name = "plots/" + template_name +"_template_all" + this->filename_suffix + ".png";}
+	if(channel == "" || allchannels) {output_plot_name = "plots/" + template_name +"_template_all" + this->filename_suffix + this->format;}
 
 	c1->SaveAs(output_plot_name.Data());
 
@@ -3188,6 +3541,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	TH1F *h_tmp = 0, *h_sum_data = 0;
 	vector<TH1F*> v_MC_histo;
 
+	vector<TString> MC_samples_legend; //List the MC samples which are actually used (to get correct legend)
+
 	TLegend* qw = new TLegend(.85,.7,0.965,.915);
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
@@ -3231,10 +3586,12 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 				{
 					h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
 
+					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
 					//Use color vector filled in main() (use -1 because first sample should be data)
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(colorVector[isample-1]);
+					h_tmp->SetLineColor(kBlack);
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -3252,9 +3609,11 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 					h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
 
+					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(colorVector[isample-1]);
+					h_tmp->SetLineColor(kBlack);
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -3284,16 +3643,45 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	THStack* stack_MC = 0;
 	TH1F* histo_total_MC = 0; //Sum of all MC samples
 
+	//CHANGED -- ARC request : plot tZq signal above stack
+	int index_tZq_sample = -99;
+
+	//Stack all the MC nominal histograms (contained in v_MC_histo)
 	for(int i=0; i<v_MC_histo.size(); i++)
 	{
-		if(i == 0) {stack_MC = new THStack; stack_MC->Add(v_MC_histo[i]); histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
-		else {stack_MC->Add(v_MC_histo[i]); histo_total_MC->Add(v_MC_histo[i]);}
+		if(MC_samples_legend[i].Contains("tZq"))
+		{
+			index_tZq_sample = i;
+		}
+		else
+		{
+			if(stack_MC == 0) {stack_MC = new THStack; stack_MC->Add(v_MC_histo[i]);}
+			else {stack_MC->Add(v_MC_histo[i]);}
+		}
+
+		if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+		// if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
+		else {histo_total_MC->Add(v_MC_histo[i]);}
 
 		//ADD LEGEND ENTRIES
-		if(!sample_list[i+1].Contains("ttH") && !sample_list[i+1].Contains("ttZ") && !sample_list[i+1].Contains("ttW") && !sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], sample_list[i+1].Data() , "f");}
-		else if(sample_list[i+1].Contains("tZq") ) {qw->AddEntry(v_MC_histo[i], "tZq" , "f");}
-		else if(sample_list[i+1] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV" , "f");} //Single entry for ttZ+ttW+ttH
+		if(MC_samples_legend[i] == "ttH" || MC_samples_legend[i] == "ttW" ) {continue;}
+		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
+		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
+		else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
+		else if(MC_samples_legend[i] == "WZC") {qw->AddEntry(v_MC_histo[i], "WZ+c" , "f");}
+		else if(MC_samples_legend[i] == "ZZ") {qw->AddEntry(v_MC_histo[i], "ZZ" , "f");}
+		else if(MC_samples_legend[i].Contains("Fakes") ) {qw->AddEntry(v_MC_histo[i], "Non-prompt" , "f");}
+		else if(MC_samples_legend[i] == "WZC") {qw->AddEntry(v_MC_histo[i], "WZ+c" , "f");}
+		else if(MC_samples_legend[i].Contains("ST") ) {qw->AddEntry(v_MC_histo[i], "tWZ" , "f");}
+		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 	}
+
+	if(index_tZq_sample >= 0) //Put tZq on top
+	{
+		stack_MC->Add(v_MC_histo[index_tZq_sample]);
+		qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
+	}
+	else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
 
 
 	//Set Yaxis maximum & minimum
@@ -3353,11 +3741,11 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
 	histo_ratio_data->SetMinimum(0.0);
-	histo_ratio_data->SetMaximum(2.0);
-	// histo_ratio_data->GetXaxis()->SetTitle(template_name.Data());
-	// histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
-	// histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
-
+	histo_ratio_data->SetMaximum(1.999);
+/*
+	histo_ratio_data->GetXaxis()->SetTitle(template_name.Data());
+	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
+	histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
 	histo_ratio_data->GetYaxis()->SetTitle("Data/MC");
 	histo_ratio_data->GetYaxis()->SetTitleOffset(1.4);
 	histo_ratio_data->GetYaxis()->SetLabelSize(0.04);
@@ -3365,7 +3753,21 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
 	histo_ratio_data->GetXaxis()->SetTickLength(0);
 	histo_ratio_data->GetXaxis()->SetLabelOffset(999);
+*/
 
+	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
+	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
+	histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
+	histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
+	histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	histo_ratio_data->GetXaxis()->SetLabelFont(42);
+	histo_ratio_data->GetYaxis()->SetLabelFont(42);
+	histo_ratio_data->GetXaxis()->SetTitleFont(42);
+	histo_ratio_data->GetYaxis()->SetTitleFont(42);
+	// histo_ratio_data->GetYaxis()->SetNdivisions(6);
+	histo_ratio_data->GetYaxis()->SetNdivisions(503);
+	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 	histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
 	//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
@@ -3380,10 +3782,21 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
    axis->Draw("same");
 
 	// stack_MC->GetXaxis()->SetTitle(template_name.Data());
+	// stack_MC->GetXaxis()->SetLabelSize(0.0);
+	// stack_MC->GetYaxis()->SetTitle("Events");
+
+	stack_MC->GetXaxis()->SetLabelFont(42);
+	stack_MC->GetYaxis()->SetLabelFont(42);
+	stack_MC->GetYaxis()->SetTitleFont(42);
+	stack_MC->GetYaxis()->SetTitleSize(0.045);
+	stack_MC->GetYaxis()->SetTickLength(0.04);
 	stack_MC->GetXaxis()->SetLabelSize(0.0);
+	stack_MC->GetYaxis()->SetLabelSize(0.048);
 	stack_MC->GetYaxis()->SetTitle("Events");
+
 	c1->Modified();
 
+/*
 	//-------------------
 	//CAPTIONS
 	//-------------------
@@ -3426,7 +3839,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//text2->SetTextSizePixels(24);// dflt=28
 	text2->Draw("same");
 	//------------------
-
+*/
 
 	qw->Draw("same");
 
@@ -4047,3 +4460,249 @@ void theMVAtool::Compare_Negative_Weights_Effect_On_Distributions(TString channe
 	return;
 }
 */
+
+
+
+
+
+
+//  ######  ##     ## ########  ######## ########  ########   #######   ######  ########    ##     ## ######## ##     ##
+// ##    ## ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##    ## ##          ###   ### ##       ###   ###
+// ##       ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##       ##          #### #### ##       #### ####
+//  ######  ##     ## ########  ######   ########  ########  ##     ##  ######  ######      ## ### ## ######   ## ### ##
+//       ## ##     ## ##        ##       ##   ##   ##        ##     ##       ## ##          ##     ## ##       ##     ##
+// ##    ## ##     ## ##        ##       ##    ##  ##        ##     ## ##    ## ##          ##     ## ##       ##     ##
+//  ######   #######  ##        ######## ##     ## ##         #######   ######  ########    ##     ## ######## ##     ##
+
+/**
+ * Superpose prefit template distributions with or without MEM
+ */
+void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TString channel, bool normalized)
+{
+	if(channel != "allchan" && channel != "uuu" && channel != "uue" && channel != "eeu" && channel != "eee" )
+	{
+		cout<<"Wrong channel  Abort"<<endl; return;
+	}
+
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots ---")<<endl;}
+	else {cout<<FRED("--- ERROR : invalid template_name value !")<<endl;}
+	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
+
+	TString input_name_noMEM = "outputs/files_noMEM_noCuts/Combine_Input.root";
+	if(!Check_File_Existence(input_name_noMEM) ) {input_name_noMEM = "outputs/files_noMEM_noCuts/Reader_" + template_name + this->filename_suffix + ".root";}
+	if(!Check_File_Existence(input_name_noMEM) ) {cout<<"No template files in dir. outputs/files_noMEM_noCuts/ ! Abort"<<endl; return;}
+	TFile* file_input_noMEM = 0;
+	file_input_noMEM = TFile::Open( input_name_noMEM.Data() );
+	if(file_input_noMEM == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+
+	TString input_name_MEM = "outputs/files_MEM/Combine_Input.root";
+	if(!Check_File_Existence(input_name_MEM) ) {input_name_MEM = "outputs/files_MEM/Reader_" + template_name + this->filename_suffix + ".root";}
+	if(!Check_File_Existence(input_name_MEM) ) {cout<<"No template files in dir. outputs/files_MEM/ ! Abort"<<endl; return;}
+	TFile* file_input_MEM = 0;
+	file_input_MEM = TFile::Open( input_name_MEM.Data() );
+	if(file_input_MEM == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+
+	mkdir("plots",0777);
+	TH1::SetDefaultSumw2();
+
+	TH1F *h_tmp_noMEM = 0, *h_signal_noMEM  = 0, *h_sum_background_noMEM = 0;
+	TH1F *h_tmp_MEM = 0, *h_signal_MEM = 0, *h_sum_background_MEM = 0;
+
+	//TLegend* qw = new TLegend(.80,.60,.95,.90);
+	TLegend* qw = new TLegend(.6,.77,0.85,.915);
+	qw->SetShadowColor(0);
+	qw->SetFillColor(0);
+	qw->SetLineColor(0);
+	// qw->SetLineWidth(3);
+	qw->SetTextSize(0.03);
+
+	for(int ichan=0; ichan<channel_list.size(); ichan++)
+	{
+		if(channel != "allchan" && channel_list[ichan] != channel) {continue;}
+
+	//--- All MC samples but fakes
+		for(int isample = 0; isample < sample_list.size(); isample++)
+		{
+			if(sample_list[isample].Contains("Data") ) {continue;}
+
+			TString histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
+			if(!file_input_noMEM->GetListOfKeys()->Contains(histo_name.Data()) && !sample_list[isample].Contains("Fakes") ) {cout<<histo_name<<" : not found"<<endl; continue;}
+			if(!file_input_MEM->GetListOfKeys()->Contains(histo_name.Data()) && !sample_list[isample].Contains("Fakes") ) {cout<<histo_name<<" : not found"<<endl; continue;}
+
+			if(!sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("tZq") )
+			{
+				h_tmp_noMEM = (TH1F*) file_input_noMEM->Get(histo_name.Data())->Clone();
+				h_tmp_MEM = (TH1F*) file_input_MEM->Get(histo_name.Data())->Clone();
+
+				if(h_sum_background_noMEM == 0) {h_sum_background_noMEM = (TH1F*) h_tmp_noMEM->Clone();}
+				else {h_sum_background_noMEM->Add(h_tmp_noMEM);}
+
+				if(h_sum_background_MEM == 0) {h_sum_background_MEM = (TH1F*) h_tmp_MEM->Clone();}
+				else {h_sum_background_MEM->Add(h_tmp_MEM);}
+			}
+			else if(sample_list[isample].Contains("Fakes") ) //fakes
+			{
+				TString template_fake_name = "";
+
+				if(   channel_list[ichan] == "uuu" )      {template_fake_name = "FakeMuMuMu";}
+				else if(   channel_list[ichan] == "uue" ) {template_fake_name = "FakeMuMuEl";}
+				else if(   channel_list[ichan] == "eeu" ) {template_fake_name = "FakeElElMu";}
+				else if(   channel_list[ichan] == "eee" ) {template_fake_name = "FakeElElEl";}
+
+				histo_name = template_name + "_" + channel_list[ichan] + "__" + template_fake_name;
+				if(!file_input_noMEM->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
+				if(!file_input_MEM->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
+				else
+				{
+					h_tmp_noMEM = (TH1F*) file_input_noMEM->Get(histo_name.Data())->Clone();
+					h_tmp_MEM = (TH1F*) file_input_noMEM->Get(histo_name.Data())->Clone();
+
+					h_sum_background_noMEM->Add(h_tmp_noMEM);
+					h_sum_background_MEM->Add(h_tmp_MEM);
+				}
+			}
+			else if(sample_list[isample].Contains("tZq") ) //Signal
+			{
+				h_tmp_noMEM = (TH1F*) file_input_noMEM->Get(histo_name.Data())->Clone();
+				h_tmp_MEM = (TH1F*) file_input_MEM->Get(histo_name.Data())->Clone();
+
+				if(h_signal_noMEM == 0) {h_signal_noMEM = (TH1F*) h_tmp_noMEM->Clone();}
+				else {h_signal_noMEM->Add(h_tmp_noMEM);}
+
+				if(h_signal_MEM == 0) {h_signal_MEM = (TH1F*) h_tmp_MEM->Clone();}
+				else {h_signal_MEM->Add(h_tmp_MEM);}
+			}
+		} //end sample loop
+
+	} //end channel loop
+
+	if(normalized)
+	{
+		h_sum_background_noMEM->Scale(1./h_sum_background_noMEM->Integral() );
+		h_sum_background_MEM->Scale(1./h_sum_background_MEM->Integral() );
+		h_signal_noMEM->Scale(1./h_signal_noMEM->Integral() );
+		h_signal_MEM->Scale(1./h_signal_MEM->Integral() );
+	}
+
+	h_sum_background_noMEM->SetLineColor(kBlue);
+	h_sum_background_noMEM->SetLineWidth(2);
+
+	h_sum_background_MEM->SetLineColor(kBlue);
+	h_sum_background_MEM->SetLineStyle(2);
+	h_sum_background_MEM->SetLineWidth(2);
+
+	h_signal_noMEM->SetLineColor(kRed);
+	h_signal_noMEM->SetLineWidth(2);
+
+	h_signal_MEM->SetLineColor(kRed);
+	h_signal_MEM->SetLineStyle(2);
+	h_signal_MEM->SetLineWidth(2);
+
+	if(!normalized) //Changes which histo should be drawn first
+	{
+		h_sum_background_MEM->SetMinimum(0);
+		h_sum_background_MEM->SetMaximum(h_sum_background_MEM->GetMaximum()*1.1);
+		h_sum_background_MEM->GetYaxis()->SetTitle("Events");
+		h_sum_background_MEM->GetXaxis()->SetTitle(template_name);
+	}
+	else
+	{
+		h_signal_MEM->SetMinimum(0);
+		h_signal_MEM->SetMaximum(h_signal_MEM->GetMaximum()*1.4);
+		h_signal_MEM->GetYaxis()->SetTitle("Events");
+		h_signal_MEM->GetXaxis()->SetTitle(template_name);
+	}
+
+
+	//Set Yaxis maximum & minimum
+	// if(h_sum_data->GetMaximum() > stack_MC->GetMaximum() ) {stack_MC->SetMaximum(h_sum_data->GetMaximum()+0.3*h_sum_data->GetMaximum());}
+	// else stack_MC->SetMaximum(stack_MC->GetMaximum()+0.3*stack_MC->GetMaximum());
+	// stack_MC->SetMinimum(0);
+
+
+	//Canvas definition
+	Load_Canvas_Style();
+	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+
+	if(!normalized)
+	{
+		h_sum_background_MEM->Draw("hist");
+		h_signal_MEM->Draw("same hist");
+	}
+	else
+	{
+		h_signal_MEM->Draw("hist");
+		h_sum_background_MEM->Draw("same hist");
+	}
+	h_sum_background_noMEM->Draw("same hist");
+	h_signal_noMEM->Draw("same hist");
+
+	qw->AddEntry(h_sum_background_noMEM, "Sum backgrounds" , "L");
+	qw->AddEntry(h_sum_background_MEM, "Sum backgrounds (+ MEM)" , "L");
+	qw->AddEntry(h_signal_noMEM, "Signal" , "L");
+	qw->AddEntry(h_signal_MEM, "Signal (+ MEM)" , "L");
+
+	//-------------------
+	//CAPTIONS
+	//-------------------
+	TLatex* latex = new TLatex();
+	latex->SetNDC();
+	latex->SetTextSize(0.04);
+	latex->SetTextAlign(31);
+	latex->DrawLatex(0.45, 0.95, "CMS Preliminary");
+
+	TLatex* latex2 = new TLatex();
+	latex2->SetNDC();
+	latex2->SetTextSize(0.04);
+	latex2->SetTextAlign(31);
+	//------------------
+	// float lumi = 12.9 * luminosity_rescale;
+	float lumi = 35.68 * luminosity_rescale; //CHANGED
+	TString lumi_ts = Convert_Number_To_TString(lumi);
+	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
+	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
+	//------------------
+
+	TString info_data;
+	if (channel=="eee")    info_data = "eee channel";
+	else if (channel=="eeu")  info_data = "ee#mu channel";
+	else if (channel=="uue")  info_data = "#mu#mu e channel";
+	else if (channel=="uuu") info_data = "#mu#mu #mu channel";
+	else if(channel=="allchan") info_data = "All channels";
+	// else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
+
+	if(isWZ) {info_data+= " - CR WZ";}
+	else if(isttZ) {info_data+= " - CR ttZ";}
+	else if(!isWZ && !isttZ) {info_data+= " - SR tZq";}
+
+	TLatex* text2 = new TLatex(0, 0, info_data);
+	text2->SetNDC();
+	text2->SetTextAlign(13);
+	text2->SetX(0.25);
+	text2->SetY(0.9);
+	text2->SetTextFont(42);
+	text2->SetTextSize(0.03);
+	//text2->SetTextSizePixels(24);// dflt=28
+	text2->Draw("same");
+	//------------------
+
+
+	qw->Draw("same");
+
+	mkdir("plots",0777); //Create directory if inexistant
+
+	//Output
+	TString output_plot_name = "plots/Superpose_" + template_name +"_" + channel + this->filename_suffix + this->format;
+	if(normalized) output_plot_name = "plots/Superpose_" + template_name +"_" + channel + this->filename_suffix + "_norm" + this->format;
+
+	c1->SaveAs(output_plot_name.Data());
+
+	delete file_input_noMEM;
+	delete file_input_MEM;
+
+	delete c1;
+	delete qw;
+
+	return;
+}

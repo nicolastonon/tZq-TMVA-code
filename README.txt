@@ -60,7 +60,7 @@ _____________________________________________________________________________
 
 * All codes are compiled via the Makefile. (/!\ Modify the path to your TMVA libraries !)
 
-* All input Ntuples are placed in 'input_ntuples'. /!\ Currently, we use 2 different sets of Ntuples : for WZ region (no MEM), and ttZ+tZq regions (w/ MEM). This can be modified in the constructor of theMVAtool ('dir_ntuples' member), e.g. if you want to use a single set of ntuples for all 3 regions.
+* Make sure you properly modified the "Dir. path" section in BDT_analysis.cc, to tell the code where you located your Ntuples
 
 * All output .root files are placed in 'outputs/' (e.g. templates, control histograms, ...).
 
@@ -69,7 +69,7 @@ _____________________________________________________________________________
 * All TMVA BDT weight files are placed in 'weights/'
 
 * For disambiguation, output files (templates, BDT, ...) contain a suffix in their names, indicating which set of cuts they correspond to. These suffix are used throughout the code to make sure the right input files are used.
----> e.g. 'Reader_mTW_NJetsMin0_NBJetsEq0.root' is the file containing the templates in the WZ regions (suffix <-> No bjets, at least 1 light jet).
+---> e.g. 'Reader_mTW_NJetsMin0_NBJetsEq0.root' is the file containing the templates in the WZ region with no additional cut (suffix <-> No bjets, at least 1 light jet).
 
 * NOTE : the regions / template we use are :
 - WZ Control Region --> == 0 bjet, > 0 total jets --> mTW templates
@@ -107,10 +107,11 @@ This class contains all the necessary functions to perform our Template Fit Anal
 --- FUNCTION CALLS => This is where the functions are called. Simply set to 'TRUE' the booleans activating the functions you want to use. Then all the function calls are made automatically from there.
 
 
---- OPTIMIZATION => This is a simple loop on 2 sets of cuts, which allows to produce templates in the selected region with different cuts ==> Can then perform template fit with all the different files, and see which set of cuts maximizes the significance !
-- NB : only does training + template creation (needed for comparison b/w cut sets)
-- NB : to use the optimization loop, need to set corresponding boolean in 'Options' section ;
-- NB : can easily loop on more than two sets of cuts, by adding loops !
+--- OPTIMIZATION [FIXME : update description]
+=> This section is divided in 2 parts : "Cuts" & "BDT variables", to optimize either the cuts (MET & mTW) or the list of input variables to the BDTs.
+- The idea is to loop (on cut values or the variables to remove) & produce templates files at each iteration
+--> Automatically feed templates to combine & retrieve significance values for each case
+
 
 ---------------------------
 
@@ -202,13 +203,13 @@ _____________________________________________________________________________
 2) Activate 'Train_Test_Evaluate' & 'Read' functions. Run the 'auto_BDTanalysis_3regions.sh' script (= all 3 regions)
 ---> Creates 3 'Reader' files in 'outputs/'.
 
-3) Move to 'outputs/' & run the script 'merge_templates_combine.sh'
+3) Run the script 'merge_templates_combine.sh'
 ---> Creates file Combine_Input.root from the 3 previous files.
 ===> This is the input file we're going to feed to Combine !
 
 
 ----------- CHECK THE COMBINE README.TXT FOR THE NEXT STEPS -----------
-5) Move this file to <your_combine_folder>/templates/ .
+5) Move Combine_Input.root to <your_combine_folder>/templates/ .
 
 5) Do as instructed on the other README to perform the template fit :
 - Generate the Datacards

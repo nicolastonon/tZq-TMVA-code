@@ -594,7 +594,6 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
   TString filepath = "./input_ntuples/FCNCNTuple_" +samplename+ ".root"; //FOR LOCAL EXECUTION
-  // TString filepath = "/opt/sbg/scratch1/cms/TTH/ntuplesMEM_JES_newBTag/FCNCNTuple_" +samplename+ ".root"; //FOR EXECUTION ON SBGUI6 SERVER
 
   TFile* f_input = 0;
   f_input = new TFile(filepath.Data());
@@ -750,13 +749,13 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
       if(NJets_tmp != NJets || NBJets_tmp != NBJets)
       {
-        // cout<<"Disagreement b/w NJets definitions"<<endl;
-        // cout<<"NJets "<<NJets<<" NJets_tmp "<<NJets_tmp<<" vSelectedJets "<<vSelectedJets->size()<<endl;
-        // cout<<"NBJets "<<NBJets<<" NBJets_tmp "<<NBJets_tmp<<endl;
-        // for(int ijet=0; ijet<vSelectedJets->size(); ijet++)
-        // {
-        //   cout<<vSelectedJets->at(ijet).eta<<" "<<vSelectedJets->at(ijet).btagCSV<<endl;
-        // }      cout<<endl<<endl<<endl;
+        cout<<"Disagreement b/w NJets definitions"<<endl;
+        cout<<"NJets "<<NJets<<" NJets_tmp "<<NJets_tmp<<" vSelectedJets "<<vSelectedJets->size()<<endl;
+        cout<<"NBJets "<<NBJets<<" NBJets_tmp "<<NBJets_tmp<<endl;
+        for(int ijet=0; ijet<vSelectedJets->size(); ijet++)
+        {
+          cout<<vSelectedJets->at(ijet).eta<<" "<<vSelectedJets->at(ijet).btagCSV<<endl;
+        }      cout<<endl<<endl<<endl;
 
         cout<<"--- WRONG BJET DEF ! ABORT"<<endl; return;
       }
@@ -927,6 +926,8 @@ int main()
   vector<TString> v_samplenames;
   // v_samplenames.push_back("Data");
   // v_samplenames.push_back("tZqmcNLO");
+  v_samplenames.push_back("tZqQup");
+  v_samplenames.push_back("tZqQdw");
   // v_samplenames.push_back("WZB");
   // v_samplenames.push_back("WZL");
   // v_samplenames.push_back("WZC");
@@ -935,7 +936,7 @@ int main()
   // v_samplenames.push_back("ttH");
   // v_samplenames.push_back("ttW");
   // v_samplenames.push_back("STtWll");
-  v_samplenames.push_back("Fakes");
+  // v_samplenames.push_back("Fakes");
 
 
 
@@ -1067,27 +1068,35 @@ int main()
   double CSV_threshold = 0.5426; //Medium CSV
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
+  bool do_MEM_regions = true;
+	bool do_WZ_region = true;
 
 
 
 //--- Produce ntuples for MEM (ttZ/tZq regions)
-  region_choice = "MEM";
-  for(int isample=0; isample<v_samplenames.size(); isample++)
+  if(do_MEM_regions)
   {
-    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
-    theNtupleMaker->Init();
-    theNtupleMaker->NtupleMaker(v_samplenames[isample]);
-    theNtupleMaker->~MEM_NtupleMaker();
+    region_choice = "MEM";
+    for(int isample=0; isample<v_samplenames.size(); isample++)
+    {
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
+      theNtupleMaker->Init();
+      theNtupleMaker->NtupleMaker(v_samplenames[isample]);
+      theNtupleMaker->~MEM_NtupleMaker();
+    }
   }
 
 //--- Produce ntuples for WZ CR study (mTW template fit)
-  region_choice = "WZ";
-  for(int isample=0; isample<v_samplenames.size(); isample++)
+  if(do_WZ_region)
   {
-    MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
-    theNtupleMaker->Init();
-    theNtupleMaker->NtupleMaker(v_samplenames[isample]);
-    theNtupleMaker->~MEM_NtupleMaker();
+    region_choice = "WZ";
+    for(int isample=0; isample<v_samplenames.size(); isample++)
+    {
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
+      theNtupleMaker->Init();
+      theNtupleMaker->NtupleMaker(v_samplenames[isample]);
+      theNtupleMaker->~MEM_NtupleMaker();
+    }
   }
 
 

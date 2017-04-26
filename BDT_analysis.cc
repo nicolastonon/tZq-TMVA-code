@@ -29,28 +29,33 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool RemoveBDTvars_CreateTemplates_ExtractSignif = false;
 
 
-    //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
-    double set_luminosity = 35.68; //Moriond 2017
+    //Blinding
+    bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
 
 
     //Matrix Element Method
     bool include_MEM_variables = false;
 
 
+
+
+    //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
+    double set_luminosity = 35.68; //Moriond 2017
+
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
 
-    //Templates
+    //Templates options
     int nofbin_templates = 10; //Templates binning (to be optimized)
     bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
-    bool cut_on_BDT = false; //Apply cut on BDT values --> Don't look signal region !
+
 
     //Fakes
     bool fakes_from_data = true; //Use MC fakes or data-driven fakes)
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! //NOTE : this option will modify the Fakes rescaling
 
     //Outputs
-    TString format = ".png"; //.png or .pdf only
+    TString format = ".png"; //'.png' or '.pdf' only
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -102,8 +107,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
-        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //-------------------
@@ -204,11 +209,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
     thesamplelist.push_back("WZB");             v_color.push_back(921); //grey
     thesamplelist.push_back("WZC");             v_color.push_back(922); //grey
-    thesamplelist.push_back("ZZ");              v_color.push_back(kYellow);
-    thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //Keep 3 'red' samples together for plots
-    thesamplelist.push_back("ttW");             v_color.push_back(kRed);
-    thesamplelist.push_back("ttH");             v_color.push_back(kRed);
-    thesamplelist.push_back("STtWll");          v_color.push_back(kBlack);
+    thesamplelist.push_back("ZZ");              v_color.push_back(kYellow+1);
+    thesamplelist.push_back("ttZ");             v_color.push_back(kRed+1); //Keep 3 'red' samples together for plots
+    thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
+    thesamplelist.push_back("ttH");             v_color.push_back(kRed+1);
+    thesamplelist.push_back("STtWll");          v_color.push_back(kOrange+1);
     // thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
 
     //FAKES
@@ -262,8 +267,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //--- NEW VARIABLES
     // thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
     // thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
-    thevarlist.push_back("MEMvar_6"); //try 0 + 7 instead
-    // thevarlist.push_back("MEMvar_7");
+    thevarlist.push_back("MEMvar_6");
+    // thevarlist.push_back("MEMvar_7"); //Strangely, a bit more correlated to others than MEMvar_6 (retry after BDT optim?)
     }
 
     // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
@@ -302,9 +307,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
     }
 
-    // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
     // thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //MEMvar_1
     // thevarlist_ttZ.push_back("log(mc_mem_ttz_weight_kinmaxint)"); //MEMvar_2
+    // thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //MEMvar_3
 
 //-------------------
 
@@ -403,16 +408,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = false; //Plot input variables
+        bool draw_input_vars = true; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
@@ -470,8 +475,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(create_control_histograms)
         {
             if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, false); //FIXME
-            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT); //NOTE : very long ! You should only activate necessary syst./vars !
+            // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, !real_data_templates);
+            // MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT); //NOTE : very long ! You should only activate necessary syst./vars !
         }
 
         //#############################################
@@ -506,6 +511,15 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //-----------------
         TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
+
+        for(int ichan=0; ichan<thechannellist.size(); ichan++)
+        {
+            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], false);
+            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+        }
+        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", false);
+        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
+
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
