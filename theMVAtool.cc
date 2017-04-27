@@ -2702,7 +2702,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			if(h_data->GetMaximum() > stack->GetMaximum() ) {stack->SetMaximum(h_data->GetMaximum()+0.3*h_data->GetMaximum());}
 			else stack->SetMaximum(stack->GetMaximum()+0.3*stack->GetMaximum());
 		}
-		stack->SetMinimum(0);
+		// stack->SetMinimum(0);
+		stack->SetMinimum(0.0001);
 
 		//Draw stack
 		if(stack != 0) {stack->Draw("HIST"); stack->GetXaxis()->SetLabelSize(0.0);}
@@ -2961,19 +2962,22 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
 			histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
 			histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
-			histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+			histo_ratio_data->GetYaxis()->SetLabelSize(0.04); //CHANGED
+			// histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
 			histo_ratio_data->GetXaxis()->SetLabelFont(42);
 			histo_ratio_data->GetYaxis()->SetLabelFont(42);
 			histo_ratio_data->GetXaxis()->SetTitleFont(42);
 			histo_ratio_data->GetYaxis()->SetTitleFont(42);
 			// histo_ratio_data->GetYaxis()->SetNdivisions(6);
-			histo_ratio_data->GetYaxis()->SetNdivisions(503);
+			// histo_ratio_data->GetYaxis()->SetNdivisions(503);
+			histo_ratio_data->GetYaxis()->SetNdivisions(303); //CHANGED
 			histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
 
 			histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 
 			histo_ratio_data->SetMinimum(0.0);
-			histo_ratio_data->SetMaximum(2.999);
+			// histo_ratio_data->SetMaximum(2.999);
+			histo_ratio_data->SetMaximum(2); //CHANGED
 			// histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
 			// histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
 			// histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
@@ -3286,7 +3290,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//Set Yaxis maximum & minimum
 	if(h_sum_data->GetMaximum() > stack_MC->GetMaximum() ) {stack_MC->SetMaximum(h_sum_data->GetMaximum()+0.3*h_sum_data->GetMaximum());}
 	else stack_MC->SetMaximum(stack_MC->GetMaximum()+0.3*stack_MC->GetMaximum());
-	stack_MC->SetMinimum(0);
+	// stack_MC->SetMinimum(0);
+	stack_MC->SetMinimum(0.0001);
 
 
 	//Canvas definition
@@ -3327,7 +3332,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	histo_ratio_data->GetXaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetTitleFont(42);
 	// histo_ratio_data->GetYaxis()->SetNdivisions(6);
-	histo_ratio_data->GetYaxis()->SetNdivisions(503);
+	// histo_ratio_data->GetYaxis()->SetNdivisions(503);
+	histo_ratio_data->GetYaxis()->SetNdivisions(303); //CHANGED
 	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
 
 	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
@@ -3669,6 +3675,12 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	}
 
 
+	//Canvas definition
+	Load_Canvas_Style();
+	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+	c1->SetBottomMargin(0.3);
+
+
 	//Stack all the MC nominal histograms (contained in v_MC_histo)
 	THStack* stack_MC = 0;
 	TH1F* histo_total_MC = 0; //Sum of all MC samples
@@ -3693,6 +3705,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		// if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
 		else {histo_total_MC->Add(v_MC_histo[i]);}
 	}
+
+	stack_MC->Draw("hist"); //NOTE : need to draw stack here to access its Xaxis ; tZq not included yet (for ordering), so will redraw it after
 
 	//--- Need to transform data histogram so that it's x-axis complies with combine's one
 	double xmax_stack = stack_MC->GetXaxis()->GetXmax();
@@ -3743,22 +3757,15 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//Set Yaxis maximum & minimum
 	if(h_sum_data->GetMaximum() > stack_MC->GetMaximum() ) {stack_MC->SetMaximum(h_sum_data->GetMaximum()+0.3*h_sum_data->GetMaximum());}
 	else stack_MC->SetMaximum(stack_MC->GetMaximum()+0.3*stack_MC->GetMaximum());
-	stack_MC->SetMinimum(0);
+	stack_MC->SetMinimum(0.0001);
 
-
-	//Canvas definition
-	Load_Canvas_Style();
-	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-	c1->SetBottomMargin(0.3);
 
 	//Draw stack & data
-	stack_MC->Draw("hist");
+	stack_MC->Draw("hist"); //Re-draw
+	c1->Modified();
 
-
-	// h_sum_data->SetMarkerStyle(20);
-	// h_sum_data->Draw("e0psame");
 	h_data_new->SetMarkerStyle(20);
-	h_data_new->Draw("e0psame");
+	h_data_new->Draw("epsame");
 
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
 	canvas_2->SetTopMargin(0.7);
@@ -3772,7 +3779,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
 	histo_ratio_data->SetMinimum(0.0);
-	histo_ratio_data->SetMaximum(1.999);
+	// histo_ratio_data->SetMaximum(1.999); //CHANGED
+	histo_ratio_data->SetMaximum(2);
 /*
 	histo_ratio_data->GetXaxis()->SetTitle(template_name.Data());
 	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
@@ -3783,38 +3791,43 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->GetYaxis()->SetNdivisions(6);
 	histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
 	histo_ratio_data->GetXaxis()->SetTickLength(0);
-	histo_ratio_data->GetXaxis()->SetLabelOffset(999);
 */
+
+	//To remove original Xaxis (we need to draw a custom Xaxis, see below)
+	histo_ratio_data->GetXaxis()->SetLabelOffset(999);
+	histo_ratio_data->GetXaxis()->SetLabelSize(0.0);
+	histo_ratio_data->GetXaxis()->SetTickLength(0.0);
 
 	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
 	histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
 	histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
-	histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	// histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	histo_ratio_data->GetYaxis()->SetLabelSize(0.04); //CHANGED
 	histo_ratio_data->GetXaxis()->SetLabelFont(42);
 	histo_ratio_data->GetYaxis()->SetLabelFont(42);
 	histo_ratio_data->GetXaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetTitleFont(42);
 	// histo_ratio_data->GetYaxis()->SetNdivisions(6);
-	histo_ratio_data->GetYaxis()->SetNdivisions(503);
+	histo_ratio_data->GetYaxis()->SetNdivisions(303);
 	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
 	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 	histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
+
 	//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
 	TGaxis *axis = new TGaxis(histo_ratio_data->GetXaxis()->GetXmin(),histo_ratio_data->GetMinimum(),histo_ratio_data->GetXaxis()->GetXmax(),histo_ratio_data->GetMinimum(),xmin_data,xmax_data, 510, "+"); // + : tick marks on positive side ; = : label on same side as marks
    axis->SetLineColor(1);
-   axis->SetTitle(template_name.Data());
-   axis->SetTitleSize(0.04);
-   axis->SetTitleOffset(1.4);
-   axis->SetTickLength(0.03);
-   axis->SetLabelSize(0.03);
-   // axis->SetLabelOffset(-0.01);
-   axis->Draw("same");
 
-	// stack_MC->GetXaxis()->SetTitle(template_name.Data());
-	// stack_MC->GetXaxis()->SetLabelSize(0.0);
-	// stack_MC->GetYaxis()->SetTitle("Events");
+	if (template_name == "BDT" ) axis->SetTitle("BDT output (1 tag)") ;
+	else if ( template_name == "BDTttZ" ) axis->SetTitle("BDT output (2 tags)");
+	else if ( template_name == "mTW")  axis->SetTitle("m_{T}^{W} [GeV]");
+	axis->SetTitleSize(0.04);
+	axis->SetTitleOffset(1.4);
+	axis->SetTickLength(0.03);
+	axis->SetLabelSize(0.03);
+	// axis->SetLabelOffset(-0.01);
+	axis->Draw("same");
 
 	stack_MC->GetXaxis()->SetLabelFont(42);
 	stack_MC->GetYaxis()->SetLabelFont(42);
