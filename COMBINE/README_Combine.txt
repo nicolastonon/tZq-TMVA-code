@@ -110,7 +110,7 @@ NB : need to create outputs dir. first to avoid segfault ;
 
 
 
-11) TO DO THE BREAKDOWN OF SYSTEMATICS : (Complete instructions here : https://indico.cern.ch/event/577649/contributions/2388797/attachments/1380376/2098158/HComb-Tutorial-Nov16-Impacts.pdf)
+11) To do the break-down of systematics : (Complete instructions here : https://indico.cern.ch/event/577649/contributions/2388797/attachments/1380376/2098158/HComb-Tutorial-Nov16-Impacts.pdf)
 
 - The commands are :
 
@@ -121,11 +121,22 @@ combineTool.py -M Impacts -d COMBINED_datacard_TemplateFit.root -m 125 -o impact
 plotImpacts.py -i impacts.json -o impacts
 
 
+12) To estimate stat. uncertainty contribution : (Complete instructions here : https://indico.cern.ch/event/577649/contributions/2388797/attachments/1380376/2098158/HComb-Tutorial-Nov16-Impacts.pdf)
+
+- The commands are :
+
+combine -M MultiDimFit --algo grid --points 50 --rMin -1 --rMax 4  COMBINED_datacard_TemplateFit_tZq.root -m 125 -n nominal --expectSignal=1 -t -1
+combine -M MultiDimFit --algo none --rMin -1 --rMax 4  COMBINED_datacard_TemplateFit_tZq.root -m 125 -n bestfit  --saveWorkspace --expectSignal=1 -t -1
+combine -M MultiDimFit --algo grid --points 50 --rMin -1 --rMax 4 -m 125 -n stat higgsCombinebestfit.MultiDimFit.mH125.root --snapshotName MultiDimFit --freezeNuisances all --expectSignal=1 -t -1
+./plot1DScan_mine.py --others 'higgsCombinestat.MultiDimFit.mH125.root:Freeze all:2' --breakdown syst,stat higgsCombinenominal.MultiDimFit.mH125.root
 
 
-
-
-
+13) To compute EXPECTED (cf. '-t -1' options) significance SIMULTANEOUSLY for ttZ & tZq :
+text2workspace.py -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel  --PO verbose --PO 'map=.*/tZqmcNLO:r_tZqmcNLO[1,0,10]' --PO 'map=.*/ttZ:r_ttZ[1,0,20]' COMBINED_datacard_TemplateFit_tZqANDttZ.txt -o toy-2d.root
+combine toy-2d.root  -M HybridNew --onlyTestStat --testStat=PL --singlePoint r_tZqmcNLO=0 --redefineSignalPOIs r_tZqmcNLO --expectSignal=1 -t -1
+combine toy-2d.root -M ProfileLikelihood --signif --redefineSignalPOIs r_tZqmcNLO --setPhysicsModelParameters r_rZqmcNLO=1,r_ttZ=1 --expectSignal=1 -t -1
+combine workspace.root -M HybridNew --onlyTestStat --testStat=PL --singlePoint r_tZq=1,r_ttZ=1
+combine workspace.root -M HybridNew --onlyTestStat --testStat=PL --singlePoint r_tZq=1,r_ttZ=1 --setPhysicsModelParameters r_rZqmcNLO=1,r_ttZ=1 --expectSignal=1 -t -1
 
 
 

@@ -107,8 +107,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
-        set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //-------------------
@@ -214,10 +214,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
     thesamplelist.push_back("ttH");             v_color.push_back(kRed+1);
     thesamplelist.push_back("STtWll");          v_color.push_back(kOrange+1);
-    // thesamplelist.push_back("WZjets");          v_color.push_back(11); //grey
 
     //FAKES
     thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
+
 
     //-- THESE SAMPLES MUST BE THE LAST OF THE SAMPLE LIST FOR THE READER TO KNOW WHICH ARE THE MC FAKE SAMPLES !
     //WARNING : OBSOLETE -- don't use MC fakes (or update code)
@@ -408,16 +408,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = true; //Plot input variables
+        bool draw_input_vars = false; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
@@ -475,8 +475,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(create_control_histograms)
         {
             if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            // MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, !real_data_templates);
-            // MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT); //NOTE : very long ! You should only activate necessary syst./vars !
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, !real_data_templates);
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT); //NOTE : very long ! You should only activate necessary syst./vars !
         }
 
         //#############################################

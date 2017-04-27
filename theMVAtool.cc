@@ -651,7 +651,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 	TString file_mTW_templates_unscaled_PATH;
 	Long_t *id,*size,*flags,*modtime;
-	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW"+filename_suffix_noJet+"_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
+	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs //FIXME --never add suffix?
 
 	file_mTW_templates_unscaled = TFile::Open(file_mTW_templates_unscaled_PATH, "READ"); //File containing the templates, from which can compute fake ratio
 	if(!file_mTW_templates_unscaled) {cout<<FRED(<<file_mTW_templates_unscaled_PATH.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
@@ -2551,7 +2551,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					h_tmp->SetLineColor(kBlack);
 					if( (isample+1) < sample_list.size())
 					{
-						if(sample_list[isample+1].Contains("tt")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples
+						if(sample_list[isample].Contains("tt") && sample_list[isample+1].Contains("tt") && !sample_list[isample+1].Contains("ST")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples -- a bit hard-coded
 					}
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
@@ -2655,7 +2655,24 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			else {histo_total_MC->Add(v_MC_histo[i]);}
 			//cout << "**********************  "<< histo_total_MC->Integral() << endl;
 
-			//ADD LEGEND ENTRIES
+
+		}
+
+		//Data on top of legend
+		if(h_data != 0) {qw->AddEntry(h_data, "Data" , "ep");}
+		else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
+
+		//Signal on top of all MC legends
+		if(index_tZq_sample >= 0) //Put tZq on top
+		{
+			stack->Add(v_MC_histo[index_tZq_sample]);
+			qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
+		}
+		else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
+
+		//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
+		for(int i=v_MC_histo.size()-1; i>=0; i--)
+		{
 			if(MC_samples_legend[i] == "ttH" || MC_samples_legend[i] == "ttW" ) {continue;}
 			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 			else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
@@ -2667,17 +2684,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			else if(MC_samples_legend[i].Contains("ST") ) {qw->AddEntry(v_MC_histo[i], "tWZ" , "f");}
 			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 		}
-
-		if(index_tZq_sample >= 0) //Put tZq on top
-		{
-			stack->Add(v_MC_histo[index_tZq_sample]);
-			qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
-		}
-		else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
-
-
-		if(h_data != 0) {qw->AddEntry(h_data, "Data" , "ep");}
-		else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
 
 		if(!stack) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
 
@@ -3157,6 +3163,10 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 				h_tmp->SetFillStyle(1001);
 				h_tmp->SetFillColor(colorVector[isample-1]);
 				h_tmp->SetLineColor(kBlack);
+				if( (isample+1) < sample_list.size())
+				{
+					if(sample_list[isample].Contains("tt") && sample_list[isample+1].Contains("tt") && !sample_list[isample+1].Contains("ST")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples -- a bit hard-coded
+				}
 
 				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 				else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -3176,9 +3186,15 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 				{
 					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 
+					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
 					h_tmp->SetLineColor(kBlack);
+					if( (isample+1) < sample_list.size())
+					{
+						if(sample_list[isample].Contains("tt") && sample_list[isample+1].Contains("tt") && !sample_list[isample+1].Contains("ST")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples -- a bit hard-coded
+					}
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -3238,8 +3254,23 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
 		// if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
 		else {histo_total_MC->Add(v_MC_histo[i]);}
+	}
 
-		//ADD LEGEND ENTRIES
+	//Data on top of legend
+	if(h_sum_data != 0) {qw->AddEntry(h_sum_data, "Data" , "ep");}
+	else {cout<<__LINE__<<BOLD(FRED(" : h_sum_data is null"))<<endl;}
+
+	//Signal on top of all MC legends
+	if(index_tZq_sample >= 0) //Put tZq on top
+	{
+		stack_MC->Add(v_MC_histo[index_tZq_sample]);
+		qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
+	}
+	else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
+
+	//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
+	for(int i=v_MC_histo.size()-1; i>=0; i--)
+	{
 		if(MC_samples_legend[i] == "ttH" || MC_samples_legend[i] == "ttW" ) {continue;}
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
@@ -3251,15 +3282,6 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		else if(MC_samples_legend[i].Contains("ST") ) {qw->AddEntry(v_MC_histo[i], "tWZ" , "f");}
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 	}
-
-	if(index_tZq_sample >= 0) //Put tZq on top
-	{
-		stack_MC->Add(v_MC_histo[index_tZq_sample]);
-		qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
-	}
-	else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
-
-	qw->AddEntry(h_sum_data, "Data" , "lep");
 
 	//Set Yaxis maximum & minimum
 	if(h_sum_data->GetMaximum() > stack_MC->GetMaximum() ) {stack_MC->SetMaximum(h_sum_data->GetMaximum()+0.3*h_sum_data->GetMaximum());}
@@ -3592,6 +3614,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
 					h_tmp->SetLineColor(kBlack);
+					if( (isample+1) < sample_list.size())
+					{
+						if(sample_list[isample].Contains("tt") && sample_list[isample+1].Contains("tt") && !sample_list[isample+1].Contains("ST")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples -- a bit hard-coded
+					}
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -3614,6 +3640,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 					h_tmp->SetFillStyle(1001);
 					h_tmp->SetFillColor(colorVector[isample-1]);
 					h_tmp->SetLineColor(kBlack);
+					if( (isample+1) < sample_list.size())
+					{
+						if(sample_list[isample].Contains("tt") && sample_list[isample+1].Contains("tt") && !sample_list[isample+1].Contains("ST")) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples -- a bit hard-coded
+					}
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else {v_MC_histo[isample-1]->Add(h_tmp);}
@@ -3662,8 +3692,41 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		if(histo_total_MC == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
 		// if(i == 0) {histo_total_MC = (TH1F*) v_MC_histo[i]->Clone();}
 		else {histo_total_MC->Add(v_MC_histo[i]);}
+	}
 
-		//ADD LEGEND ENTRIES
+	//--- Need to transform data histogram so that it's x-axis complies with combine's one
+	double xmax_stack = stack_MC->GetXaxis()->GetXmax();
+	double xmin_stack = stack_MC->GetXaxis()->GetXmin();
+	double xmax_data = h_sum_data->GetXaxis()->GetXmax();
+	double xmin_data = h_sum_data->GetXaxis()->GetXmin();
+
+	// cout<<"xmin_stack = "<<xmin_stack<<" / xmax_stack = "<<xmax_stack<<endl;
+	// cout<<"xmin_data = "<<xmin_data<<" / xmax_data = "<<xmax_data<<endl;
+	TH1F *h_data_new = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
+	for(int ibin = 1; ibin<h_sum_data->GetNbinsX()+1; ibin++)
+	{
+		double x =  h_sum_data->GetXaxis()->GetBinCenter(ibin);
+		double y = 	h_sum_data->GetBinContent(ibin);
+		double y_err =	h_sum_data->GetBinError(ibin);
+		double xnew = (x-xmin_data) * xmax_stack / (xmax_data - xmin_data); //Transformation
+		h_data_new->Fill(xnew,y); h_data_new->SetBinError(ibin, y_err); //CHANGED
+
+		// cout<<"i = "<<ibin<<" x = "<<x<<" xnew = "<<xnew<<" y = "<<y<<endl;
+	}
+
+	qw->AddEntry(h_data_new, "Data" , "ep");
+
+	//Signal on top of all MC legends
+	if(index_tZq_sample >= 0) //Put tZq on top
+	{
+		stack_MC->Add(v_MC_histo[index_tZq_sample]);
+		qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
+	}
+	else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
+
+	//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
+	for(int i=v_MC_histo.size()-1; i>=0; i--)
+	{
 		if(MC_samples_legend[i] == "ttH" || MC_samples_legend[i] == "ttW" ) {continue;}
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
@@ -3675,13 +3738,6 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		else if(MC_samples_legend[i].Contains("ST") ) {qw->AddEntry(v_MC_histo[i], "tWZ" , "f");}
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
 	}
-
-	if(index_tZq_sample >= 0) //Put tZq on top
-	{
-		stack_MC->Add(v_MC_histo[index_tZq_sample]);
-		qw->AddEntry(v_MC_histo[index_tZq_sample], "tZq" , "f");
-	}
-	else {cout<<__LINE__<<" : no signal histogram !"<<endl;}
 
 
 	//Set Yaxis maximum & minimum
@@ -3697,31 +3753,6 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	//Draw stack & data
 	stack_MC->Draw("hist");
-
-	//Need to transform data histogram so that it's x-axis complies with combine's one
-	double xmax_stack = stack_MC->GetXaxis()->GetXmax();
-	double xmin_stack = stack_MC->GetXaxis()->GetXmin();
-	double xmax_data = h_sum_data->GetXaxis()->GetXmax();
-	double xmin_data = h_sum_data->GetXaxis()->GetXmin();
-
-	// cout<<"BDT_uuu[10] = "
-
-
-	// cout<<"xmin_stack = "<<xmin_stack<<" / xmax_stack = "<<xmax_stack<<endl;
-	// cout<<"xmin_data = "<<xmin_data<<" / xmax_data = "<<xmax_data<<endl;
-   	TH1F *h_data_new = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
-	for(int ibin = 1; ibin<h_sum_data->GetNbinsX()+1; ibin++)
-	{
-		double x =  h_sum_data->GetXaxis()->GetBinCenter(ibin);
-		double y = 	h_sum_data->GetBinContent(ibin);
-		double y_err =	h_sum_data->GetBinError(ibin);
-		double xnew = (x-xmin_data) * xmax_stack / (xmax_data - xmin_data); //Transformation
-		h_data_new->Fill(xnew,y); h_data_new->SetBinError(ibin, y_err); //CHANGED
-
-		// cout<<"i = "<<ibin<<" x = "<<x<<" xnew = "<<xnew<<" y = "<<y<<endl;
-	}
-
-	qw->AddEntry(h_data_new, "Data" , "lep");
 
 
 	// h_sum_data->SetMarkerStyle(20);
