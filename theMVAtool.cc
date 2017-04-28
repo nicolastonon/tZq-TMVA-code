@@ -2702,8 +2702,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			if(h_data->GetMaximum() > stack->GetMaximum() ) {stack->SetMaximum(h_data->GetMaximum()+0.3*h_data->GetMaximum());}
 			else stack->SetMaximum(stack->GetMaximum()+0.3*stack->GetMaximum());
 		}
-		// stack->SetMinimum(0);
-		stack->SetMinimum(0.0001);
+		stack->SetMinimum(0); //CHANGED
+		// stack->SetMinimum(0.0001);
 
 		//Draw stack
 		if(stack != 0) {stack->Draw("HIST"); stack->GetXaxis()->SetLabelSize(0.0);}
@@ -2976,14 +2976,36 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 
 			histo_ratio_data->SetMinimum(0.0);
-			// histo_ratio_data->SetMaximum(2.999);
-			histo_ratio_data->SetMaximum(2); //CHANGED
+			histo_ratio_data->SetMaximum(2.999);
 			// histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
 			// histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
 			// histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
 			// histo_ratio_data->GetYaxis()->SetNdivisions(6);
 			// histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
 			histo_ratio_data->Draw("E1X0"); //Draw ratio points
+
+			//--- Create 2 flat histograms only to draw horizontal lines on ratio plot //FIXME
+			TH1F *h_line1 = new TH1F("","",this->nbin, h_data->GetXaxis()->GetXmin(), h_data->GetXaxis()->GetXmax());
+			TH1F *h_line2 = new TH1F("","",this->nbin, h_data->GetXaxis()->GetXmin(), h_data->GetXaxis()->GetXmax());
+			TH1F *h_line3 = new TH1F("","",this->nbin, h_data->GetXaxis()->GetXmin(), h_data->GetXaxis()->GetXmax());
+
+			for(int ibin=1; ibin<this->nbin +1; ibin++)
+			{
+				h_line1->SetBinContent(ibin, 0.5);
+				h_line2->SetBinContent(ibin, 1.5);
+				h_line3->SetBinContent(ibin, 2.5);
+			}
+
+			h_line1->SetLineStyle(3);
+			h_line2->SetLineStyle(3);
+			h_line3->SetLineStyle(3);
+
+			h_line1->Draw("hist same");
+			h_line2->Draw("hist same");
+			h_line3->Draw("hist same");
+
+
+
 
 			//Copy previous TGraphAsymmErrors
 			TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
@@ -3045,7 +3067,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			mkdir(("plots/inputVars/"+region_name+"/prefit/allchans").Data(), 0777);
 		}
 
-		//Image name
+		//Iximumge name
 		TString outputname = "plots/inputVars/"+ region_name + "/";
 		if(postfit) outputname+= "postfit/";
 		else outputname+= "prefit/";
@@ -3290,8 +3312,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//Set Yaxis maximum & minimum
 	if(h_sum_data->GetMaximum() > stack_MC->GetMaximum() ) {stack_MC->SetMaximum(h_sum_data->GetMaximum()+0.3*h_sum_data->GetMaximum());}
 	else stack_MC->SetMaximum(stack_MC->GetMaximum()+0.3*stack_MC->GetMaximum());
-	// stack_MC->SetMinimum(0);
-	stack_MC->SetMinimum(0.0001);
+	stack_MC->SetMinimum(0);
+	// stack_MC->SetMinimum(0.0001);
 
 
 	//Canvas definition
@@ -3318,7 +3340,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
 	histo_ratio_data->SetMinimum(0.0);
-	histo_ratio_data->SetMaximum(1.999);
+	histo_ratio_data->SetMaximum(2.999);
 
 	// histo_ratio_data->GetXaxis()->SetTickLength(0.22);
 	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
@@ -3326,7 +3348,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
 	histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
 	histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
-	histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	// histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	histo_ratio_data->GetYaxis()->SetLabelSize(0.04);
 	histo_ratio_data->GetXaxis()->SetLabelFont(42);
 	histo_ratio_data->GetYaxis()->SetLabelFont(42);
 	histo_ratio_data->GetXaxis()->SetTitleFont(42);
@@ -3342,6 +3365,29 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	if (template_name == "BDT" ) histo_ratio_data->GetXaxis()->SetTitle("BDT output (1 tag)") ;
 	else if ( template_name == "BDTttZ" ) histo_ratio_data->GetXaxis()->SetTitle("BDT output (2 tags)");
 	else if ( template_name == "mTW")  histo_ratio_data->GetXaxis()->SetTitle("m_{T}^{W} [GeV]");
+
+
+	//--- Create 2 flat histograms only to draw horizontal lines on ratio plot //FIXME
+	TH1F *h_line1 = new TH1F("","",this->nbin, h_sum_data->GetXaxis()->GetXmin(), h_sum_data->GetXaxis()->GetXmax());
+	TH1F *h_line2 = new TH1F("","",this->nbin, h_sum_data->GetXaxis()->GetXmin(), h_sum_data->GetXaxis()->GetXmax());
+	TH1F *h_line3 = new TH1F("","",this->nbin, h_sum_data->GetXaxis()->GetXmin(), h_sum_data->GetXaxis()->GetXmax());
+
+	for(int ibin=1; ibin<this->nbin +1; ibin++)
+	{
+		h_line1->SetBinContent(ibin, 0.5);
+		h_line2->SetBinContent(ibin, 1.5);
+		h_line3->SetBinContent(ibin, 2.5);
+	}
+
+	h_line1->SetLineStyle(3);
+	h_line2->SetLineStyle(3);
+	h_line3->SetLineStyle(3);
+
+	h_line1->Draw("hist same");
+	h_line2->Draw("hist same");
+	h_line3->Draw("hist same");
+
+
 
 	// stack_MC->GetXaxis()->SetTitle(template_name.Data());
 	stack_MC->GetXaxis()->SetLabelFont(42);
@@ -3757,7 +3803,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//Set Yaxis maximum & minimum
 	if(h_sum_data->GetMaximum() > stack_MC->GetMaximum() ) {stack_MC->SetMaximum(h_sum_data->GetMaximum()+0.3*h_sum_data->GetMaximum());}
 	else stack_MC->SetMaximum(stack_MC->GetMaximum()+0.3*stack_MC->GetMaximum());
-	stack_MC->SetMinimum(0.0001);
+	// stack_MC->SetMinimum(0.0001);
 
 
 	//Draw stack & data
@@ -3779,8 +3825,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
 	histo_ratio_data->SetMinimum(0.0);
-	// histo_ratio_data->SetMaximum(1.999); //CHANGED
-	histo_ratio_data->SetMaximum(2);
+	histo_ratio_data->SetMaximum(2.999);
 /*
 	histo_ratio_data->GetXaxis()->SetTitle(template_name.Data());
 	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
@@ -3813,6 +3858,27 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
 	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 	histo_ratio_data->Draw("E1X0"); //Draw ratio points
+
+
+	//--- Create 2 flat histograms only to draw horizontal lines on ratio plot //FIXME
+	TH1F *h_line1 = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
+	TH1F *h_line2 = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
+	TH1F *h_line3 = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
+
+	for(int ibin=1; ibin<this->nbin +1; ibin++)
+	{
+		h_line1->SetBinContent(ibin, 0.5);
+		h_line2->SetBinContent(ibin, 1.5);
+		h_line3->SetBinContent(ibin, 2.5);
+	}
+
+	h_line1->SetLineStyle(3);
+	h_line2->SetLineStyle(3);
+	h_line3->SetLineStyle(3);
+
+	h_line1->Draw("hist same");
+	h_line2->Draw("hist same");
+	h_line3->Draw("hist same");
 
 
 	//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
@@ -3855,8 +3921,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	latex2->SetTextSize(0.04);
 	latex2->SetTextAlign(31);
 	//------------------
-	// float lumi = 12.9 * luminosity_rescale;
-	float lumi = 35.68 * luminosity_rescale; //CHANGED
+	float lumi = 35.68 * luminosity_rescale;
 	TString lumi_ts = Convert_Number_To_TString(lumi);
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -3884,6 +3949,70 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	text2->Draw("same");
 	//------------------
 */
+
+// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines //CHANGED
+		//
+		TString cmsText     = "CMS";
+		float cmsTextFont   = 61;  // default is helvetic-bold
+
+		bool writeExtraText = false;
+		TString extraText   = "Preliminary";
+		// TString extraText   = "Work in progress";
+		float extraTextFont = 52;  // default is helvetica-italics
+
+		// text sizes and text offsets with respect to the top frame
+		// in unit of the top margin size
+		float lumiTextSize     = 0.6;
+		float lumiTextOffset   = 0.2;
+		float cmsTextSize      = 0.75;
+		float cmsTextOffset    = 0.1;  // only used in outOfFrame version
+
+		float relPosX    = 0.045;
+		float relPosY    = 0.035;
+		float relExtraDY = 1.2;
+
+		// ratio of "CMS" and extra text size
+		float extraOverCmsTextSize  = 0.76;
+
+		float lumi = 35.7 * luminosity_rescale; //CHANGED
+		TString lumi_13TeV = Convert_Number_To_TString(lumi);
+		lumi_13TeV += " fb^{-1} (13 TeV)";
+
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+
+		float H = c1->GetWh();
+		float W = c1->GetWw();
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
+		float r = c1->GetRightMargin();
+		float b = c1->GetBottomMargin();
+
+		float extraTextSize = extraOverCmsTextSize*cmsTextSize;
+
+		latex.SetTextFont(42);
+		latex.SetTextAlign(31);
+		latex.SetTextSize(lumiTextSize*t);
+		//	Change position w.r.t. CMS recommendation, only for control plots
+		//      latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumi_13TeV);
+		latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
+		// latex.DrawLatex(0.9,1-t+lumiTextOffset*t,lumi_13TeV);
+		latex.SetTextFont(cmsTextFont);
+		latex.SetTextAlign(11);
+		latex.SetTextSize(cmsTextSize*t);
+		latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
+
+		//float posX_ =   l +  relPosX*(1-l-r);
+		//float posY_ =   1-t+lumiTextOffset*t;
+
+		latex.SetTextFont(extraTextFont);
+		//latex.SetTextAlign(align_);
+		latex.SetTextSize(extraTextSize*t);
+		latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+
+//------------------
 
 	qw->Draw("same");
 
