@@ -4343,7 +4343,7 @@ void theMVAtool::Convert_Templates_Theta()
  * @param  path_templatefile path of the templatefile on which to run Combine
  * @return                   computed significance value
  */
-float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, bool expected, bool use_syst)
+float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, TString channel, bool expected, bool use_syst)
 {
 	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
 
@@ -4353,6 +4353,12 @@ float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_te
 		datacard_path+= signal;
 	}
 	else {cout<<"Wrong signal name ! Abort"<<endl; return 0;}
+
+	if(channel == "uuu" || channel == "eeu" || channel == "uue" || channel == "eee")
+	{
+		datacard_path+= "_"+channel;
+	}
+	else if(channel != "") {cout<<"Wrong channel name ! Abort"<<endl; return 0;}
 
 	if(!use_syst) datacard_path+= "_noSyst";
 
@@ -4364,7 +4370,7 @@ float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_te
 	else {system( ("combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Observed
 
 
-	ifstream file_in(f_tmp_name.Data());
+	ifstream file_in(f_tmp_name.Data()); //Store output from combine in text file, read it & extract value
 	string line;
 	TString ts;
 	while(!file_in.eof())

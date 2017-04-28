@@ -25,7 +25,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //If true, activates only the "optimization" part (@ end of file)
-    bool do_optimization_cuts = false;
+    bool do_optimization_cuts = true;
     bool RemoveBDTvars_CreateTemplates_ExtractSignif = false;
 
 
@@ -163,8 +163,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     else //--- CIEMAT : Default Ntuples
     {
-        dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-        // dir_ntuples="../ntuples";
+        // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+        dir_ntuples="../ntuples";
         t_name = "Default";
     }
 
@@ -345,7 +345,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
     //FIXME -- include new systs !
@@ -370,12 +370,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     systematics_names_tmp.push_back("EleEff");
     systematics_names_tmp.push_back("LFcont");
     systematics_names_tmp.push_back("HFstats1");
-    systematics_names_tmp.push_back("HFstats2"); //
+    // systematics_names_tmp.push_back("HFstats2"); //
     systematics_names_tmp.push_back("CFerr1");
-    systematics_names_tmp.push_back("CFerr2"); //
+    // systematics_names_tmp.push_back("CFerr2"); //
     systematics_names_tmp.push_back("HFcont");
-    systematics_names_tmp.push_back("LFstats1"); //
-    systematics_names_tmp.push_back("LFstats2"); //
+    // systematics_names_tmp.push_back("LFstats1"); //
+    // systematics_names_tmp.push_back("LFstats2"); //
 //----------------
 
 //--- Actual vector of systematic names we will use
@@ -577,11 +577,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
  //  ####   ####    #    ####
 //---------------------------------------------------------------------------
 
-//--- Apply MET&mTW cuts, Train BDT + produce templates (tZq or ttZ region), then merge with the 2 other nominal templates files, feed it to Combine, retrieve Significance
-//   --> Order cuts by Significance
-// NB : need to choose cuts range, & set boolean = true (top of code)
+//--- Apply MET&mTW cuts, Train BDT + produce templates (tZq & ttZ regions only), then merge with the 2 other nominal templates files
+//--- Then compute expected significance FOR EACH CHANNEL SEPARATELY, and store the results in file. Thus we get for each channel the set of cuts which maximizes the significance
 
-    if(do_optimization_cuts)
+
+    if(do_optimization_cuts) // NB : need to choose cuts range, & set boolean = true (top of code)
     {
         if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling, etc.
         {
@@ -609,12 +609,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // v_cut2_values.push_back(">0");
 
         //-- 2D scan of MET & mTW
-        for(int icut=0; icut<=100; icut+=10)
+        for(int icut=0; icut<=20; icut+=5)
         {
             TString cut_def = ">" + icut;
 
-            // v_cut1_values.push_back(cut_def);
-            // v_cut2_values.push_back(cut_def);
+            v_cut1_values.push_back(cut_def);
+            v_cut2_values.push_back(cut_def);
         }
 
 
@@ -812,19 +812,23 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                 system( ("hadd -f "+combine_file_path+" ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root "+file_BDT_path + " " + file_BDTttZ_path).Data() );
 
-                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( combine_file_path, signal, expected, use_syst);
-
                 TString output_text = cut1_name+v_cut1_values[icut1]+"&&"+cut2_name+v_cut2_values[icut2];
-                // if((cut1_name=="METpt" || cut1_name=="mTW") && v_cut1_values[icut1]==0) {output_text = cut2_name+v_cut2_values[icut2];}
-                // else if((cut2_name=="METpt" || cut2_name=="mTW") && v_cut2_values[icut1]==0) {output_text = cut1_name+v_cut1_values[icut1];}
+                file_out<<endl<<output_text<<" : "<<endl;
+                for(int ichan=0; ichan<thechannellist.size(); ichan++)
+                {
+                    float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( combine_file_path, signal, thechannellist[ichan], expected, use_syst);
 
-                file_out<<output_text<<" ---> "<<signif<<endl;
+                    cout<<thechannellist[ichan]<<" ---> "<<signif<<endl;
+                }
+
+
+
             }
         }
 
         delete MVAtool;
 
-        Order_Cuts_By_Decreasing_Signif_Loss(file_significances.Data() );
+        // Order_Cuts_By_Decreasing_Signif_Loss(file_significances.Data() );
 
     } //End optimization Scan
 
@@ -1023,7 +1027,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             {
                 system( ("hadd -f ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root").Data() );
 
-                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, expected, use_syst);
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, "", expected, use_syst);
 
                 file_out<<thevarlist_tmp[ivar]<<" ---> "<<signif<<endl;
             }
@@ -1031,7 +1035,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             {
                 system( ("hadd -f ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root").Data() );
 
-                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, expected, use_syst);
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, "", expected, use_syst);
 
                 file_out<<thevarlist_tmp[ivar]<<" ---> "<<signif<<endl;
             }
