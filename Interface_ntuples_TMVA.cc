@@ -84,8 +84,17 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	mkdir("input_ntuples/ntuples_WZ",0755);
 
 	TString output_filename;
-	if(MEM_or_WZ == "MEM") output_filename 	= "input_ntuples/ntuples_MEM/FCNCNTuple_" + sample +  ".root";
-	else if(MEM_or_WZ == "WZ") output_filename 	= "input_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
+	if(MEM_or_WZ == "MEM")
+	{
+		output_filename = "input_ntuples/ntuples_MEM/FCNCNTuple_" + sample +  ".root";
+		if(sample=="tWZ") output_filename 	= "input_ntuples/ntuples_MEM/FCNCNTuple_STtWll.root";
+	}
+	else if(MEM_or_WZ == "WZ")
+	{
+		output_filename 	= "input_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
+		if(sample=="tWZ") output_filename 	= "input_ntuples/ntuples_WZ/FCNCNTuple_STtWll.root";
+
+	}
 	else {cout<<"ERROR -- abort !"<<endl; return;}
 
 	cout<<endl<<endl<<"--- Creating new Ntuple from "<<input_filename.Data()<<endl;
@@ -148,9 +157,15 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 		//Set Branch Addresses
 		TTree* t_input = 0;
-		if(MEM_or_WZ == "MEM") {t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data()); if(!t_input) {cout<<"Tree not found !"<<endl; return;} }
+		if(MEM_or_WZ == "MEM")
+		{
+			t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data());
+
+			if(tree_syst_list[itreesyst] == "Fakes__plus") {t_input = (TTree*) f_input->Get("Tree"); } //Fakes__plus = nominal !
+			if(!t_input) {cout<<"Tree "<<tree_syst_list[itreesyst]<<" not found !"<<endl; return;}
+		}
 		// else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Default"); if(!t_input) {cout<<"Tree 'Default' not found !"<<endl; return;} }
-		else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Tree"); if(!t_input) {cout<<"Tree 'Tree' not found !"<<endl; return;} }
+		else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Tree"); if(!t_input) {cout<<"Tree '"<<tree_syst_list[itreesyst]<<"' not found !"<<endl; return;} }
 
 
 		TLorentzVector* v_MET = new TLorentzVector; int index_MET_float = -99;
@@ -222,6 +237,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			    // thevarlist.push_back("log(mc_mem_wzjj_weight_kinmaxint)"); //5
 			    // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //6
 				// thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight) / (0.017*mc_mem_wzjj_weight + 0.17993*mc_mem_tllj_weight) )"); //7
+				// discriminant_TZQ_TTZandWZ_SR = "-log((0.017e-10*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017e-10*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"; //8
 
 				// thevarlist_ttZ.push_back("-log(mc_mem_ttz_tllj_likelihood)"); //3
 				// thevarlist_ttZ.push_back("log(mc_mem_tllj_weight_kinmaxint)"); //1
@@ -239,6 +255,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				v_floats_modif[6] = -log( (0.017*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0]) / (0.17*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
 
 				v_floats_modif[7] = -log((0.017*v_double_MEM[5]) / (0.017*v_double_MEM[5] + 0.17993*v_double_MEM[1]) );
+
+				v_floats_modif[8] = -log( (0.017e-10*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0]) / (0.17e-10*v_double_MEM[5] + 3.89464e-13*v_double_MEM[0] + 0.17993*v_double_MEM[1]) );
 
 				//FIXME -- seem to be an error bc of some events ~ -700
 				if(v_floats_modif[4] < -600) v_floats_modif[4] = 0;
@@ -274,7 +292,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 				for(int i=0; i<v_double_MEM.size(); i++)
 				{
-					v_floats_MEM[i] = (float) v_double_MEM[i]; //Convert from doubles to float --> Store as floats in output ntuple
+					v_floats_MEM[i] = (float) v_double_MEM[i]; //Convert from doubles to float --> Store as floats in output ntuple, so it has same format as all BDT vars
 				}
 
 			}
@@ -312,19 +330,21 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	// sample_list.push_back("Data");
-	// sample_list.push_back("tZq");
-	// sample_list.push_back("tZqmcNLO");
-	// sample_list.push_back("WZL");
-	// sample_list.push_back("WZB");
-	// sample_list.push_back("WZC");
-	// sample_list.push_back("ttZ");
-	// sample_list.push_back("ttW");
-	// sample_list.push_back("ttH");
-	// sample_list.push_back("ZZ");
+	sample_list.push_back("Data");
+	sample_list.push_back("tZq");
+	sample_list.push_back("tZqmcNLO");
+	sample_list.push_back("WZL");
+	sample_list.push_back("WZB");
+	sample_list.push_back("WZC");
+	sample_list.push_back("ttZ");
+	sample_list.push_back("ttW");
+	sample_list.push_back("ttH");
+	sample_list.push_back("ZZ");
 	sample_list.push_back("Fakes");
-	// sample_list.push_back("STtWll");
-	// sample_list.push_back("tWZ");
+	sample_list.push_back("STtWll");
+	sample_list.push_back("tWZ");
+	sample_list.push_back("tZqQup");
+	sample_list.push_back("tZqQdw");
 
 
 
@@ -430,6 +450,7 @@ int main()
 	MEMvarlist_new.push_back("MEMvar_5");
 	MEMvarlist_new.push_back("MEMvar_6");
 	MEMvarlist_new.push_back("MEMvar_7");
+	MEMvarlist_new.push_back("MEMvar_8");
 
 
 

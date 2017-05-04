@@ -25,7 +25,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //If true, activates only the "optimization" part (@ end of file)
-    bool do_optimization_cuts = true;
+    bool do_optimization_cuts = false;
     bool RemoveBDTvars_CreateTemplates_ExtractSignif = false;
 
 
@@ -34,7 +34,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Matrix Element Method
-    bool include_MEM_variables = false;
+    bool include_MEM_variables = true;
 
 
 
@@ -163,11 +163,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     else //--- CIEMAT : Default Ntuples
     {
-        // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-        dir_ntuples="../ntuples";
+        dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+        // dir_ntuples="../ntuples";
         t_name = "Default";
     }
-
 
 
 //---------------------------------------------------------------------------
@@ -259,16 +258,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist.push_back("tZq_pT");
 
     //Current list of MEM vars in SR : 0,1,2,6
-    if(include_MEM_variables){
-    thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
-    thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
-    thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
+    if(include_MEM_variables)
+    {
+        thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
+        thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
+        thevarlist.push_back("MEMvar_2"); //Kinematic Fit Score
 
-    //--- NEW VARIABLES
-    // thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
-    // thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
-    thevarlist.push_back("MEMvar_6");
-    // thevarlist.push_back("MEMvar_7"); //Strangely, a bit more correlated to others than MEMvar_6 (retry after BDT optim?)
+        //--- NEW VARIABLES
+        // thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
+        // thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
+        // thevarlist.push_back("MEMvar_6"); //FIXME
+        // thevarlist.push_back("MEMvar_7");
+        thevarlist.push_back("MEMvar_8");
     }
 
     // thevarlist.push_back("-log((3.89464e-13*mc_mem_ttz_weight) / (3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"); //MEMvar_0
@@ -278,6 +279,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // thevarlist.push_back("log(mc_mem_wzjj_weight_kinmaxint)"); //MEMvar_5
     // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))");//MEMvar_6
     // thevarlist.push_back("-log((0.017*mc_mem_wzjj_weight) / (0.017*mc_mem_wzjj_weight + 0.17993*mc_mem_tllj_weight) )"); //MEMvar_7
+    // discriminant_TZQ_TTZandWZ_SR = "-log((0.017e-10*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight) / (0.017e-10*mc_mem_wzjj_weight + 3.89464e-13*mc_mem_ttz_weight + 0.17993*mc_mem_tllj_weight))"; //MEMvar_8
 
 
 
@@ -354,8 +356,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     vector<TString> systematics_names_tmp;
 
     //--- Stored in separate Ntuples (tZq only)
-    // systematics_names_tmp.push_back("PSscale"); //
-    // systematics_names_tmp.push_back("Hadron"); //
+    systematics_names_tmp.push_back("PSscale"); //
+    // systematics_names_tmp.push_back("Hadron"); //Need new herwig sample
 
     //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
@@ -370,12 +372,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     systematics_names_tmp.push_back("EleEff");
     systematics_names_tmp.push_back("LFcont");
     systematics_names_tmp.push_back("HFstats1");
-    // systematics_names_tmp.push_back("HFstats2"); //
+    systematics_names_tmp.push_back("HFstats2"); //
     systematics_names_tmp.push_back("CFerr1");
-    // systematics_names_tmp.push_back("CFerr2"); //
+    systematics_names_tmp.push_back("CFerr2"); //
     systematics_names_tmp.push_back("HFcont");
-    // systematics_names_tmp.push_back("LFstats1"); //
-    // systematics_names_tmp.push_back("LFstats2"); //
+    systematics_names_tmp.push_back("LFstats1"); //
+    systematics_names_tmp.push_back("LFstats2"); //
 //----------------
 
 //--- Actual vector of systematic names we will use
@@ -408,10 +410,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -589,8 +591,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
         if(isWZ) {cout<<endl<<BOLD(FRED("No MET/mTW cuts in the WZ control region ! Abort"))<<endl<<endl; return 0;}
-        if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
-        if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+        // if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+        // if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
 
 
         //#############################################
@@ -611,7 +613,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //-- 2D scan of MET & mTW
         for(int icut=0; icut<=20; icut+=5)
         {
-            TString cut_def = ">" + icut;
+            TString cut_def = ">" + Convert_Number_To_TString(icut);
 
             v_cut1_values.push_back(cut_def);
             v_cut2_values.push_back(cut_def);
@@ -812,13 +814,14 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                 system( ("hadd -f "+combine_file_path+" ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root "+file_BDT_path + " " + file_BDTttZ_path).Data() );
 
+
                 TString output_text = cut1_name+v_cut1_values[icut1]+"&&"+cut2_name+v_cut2_values[icut2];
-                file_out<<endl<<output_text<<" : "<<endl;
+                file_out<<endl<<endl<<output_text<<" : "<<endl;
                 for(int ichan=0; ichan<thechannellist.size(); ichan++)
                 {
                     float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( combine_file_path, signal, thechannellist[ichan], expected, use_syst);
 
-                    cout<<thechannellist[ichan]<<" ---> "<<signif<<endl;
+                    file_out<<thechannellist[ichan]<<" ---> "<<signif<<endl;
                 }
 
 
@@ -879,7 +882,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
         if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
 
-        vector<TString > thevarlist_tmp;
+        vector<TString > thevarlist_tmp; //Tmp input vars list, used in loop to remove vars 1 by 1
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
         else       thevarlist_tmp = thevarlist;
 
@@ -889,7 +892,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
 
-        //--- Technical issue : some variables in the cuts vectors are also used in BDT ; need to take them into account
+        //--- Technical issue : some variables in the cuts vectors are also used in BDT ; need to take them into account as well, to remove them
         int n_cutVars_in_BDT = 0;
         for(int i=0; i<set_v_cut_name.size(); i++)
         {
@@ -910,7 +913,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             TString removed_var_name = thevarlist_tmp[ivar];
 
-            vector<TString > varlist_optim;
+            vector<TString > varlist_optim; //Var list which is actually used
             for(int j=0; j<thevarlist_tmp.size(); j++)
             {
                 if(j==ivar) {continue;} //Remove var by not pushing it into new vector
@@ -922,7 +925,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             vector<bool > set_v_cut_IsUsedForBDT_optim = set_v_cut_IsUsedForBDT;
             for(int j=0; j<n_cutVars_in_BDT; j++)
             {
-                // if(thevarlist_tmp[ivar+thevarlist_tmp.size()] == v_cut_name_optim[j])
+                //To remove a var defined within cut vector, set its 'IsUsed' boolean to false
                 if(thevarlist_tmp[ivar] == v_cut_name_optim[j])
                 {
                     set_v_cut_IsUsedForBDT_optim[j] = false;
