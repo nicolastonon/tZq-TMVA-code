@@ -4,7 +4,7 @@ cp ../*.h .
 #cp ../*.cxx .
 #cp ../*.C .
 cp ../Makefile .
-cp ../*.txt .
+cp ../README.txt .
 
 cp ../other/getROC_curves.cc .
 
