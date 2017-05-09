@@ -104,6 +104,7 @@ class theMVAtool
 	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
+	void Rebin_Template_File(TString, int);
 	// void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members

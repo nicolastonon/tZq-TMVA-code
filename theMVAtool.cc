@@ -209,7 +209,7 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 void theMVAtool::Set_Luminosity(double desired_luminosity)
 {
 	// double current_luminosity = 12.9; //Summer 2016 lumi
-	double current_luminosity = 35.68; //Moriond 2017 //CHANGED
+	double current_luminosity = 35.862; //Moriond 2017 //CHANGED
 	this->luminosity_rescale = desired_luminosity / current_luminosity;
 
 
@@ -2769,7 +2769,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		latex2->SetTextAlign(31);
 		//------------------
 		// float lumi = 12.9 * luminosity_rescale;
-		float lumi = 35.68 * luminosity_rescale; //CHANGED
+		float lumi = 35.9 * luminosity_rescale; //CHANGED
 		TString lumi_ts = Convert_Number_To_TString(lumi);
 		lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 		latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -2800,7 +2800,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		// ratio of "CMS" and extra text size
 		float extraOverCmsTextSize  = 0.76;
 
-		float lumi = 35.7 * luminosity_rescale; //CHANGED
+		float lumi = 35.9 * luminosity_rescale; //CHANGED
 		TString lumi_13TeV = Convert_Number_To_TString(lumi);
 		lumi_13TeV += " fb^{-1} (13 TeV)";
 
@@ -3419,7 +3419,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	latex2->SetTextAlign(31);
 	//------------------
 	// float lumi = 12.9 * luminosity_rescale;
-	float lumi = 35.68 * luminosity_rescale; //CHANGED
+	float lumi = 35.9 * luminosity_rescale; //CHANGED
 	TString lumi_ts = Convert_Number_To_TString(lumi);
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -3449,7 +3449,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	// ratio of "CMS" and extra text size
 	float extraOverCmsTextSize  = 0.76;
 
-	float lumi = 35.7 * luminosity_rescale; //CHANGED
+	float lumi = 35.9 * luminosity_rescale; //CHANGED
 	TString lumi_13TeV = Convert_Number_To_TString(lumi);
 	lumi_13TeV += " fb^{-1} (13 TeV)";
 
@@ -3921,7 +3921,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	latex2->SetTextSize(0.04);
 	latex2->SetTextAlign(31);
 	//------------------
-	float lumi = 35.68 * luminosity_rescale;
+	float lumi = 35.9 * luminosity_rescale;
 	TString lumi_ts = Convert_Number_To_TString(lumi);
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -3974,7 +3974,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		// ratio of "CMS" and extra text size
 		float extraOverCmsTextSize  = 0.76;
 
-		float lumi = 35.7 * luminosity_rescale; //CHANGED
+		float lumi = 35.9 * luminosity_rescale; //CHANGED
 		TString lumi_13TeV = Convert_Number_To_TString(lumi);
 		lumi_13TeV += " fb^{-1} (13 TeV)";
 
@@ -4837,7 +4837,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	latex2->SetTextAlign(31);
 	//------------------
 	// float lumi = 12.9 * luminosity_rescale;
-	float lumi = 35.68 * luminosity_rescale; //CHANGED
+	float lumi = 35.9 * luminosity_rescale; //CHANGED
 	TString lumi_ts = Convert_Number_To_TString(lumi);
 	lumi_ts+= " fb^{-1} at #sqrt{s} = 13 TeV";
 	latex2->DrawLatex(0.87, 0.95, lumi_ts.Data());
@@ -4884,4 +4884,81 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	delete qw;
 
 	return;
+}
+
+/**
+ * Takes input file, rebins all templates inside it, and store them in a separate output file
+ */
+void theMVAtool::Rebin_Template_File(TString filepath, int nbins)
+{
+	if(!Check_File_Existence(filepath)) {cout<<filepath<<" not found ! Abort"<<endl; return;}
+
+	TFile* f = TFile::Open(filepath);
+
+	TString output_filename = filepath;
+	int i = output_filename.Index(".root"); //Find index of substring
+	output_filename.Remove(i); //Remove substring
+	output_filename+= "_"+Convert_Number_To_TString(nbins)+"Bins.root";
+
+	TFile* f_output = TFile::Open( output_filename, "RECREATE");
+
+	vector<TString> template_list;
+	template_list.push_back("mTW");
+	template_list.push_back("BDT");
+	template_list.push_back("BDTttZ");
+
+	TH1F* h = 0;
+	TH1F* hnew = 0; //re-binned histo
+
+
+	for(int itemp=0; itemp<template_list.size(); itemp++)
+	{
+		for(int isample = 0; isample<sample_list.size(); isample++)
+		{
+			for(int isyst=0; isyst<syst_list.size(); isyst++)
+			{
+				if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
+				if( (sample_list[isample] == "Data" && syst_list[isyst]!="")
+					|| ( sample_list[isample].Contains("Fakes") && syst_list[isyst]!="" && !syst_list[isyst].Contains("Fakes") ) ) {continue;} //Data = no syst. -- Fakes = only fake syst.
+				if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") )   {continue;} //Fake syst. only for "fakes" samples
+				if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
+
+				for(int ichan=0; ichan<channel_list.size(); ichan++)
+				{
+					h=0; hnew=0;
+
+					TString h_name = template_list[itemp]+"_"+channel_list[ichan]+"__";
+					if(sample_list[isample].Contains("Data")) h_name+= "data_obs";
+					else if(sample_list[isample].Contains("Fakes"))
+					{
+						if(channel_list[ichan]=="uuu") h_name+= "FakeMuMuMu";
+						else if(channel_list[ichan]=="uue") h_name+= "FakeMuMuEl";
+						else if(channel_list[ichan]=="eeu") h_name+= "FakeElElMu";
+						else if(channel_list[ichan]=="eee") h_name+= "FakeElElEl";
+					}
+					else h_name+= sample_list[isample];
+					if(syst_list[isyst] != "") {h_name+= "__"+Combine_Naming_Convention(syst_list[isyst]);}
+
+					if(!f->GetListOfKeys()->Contains(h_name) ) {cout<<h_name.Data()<<" not found !"<<endl;  continue;}
+
+					h = (TH1F*) f->Get(h_name);
+
+					int current_binning = h->GetNbinsX();
+
+					double rebin_ratio = (double) current_binning / nbins;
+
+					hnew = (TH1F*) h->Rebin(rebin_ratio);
+
+					f_output->cd();
+					hnew->Write(h_name, TObject::kOverwrite);
+				} //chan
+			} //syst
+		} //sample
+
+		cout<<"--- Done with "<<template_list[itemp]<<"templates !"<<endl;
+
+	} //template
+
+	delete h; delete hnew;
+	f->Close(); f_output->Close();
 }

@@ -26,7 +26,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //If true, activates only the "optimization" part (@ end of file)
     bool do_optimization_cuts = false;
-    bool RemoveBDTvars_CreateTemplates_ExtractSignif = false;
+    bool do_optim_RemoveBDTVars1By1 = false;
+    bool do_optim_RemoveWorstBDTVars = false; //HARD CODED VARIABLES TO REMOVE !! CAREFUL !!
 
 
     //Blinding
@@ -40,7 +41,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Luminosity -- NB : A SCALE FACTOR IS COMPUTED W.R.T MORIOND2017 LUMI !!!
-    double set_luminosity = 35.68; //Moriond 2017
+    double set_luminosity = 35.862; //Moriond 2017
 
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
@@ -107,8 +108,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
-        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">5");            set_v_cut_IsUsedForBDT.push_back(false);
+        set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //-------------------
@@ -119,17 +120,17 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     if(!isWZ && !isttZ) //Default selection is Signal Region : 1<NJets<4 && NBJets == 1
     {
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(true); //NB : cst -> not actually used in BDT
+        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false); //NB : cst -> not used in BDT
     }
     if(isWZ) //WZ CR Region : NJets > 0 && NBJets == 0
     {
-        set_v_cut_name.push_back("NJets");      set_v_cut_def.push_back(">0");          set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");     set_v_cut_def.push_back("== 0");        set_v_cut_IsUsedForBDT.push_back(true); //NB : cst -> not actually used in BDT
+        set_v_cut_name.push_back("NJets");      set_v_cut_def.push_back(">0");          set_v_cut_IsUsedForBDT.push_back(false);
+        set_v_cut_name.push_back("NBJets");     set_v_cut_def.push_back("== 0");        set_v_cut_IsUsedForBDT.push_back(false);
     }
     if(isttZ) //ttZ CR Region : NJets>1 && NBJets>1
     {
         set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(true);
+        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back(">1");           set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //---------------------
@@ -154,19 +155,20 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
 
-    if(include_MEM_variables) //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
+    // if(include_MEM_variables) //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
     {
         if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
         else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
         t_name = "Tree";
     }
-
+/*
     else //--- CIEMAT : Default Ntuples
     {
         dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
         // dir_ntuples="../ntuples";
         t_name = "Default";
     }
+*/
 
 
 //---------------------------------------------------------------------------
@@ -241,23 +243,24 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //------------------------ for tZq
     thevarlist.push_back("btagDiscri");
-    thevarlist.push_back("dRAddLepQ");
     thevarlist.push_back("dRAddLepClosestJet");
     thevarlist.push_back("dPhiAddLepB");
     thevarlist.push_back("ZEta");
-    thevarlist.push_back("Zpt");
     thevarlist.push_back("mtop");
     thevarlist.push_back("AddLepAsym");
     thevarlist.push_back("etaQ");
     thevarlist.push_back("AddLepETA");
     thevarlist.push_back("LeadJetEta");
     thevarlist.push_back("dPhiZAddLep");
-    thevarlist.push_back("dRZAddLep");
     thevarlist.push_back("dRjj");
     thevarlist.push_back("ptQ");
-    thevarlist.push_back("tZq_pT");
 
-    //Current list of MEM vars in SR : 0,1,2,6
+//-- After optimization, removed 4 vars :
+    // thevarlist.push_back("dRAddLepQ");
+    // thevarlist.push_back("dRZAddLep");
+    // thevarlist.push_back("Zpt");
+    // thevarlist.push_back("tZq_pT");
+
     if(include_MEM_variables)
     {
         thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
@@ -286,26 +289,28 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //------------------------ for ttZ
     thevarlist_ttZ.push_back("btagDiscri");
     thevarlist_ttZ.push_back("dRAddLepQ");
-    thevarlist_ttZ.push_back("dRAddLepB");
     thevarlist_ttZ.push_back("dRAddLepClosestJet");
     thevarlist_ttZ.push_back("Zpt");
     thevarlist_ttZ.push_back("ZEta");
     thevarlist_ttZ.push_back("AddLepAsym");
     thevarlist_ttZ.push_back("etaQ");
     thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
-    thevarlist_ttZ.push_back("AddLepETA");
     thevarlist_ttZ.push_back("dPhiZAddLep");
-    thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
     thevarlist_ttZ.push_back("dRjj");
     thevarlist_ttZ.push_back("mtop");
-    thevarlist_ttZ.push_back("TopPT"); // low discri power
-    thevarlist_ttZ.push_back("m3l");
     thevarlist_ttZ.push_back("dRZTop");
-    thevarlist_ttZ.push_back("tZq_pT");
+
+//--- After optimization, removed 8 variables : (+NBJets & MEMvar_2)
+    // thevarlist_ttZ.push_back("AddLepETA");
+    // thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
+    // thevarlist_ttZ.push_back("dRAddLepB");
+    // thevarlist_ttZ.push_back("TopPT"); // low discri power
+    // thevarlist_ttZ.push_back("m3l");
+    // thevarlist_ttZ.push_back("tZq_pT");
 
     if(include_MEM_variables){
     thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
-    thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
+    // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
     thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
     }
 
@@ -356,7 +361,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     vector<TString> systematics_names_tmp;
 
     //--- Stored in separate Ntuples (tZq only)
-    systematics_names_tmp.push_back("PSscale"); //
+    // systematics_names_tmp.push_back("PSscale"); //
     // systematics_names_tmp.push_back("Hadron"); //Need new herwig sample
 
     //--- Stored in separate Trees
@@ -372,12 +377,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     systematics_names_tmp.push_back("EleEff");
     systematics_names_tmp.push_back("LFcont");
     systematics_names_tmp.push_back("HFstats1");
-    systematics_names_tmp.push_back("HFstats2"); //
+    // systematics_names_tmp.push_back("HFstats2"); //
     systematics_names_tmp.push_back("CFerr1");
-    systematics_names_tmp.push_back("CFerr2"); //
+    // systematics_names_tmp.push_back("CFerr2"); //
     systematics_names_tmp.push_back("HFcont");
-    systematics_names_tmp.push_back("LFstats1"); //
-    systematics_names_tmp.push_back("LFstats2"); //
+    // systematics_names_tmp.push_back("LFstats1"); //
+    // systematics_names_tmp.push_back("LFstats2"); //
 //----------------
 
 //--- Actual vector of systematic names we will use
@@ -404,16 +409,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
 
 
-    if(!do_optimization_cuts && !RemoveBDTvars_CreateTemplates_ExtractSignif)
+    if(!do_optimization_cuts && !do_optim_RemoveBDTVars1By1)
     {
 
 //*** CHOOSE HERE FROM BOOLEANS WHAT YOU WANT TO DO !
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -522,6 +527,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", false);
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
+        // MVAtool->Rebin_Template_File("./outputs/Combine_Input.root", 15);
+        // MVAtool->Rebin_Template_File("./outputs/Combine_Input.root", 10);
+
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
@@ -579,9 +587,17 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
  //  ####   ####    #    ####
 //---------------------------------------------------------------------------
 
+
+
+
+    //---------------------------------------------
+    //---------------------------------------------
+    //---------------------------------------------
+
+
+
 //--- Apply MET&mTW cuts, Train BDT + produce templates (tZq & ttZ regions only), then merge with the 2 other nominal templates files
 //--- Then compute expected significance FOR EACH CHANNEL SEPARATELY, and store the results in file. Thus we get for each channel the set of cuts which maximizes the significance
-
 
     if(do_optimization_cuts) // NB : need to choose cuts range, & set boolean = true (top of code)
     {
@@ -591,8 +607,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
         if(isWZ) {cout<<endl<<BOLD(FRED("No MET/mTW cuts in the WZ control region ! Abort"))<<endl<<endl; return 0;}
-        // if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
-        // if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+
 
 
         //#############################################
@@ -611,6 +626,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // v_cut2_values.push_back(">0");
 
         //-- 2D scan of MET & mTW
+        //FIXME : change here the points to scan
         for(int icut=0; icut<=20; icut+=5)
         {
             TString cut_def = ">" + Convert_Number_To_TString(icut);
@@ -816,24 +832,35 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
                 TString output_text = cut1_name+v_cut1_values[icut1]+"&&"+cut2_name+v_cut2_values[icut2];
-                file_out<<endl<<endl<<output_text<<" : "<<endl;
-                for(int ichan=0; ichan<thechannellist.size(); ichan++)
-                {
-                    float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( combine_file_path, signal, thechannellist[ichan], expected, use_syst);
 
-                    file_out<<thechannellist[ichan]<<" ---> "<<signif<<endl;
+                //--- To compute significance for each channel separately
+                // file_out<<endl<<endl<<output_text<<" : "<<endl;
+                // for(int ichan=0; ichan<thechannellist.size(); ichan++)
+                {
+                    // float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( combine_file_path, signal, thechannellist[ichan], expected, use_syst); //Separately for each chan
+                    // file_out<<thechannellist[ichan]<<" ---> "<<signif<<endl;
                 }
 
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( combine_file_path, signal, "", expected, use_syst);
 
-
+                file_out<<output_text<<" ---> "<<signif<<endl;
             }
         }
 
         delete MVAtool;
 
-        // Order_Cuts_By_Decreasing_Signif_Loss(file_significances.Data() );
+        Order_Cuts_By_Decreasing_Signif_Loss(file_significances.Data() );
 
     } //End optimization Scan
+
+
+
+
+
+    //---------------------------------------------
+    //---------------------------------------------
+    //---------------------------------------------
+
 
 
 
@@ -847,7 +874,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
  // # #    # #       ####    #        ##   #    # #    # # #    # #####  ###### ######  ####
 //---------------------------------------------------------------------------
 
-    if(RemoveBDTvars_CreateTemplates_ExtractSignif)
+    if(do_optim_RemoveBDTVars1By1)
     {
         TString filename_suffix_tmp;
         TString filename_suffix_noJet; //Without the jet suffixes
@@ -890,6 +917,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             cout<<endl<<BOLD(FRED("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root not found! (needed to compute data Fakes SF) Abort! "))<<endl<<endl; return 0;
         }
+
+        cout<<BOLD(FGRN("WILL TAKE CURRENT READER FILES LOCATED IN './outputs/' AS NOMINAL TEMPLATES FOR SIGNIFICANCE COMPUTATION !"))<<endl;
+        mkdir("outputs/Templates_nominal", 0777);
+        CopyFile( ("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root"), ("./outputs/Templates_nominal/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root") );
+        CopyFile( ("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root"), ("./outputs/Templates_nominal/Reader_BDTttZ_NJetsMin1Max4_NBJetsEq1.root") );
+        CopyFile( ("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root"), ("./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root") );
 
 
         //--- Technical issue : some variables in the cuts vectors are also used in BDT ; need to take them into account as well, to remove them
@@ -1028,7 +1061,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             if(!isWZ && !isttZ)
             {
-                system( ("hadd -f ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root").Data() );
+                system( ("hadd -f ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root ./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Templates_nominal/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root").Data() );
 
                 float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDT/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, "", expected, use_syst);
 
@@ -1036,7 +1069,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             }
             else if(!isWZ && isttZ)
             {
-                system( ("hadd -f ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root").Data() );
+                system( ("hadd -f ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root  ./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root ./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Templates_nominal/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root").Data() );
 
                 float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/BDTttZ/without_"+thevarlist_tmp[ivar]+"/Combine_Input.root"), signal, "", expected, use_syst);
 
@@ -1057,14 +1090,237 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 
+    //---------------------------------------------
+    //---------------------------------------------
+    //---------------------------------------------
 
 
 
 
+    //--- Once the impact of all individual variables has been computed, can remove sequentially the worst variables and see how it impacts results
+    if(do_optim_RemoveWorstBDTVars)
+    {
+        TString filename_suffix_tmp;
+        TString filename_suffix_noJet; //Without the jet suffixes
+
+        for(int ivar=0; ivar<set_v_cut_name.size(); ivar++)
+        {
+            if( (set_v_cut_name[ivar]=="METpt" || set_v_cut_name[ivar]=="mTW") && set_v_cut_def[ivar] == ">0") {continue;} //Useless cuts
+
+            if(set_v_cut_def[ivar] != "")
+            {
+                TString tmp;
+
+                if(set_v_cut_def[ivar].Contains("||") ) {continue;} //Don't add the 'or' conditions in filename
+                else if(!set_v_cut_def[ivar].Contains("&&")) //Single condition
+                {
+                    tmp = "_" + set_v_cut_name[ivar] + Convert_Sign_To_Word(set_v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(set_v_cut_def[ivar]));
+                }
+                else //Double '&&' condition
+                {
+                    TString cut1 = Break_Cuts_In_Two(set_v_cut_def[ivar]).first, cut2 = Break_Cuts_In_Two(set_v_cut_def[ivar]).second;
+                    tmp = "_" + set_v_cut_name[ivar] + Convert_Sign_To_Word(cut1) + Convert_Number_To_TString(Find_Number_In_TString(cut1));
+                    tmp+= Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+                }
+
+                filename_suffix_tmp+= tmp;
+                if(set_v_cut_name[ivar] == "NJets" || set_v_cut_name[ivar] == "NBJets") {continue;}
+                filename_suffix_noJet+= tmp;
+            }
+        }
+
+        if(isWZ) {cout<<BOLD(FRED("No BDT in WZ Control Region !"))<<endl; return 0;}
+        if(!isWZ && !isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+        if(isttZ && !Check_File_Existence("./outputs/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root")) {cout<<BOLD(FRED("./outputs/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root DOES NOT EXIST ! You first need to create the 'nominal' templates (with complete BDT variable lists), and THEN run the optimization code ! ABORT"))<<endl; return 0;}
+        if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling
+        {
+            cout<<endl<<BOLD(FRED("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root not found! (needed to compute data Fakes SF) Abort! "))<<endl<<endl; return 0;
+        }
+
+        cout<<BOLD(FGRN("WILL TAKE CURRENT READER FILES LOCATED IN './outputs/' AS NOMINAL TEMPLATES FOR SIGNIFICANCE COMPUTATION !"))<<endl;
+        mkdir("outputs/Templates_nominal", 0777);
+        CopyFile( ("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root"), ("./outputs/Templates_nominal/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root") );
+        CopyFile( ("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root"), ("./outputs/Templates_nominal/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root") );
+        CopyFile( ("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root"), ("./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root") );
 
 
+        //--- NOTE : HARD-CODED !
+        //Define here in which order the BDT vars should be sequentially removed
+        vector<TString> v_worst_vars;
+        if(!isWZ && !isttZ) //tZq SR
+        {
+            v_worst_vars.push_back("tZq_pT");
+            v_worst_vars.push_back("Zpt");
+            v_worst_vars.push_back("dRZAddLep");
+            v_worst_vars.push_back("dRAddLepQ");
+            v_worst_vars.push_back("NJets");
+            v_worst_vars.push_back("AddLepETA");
+            v_worst_vars.push_back("ZEta");
+        }
+        else if(isttZ) //ttZ CR
+        {
+            v_worst_vars.push_back("MEMvar_2");
+            v_worst_vars.push_back("m3l");
+            v_worst_vars.push_back("dRAddLepB");
+            v_worst_vars.push_back("NBJets");
+            v_worst_vars.push_back("dRZAddLep");
+            v_worst_vars.push_back("AddLepETA");
+            v_worst_vars.push_back("tZq_pT");
+        }
 
 
+        TString bdt_type = "BDT";
+        if(isttZ) bdt_type = "BDTttZ";
+
+        TString dir_name;
+
+        vector<TString > varlist_optim; //Var list which is actually used
+        if(!isWZ && !isttZ) {varlist_optim = thevarlist;}
+        else if(isttZ) {varlist_optim = thevarlist_ttZ;}
+
+        vector<bool > set_v_cut_IsUsedForBDT_optim = set_v_cut_IsUsedForBDT;
+
+        for(int ivar=0; ivar<v_worst_vars.size(); ivar++)
+        {
+
+            for(int j=0; j<varlist_optim.size(); j++) //Vars defined in input vars vector
+            {
+                if(v_worst_vars[ivar]==varlist_optim[j])
+                {
+                    varlist_optim.erase(varlist_optim.begin() + j);
+                    break;
+                }
+            }
+            for(int j=0; j<set_v_cut_name.size(); j++) //For vars defined in cut vector
+            {
+                if(v_worst_vars[ivar]==set_v_cut_name[j])
+                {
+                    set_v_cut_IsUsedForBDT_optim[j] = false;
+                    break;
+                }
+            }
+
+
+            for(int ichan=0; ichan<thechannellist.size(); ichan++)
+            {
+                dir_name = "outputs/optim_BDTvar";
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "outputs/optim_BDTvar/RemoveWorstVars";
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type;
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar";
+                mkdir(dir_name.Data() , 0777);
+
+                dir_name = "weights/optim_BDTvar";
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "weights/optim_BDTvar/RemoveWorstVars";
+                mkdir(dir_name.Data() , 0777);
+                dir_name = "weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar";
+                mkdir(dir_name.Data() , 0777);
+
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
+
+                //#############################################
+                // TRAINING
+                //#############################################
+
+                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, use_ttZaMCatNLO_training, false);
+
+                MoveFile( ("./outputs/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".root"), ("outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar") ); //Move file -- useless file?
+
+                MoveFile( ("./weights/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".class.C"), ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".class.C") ); //Move weight file to specific dir.
+                MoveFile( ("./weights/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".weights.xml"), ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".weights.xml") ); //Move weight file to specific dir.
+
+                //------------------------
+                MVAtool->~theMVAtool(); //Delete object
+            }// chan loop
+
+            for(int ichan=0; ichan<thechannellist.size(); ichan++)
+            {
+                //#############################################
+                //  CREATE INSTANCE OF CLASS & INITIALIZE
+                //#############################################
+
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                MVAtool->Set_Luminosity(set_luminosity);
+
+                //#############################################
+                //  TEMPLATES CREATION
+                //#############################################
+
+                //Reader needs weight files from ALL FOUR channels -> make sure they are all available in dir. weights/
+                for(int jchan=0; jchan<thechannellist.size(); jchan++)
+                {
+                    CopyFile( ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".class.C"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".class.C") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
+                    CopyFile( ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
+                }
+
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+
+                MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar") ); //Move file
+
+                //------------------------
+                //------------------------
+                MVAtool->~theMVAtool(); //Delete object
+            }// end chan loop
+
+        } //end var removal loop
+
+
+        //-------------------------
+        //CREATE COMBINE INPUT FILES, RUN COMBINE ON ALL FILES, STORE SIGNIFICANCE VALUES
+        //-------------------------
+
+        bool use_syst = true;
+        bool expected = true;
+        TString signal = "tZq";
+
+
+        TString file_significances = "BDT_OPTIM_REMOVE_WORST.txt";
+        if(isttZ) file_significances = "BDTttZ_OPTIM_REMOVE_WORST.txt";
+        ofstream file_out(file_significances.Data() );
+        file_out<<" -- Significances computed from Combine, obtained by removing the worst input variables sequentially --"<<endl;
+        file_out<<"use_syst = "<<use_syst<<endl;
+        file_out<<"expected = "<<expected<<endl;
+        file_out<<"signal = "<<signal<<endl<<endl<<endl;
+
+        //#############################################
+        //  CREATE INSTANCE OF CLASS & INITIALIZE
+        //#############################################
+
+        theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+        MVAtool->Set_Luminosity(set_luminosity);
+
+        for(int ivar=0; ivar<v_worst_vars.size(); ivar++)
+        {
+            if(!isWZ && !isttZ)
+            {
+                system( ("hadd -f ./outputs/optim_BDTvar/RemoveWorstVars/BDT/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/Combine_Input.root  ./outputs/optim_BDTvar/RemoveWorstVars/BDT/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root ./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Templates_nominal/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root").Data() );
+
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("outputs/optim_BDTvar/RemoveWorstVars/BDT/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/Combine_Input.root"), signal, "", expected, use_syst);
+
+                file_out<<"without "+Convert_Number_To_TString(ivar+1)+" worst vars ---> "<<signif<<endl;
+            }
+            else if(!isWZ && isttZ)
+            {
+                system( ("hadd -f ./outputs/optim_BDTvar/RemoveWorstVars/BDTttZ/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/Combine_Input.root  ./outputs/optim_BDTvar/RemoveWorstVars/BDTttZ/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root ./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root ./outputs/Templates_nominal/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root").Data() );
+
+                float signif = MVAtool->Compute_Combine_Significance_From_TemplateFile( ("./outputs/optim_BDTvar/RemoveWorstVars/BDTttZ/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/Combine_Input.root"), signal, "", expected, use_syst);
+
+                file_out<<"without "+Convert_Number_To_TString(ivar+1)+" worst vars ---> "<<signif<<endl;
+            }
+        }
+
+        delete MVAtool;
+
+
+    } //end optimization loop
 
 
 
