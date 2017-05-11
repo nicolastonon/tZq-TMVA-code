@@ -157,7 +157,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 		//Set Branch Addresses
 		TTree* t_input = 0;
-		if(MEM_or_WZ == "MEM")
+		// if(MEM_or_WZ == "MEM")
 		{
 			t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data());
 
@@ -165,8 +165,6 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			if(!t_input) {cout<<"Tree "<<tree_syst_list[itreesyst]<<" not found !"<<endl; return;}
 		}
 		// else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Default"); if(!t_input) {cout<<"Tree 'Default' not found !"<<endl; return;} }
-		else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Tree"); if(!t_input) {cout<<"Tree '"<<tree_syst_list[itreesyst]<<"' not found !"<<endl; return;} }
-
 
 		TLorentzVector* v_MET = new TLorentzVector; int index_MET_float = -99;
 		t_input->SetBranchAddress("multilepton_mET", &v_MET); //FIXME -- need to find MET somewhere else for now
@@ -198,6 +196,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		for(int ientry=0; ientry<nentries; ientry++)
 		{
 			if(ientry%10000==0) {cout<<ientry<<" / "<<nentries<<endl;}
+
+			// if(ientry%2==0) {continue;} //CUT SAMPLES IN HALVES
 
 			t_input->GetEntry(ientry);
 
@@ -340,11 +340,11 @@ int main()
 	sample_list.push_back("ttW");
 	sample_list.push_back("ttH");
 	sample_list.push_back("ZZ");
-	sample_list.push_back("Fakes");
 	sample_list.push_back("STtWll");
 	sample_list.push_back("tWZ");
 	sample_list.push_back("tZqQup");
 	sample_list.push_back("tZqQdw");
+	sample_list.push_back("Fakes");
 
 
 
@@ -389,42 +389,6 @@ int main()
 	thevarlist.push_back("TopPT"); // low discri power
 	thevarlist.push_back("m3l");
 	thevarlist.push_back("dRZTop");
-
-/*	//--- New vars
-	thevarlist.push_back("MAddLepB");
-	thevarlist.push_back("LeadJetPT");
-	thevarlist.push_back("dPhiZMET");
-	thevarlist.push_back("dPhiZTop");
-	thevarlist.push_back("dPhiAddLepQ");
-	thevarlist.push_back("TopEta");
-	thevarlist.push_back("tZq_mass");
-	thevarlist.push_back("tq_mass");
-	thevarlist.push_back("tq_pT");
-	thevarlist.push_back("tq_eta");
-	thevarlist.push_back("AdditionalMuonIso");
-	thevarlist.push_back("AdditionalEleIso");
-	thevarlist.push_back("FCNCTopMass");
-	thevarlist.push_back("CJetPT");
-	thevarlist.push_back("dRZCJet");
-	thevarlist.push_back("dRlWCJet");
-	thevarlist.push_back("dRSMtopFCNCTop");
-	thevarlist.push_back("dR_ZBJet");
-	thevarlist.push_back("dPhi_ZCJet");
-	thevarlist.push_back("dPhi_AddLepCJet");
-	thevarlist.push_back("dPhi_SMtopFCNCTop");
-	thevarlist.push_back("dPhi_ZBJet");
-	thevarlist.push_back("LeadElePT");
-	thevarlist.push_back("leadMuPT");
-	thevarlist.push_back("NMediumBjets");
-	thevarlist.push_back("LeadingJetCSV");
-	thevarlist.push_back("SecondJetCSV");
-	thevarlist.push_back("leadingLeptonPT");
-	thevarlist.push_back("leadingLeptonEta");
-	thevarlist.push_back("PV");
-	thevarlist.push_back("dupECALcl");
-	thevarlist.push_back("hitsNotRep");
-	thevarlist.push_back("badMuon");
-	thevarlist.push_back("duplMuon");*/
 
 
 	//--- MEM variables (weights, ...) which we modify into new variables in the code

@@ -5,7 +5,7 @@ using namespace std;
 
 int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 {
-    if(argc > 2 || (strcmp(argv[1],"tZq") && strcmp(argv[1],"ttZ") && strcmp(argv[1],"WZ") ) ) //String comparison -- strcmp returns 0 if both contents are equal
+    if(argc > 2 || ( strcmp(argv[1],"tZq") && strcmp(argv[1],"ttZ") && strcmp(argv[1],"WZ") ) ) //String comparison -- strcmp returns 0 if both contents are equal
     {
         cout<<BOLD(FRED("Error : wrong arguments at execution !"))<<endl;
         cout<<"argc = "<<argc<<endl;
@@ -34,7 +34,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
 
 
-    //Matrix Element Method
+    //Matrix Element Method ==> TRUE
     bool include_MEM_variables = true;
 
 
@@ -44,10 +44,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     double set_luminosity = 35.862; //Moriond 2017
 
     //Training
-    bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample)
+    bool use_ttZaMCatNLO_training = true; //Choose ttZ training sample (false --> Madgraph sample) ==> TRUE
 
     //Templates options
-    int nofbin_templates = 10; //Templates binning (to be optimized)
+    int nofbin_templates = 10; //Templates binning ==> 10 bins
     bool real_data_templates = true; //If true, use real data sample to create templates (BDT, mTW, ...) / else, use pseudodata !
 
 
@@ -108,8 +108,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">5");            set_v_cut_IsUsedForBDT.push_back(false);
-        set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //-------------------
@@ -270,7 +270,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //--- NEW VARIABLES
         // thevarlist.push_back("MEMvar_4"); //Kinematic Fit Score -- ~ 100% correlated to 5 ?
         // thevarlist.push_back("MEMvar_5"); //Kinematic Fit Score
-        // thevarlist.push_back("MEMvar_6"); //FIXME
+        // thevarlist.push_back("MEMvar_6");
         // thevarlist.push_back("MEMvar_7");
         thevarlist.push_back("MEMvar_8");
     }
@@ -355,13 +355,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool use_systematics = true;
 //----------------
 
-    //FIXME -- include new systs !
-
 //--- General names of systematics
     vector<TString> systematics_names_tmp;
 
     //--- Stored in separate Ntuples (tZq only)
-    // systematics_names_tmp.push_back("PSscale"); //
+    systematics_names_tmp.push_back("PSscale"); //
     // systematics_names_tmp.push_back("Hadron"); //Need new herwig sample
 
     //--- Stored in separate Trees
@@ -377,12 +375,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     systematics_names_tmp.push_back("EleEff");
     systematics_names_tmp.push_back("LFcont");
     systematics_names_tmp.push_back("HFstats1");
-    // systematics_names_tmp.push_back("HFstats2"); //
+    systematics_names_tmp.push_back("HFstats2"); //
     systematics_names_tmp.push_back("CFerr1");
-    // systematics_names_tmp.push_back("CFerr2"); //
+    systematics_names_tmp.push_back("CFerr2"); //
     systematics_names_tmp.push_back("HFcont");
-    // systematics_names_tmp.push_back("LFstats1"); //
-    // systematics_names_tmp.push_back("LFstats2"); //
+    systematics_names_tmp.push_back("LFstats1"); //
+    systematics_names_tmp.push_back("LFstats2"); //
 //----------------
 
 //--- Actual vector of systematic names we will use
@@ -516,6 +514,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
         //-----------------
+        //#############################################
+        //  Additional functions
+        //#############################################
+
         TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
@@ -527,8 +529,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", false);
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
-        // MVAtool->Rebin_Template_File("./outputs/Combine_Input.root", 15);
-        // MVAtool->Rebin_Template_File("./outputs/Combine_Input.root", 10);
+        // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 
 
         //-----------------
@@ -631,8 +632,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             TString cut_def = ">" + Convert_Number_To_TString(icut);
 
-            v_cut1_values.push_back(cut_def);
-            v_cut2_values.push_back(cut_def);
+            // v_cut1_values.push_back(cut_def);
+            // v_cut2_values.push_back(cut_def);
         }
 
 
@@ -1149,23 +1150,13 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         vector<TString> v_worst_vars;
         if(!isWZ && !isttZ) //tZq SR
         {
-            v_worst_vars.push_back("tZq_pT");
-            v_worst_vars.push_back("Zpt");
-            v_worst_vars.push_back("dRZAddLep");
-            v_worst_vars.push_back("dRAddLepQ");
-            v_worst_vars.push_back("NJets");
-            v_worst_vars.push_back("AddLepETA");
-            v_worst_vars.push_back("ZEta");
+            v_worst_vars.push_back("");
+
         }
         else if(isttZ) //ttZ CR
         {
-            v_worst_vars.push_back("MEMvar_2");
-            v_worst_vars.push_back("m3l");
-            v_worst_vars.push_back("dRAddLepB");
-            v_worst_vars.push_back("NBJets");
-            v_worst_vars.push_back("dRZAddLep");
-            v_worst_vars.push_back("AddLepETA");
-            v_worst_vars.push_back("tZq_pT");
+            v_worst_vars.push_back("");
+
         }
 
 

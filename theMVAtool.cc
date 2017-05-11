@@ -4947,7 +4947,14 @@ void theMVAtool::Rebin_Template_File(TString filepath, int nbins)
 
 					double rebin_ratio = (double) current_binning / nbins;
 
-					hnew = (TH1F*) h->Rebin(rebin_ratio);
+					hnew = (TH1F*) h->Clone();
+					hnew->Rebin(rebin_ratio);
+
+					for(int n = 1; n<=hnew->GetNbinsX(); n++)
+					{
+						if(hnew->GetBinContent(n) < 0) hnew->SetBinContent(n, 0);
+					}
+
 
 					f_output->cd();
 					hnew->Write(h_name, TObject::kOverwrite);
@@ -4959,6 +4966,5 @@ void theMVAtool::Rebin_Template_File(TString filepath, int nbins)
 
 	} //template
 
-	delete h; delete hnew;
 	f->Close(); f_output->Close();
 }
