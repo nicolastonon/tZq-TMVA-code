@@ -31,7 +31,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Blinding
-    bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
+    bool cut_on_BDT = true; //FOR BLINDING SIGNAL REGION (--> observed signif.)
 
 
     //Matrix Element Method ==> TRUE
@@ -56,7 +56,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! //NOTE : this option will modify the Fakes rescaling
 
     //Outputs
-    TString format = ".png"; //'.png' or '.pdf' only
+    TString format = ".pdf"; //'.png' or '.pdf' only
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -450,7 +450,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(isWZ)   template_name = "mTW"; //Template for WZ Control region
 
         float cut_BDT_value = -99;
-        if(isWZ || isttZ)  cut_on_BDT = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
+        bool cut_on_BDT_tmp = cut_on_BDT; //hard-coded, difference between boolean needed for production and plotting
+        if(isWZ || isttZ)  cut_on_BDT_tmp = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
 
         //#############################################
         // TRAINING
@@ -470,8 +471,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         if(create_templates)
         {
-            if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT, cut_BDT_value);
+            if(cut_on_BDT_tmp) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+            MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT_tmp, cut_BDT_value);
         }
 
         //#############################################
@@ -479,9 +480,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //#############################################
         if(create_control_histograms)
         {
-            if(cut_on_BDT) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT, cut_BDT_value, !real_data_templates);
-            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT); //NOTE : very long ! You should only activate necessary syst./vars !
+            if(cut_on_BDT_tmp) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates);
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT_tmp); //NOTE : very long ! You should only activate necessary syst./vars !
         }
 
         //#############################################
@@ -492,8 +493,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit, cut_on_BDT); //Draw plots for the BDT CR
             if(draw_templates)
             {
-                if(!postfit) MVAtool->Plot_Prefit_Templates(thechannellist[i], template_name, false); //Plot the prefit templates
-                else MVAtool->Plot_Postfit_Templates(thechannellist[i], template_name, false); //Postfit templates from Combine file
+                if(!postfit) MVAtool->Plot_Prefit_Templates(thechannellist[i], template_name, false, cut_on_BDT); //Plot the prefit templates
+                else MVAtool->Plot_Postfit_Templates(thechannellist[i], template_name, false, cut_on_BDT); //Postfit templates from Combine file
             }
             // MVAtool->Compare_Negative_Weights_Effect_On_Distributions(thechannellist[i], false);
         }
@@ -502,8 +503,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit, cut_on_BDT);
         if(draw_templates)
         {
-            if(!postfit) MVAtool->Plot_Prefit_Templates("all", template_name, true); //Plot the prefit templates
-            else MVAtool->Plot_Postfit_Templates("all", template_name, true); //Postfit templates from Combine file
+            if(!postfit) MVAtool->Plot_Prefit_Templates("all", template_name, true, cut_on_BDT); //Plot the prefit templates
+            else MVAtool->Plot_Postfit_Templates("all", template_name, true, cut_on_BDT); //Postfit templates from Combine file
         }
 
         //#############################################

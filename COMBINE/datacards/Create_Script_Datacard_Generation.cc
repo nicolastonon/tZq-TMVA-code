@@ -60,24 +60,49 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 	ofstream file_out("Generate_Datacards_InputVars.sh");
 
 	vector<TString> var_list;
-	var_list.push_back("NJets");
-	var_list.push_back("NBJets");
-	var_list.push_back("mTW");
+	if(region_choice=="tZq" || region_choice=="WZ")
+	{
+		var_list.push_back("btagDiscri");
+		var_list.push_back("dRAddLepClosestJet");
+		var_list.push_back("dPhiAddLepB");
+		var_list.push_back("ZEta");
+		var_list.push_back("mtop");
+		var_list.push_back("AddLepAsym");
+		var_list.push_back("etaQ");
+		var_list.push_back("AddLepETA");
+		var_list.push_back("LeadJetEta");
+		var_list.push_back("dPhiZAddLep");
+		var_list.push_back("dRjj");
+		var_list.push_back("ptQ");
+		var_list.push_back("NJets");
 
-	var_list.push_back("btagDiscri");
-	var_list.push_back("dRAddLepQ");
-	var_list.push_back("dRAddLepClosestJet");
-	var_list.push_back("ZEta");
-	var_list.push_back("Zpt");
-	var_list.push_back("mtop");
-	var_list.push_back("AddLepAsym");
-	var_list.push_back("etaQ");
-	var_list.push_back("AddLepETA");
-	var_list.push_back("dPhiZAddLep");
-	var_list.push_back("dRZAddLep"); // --> little discrim --> to be included
-	var_list.push_back("dRjj");
-	var_list.push_back("ptQ"); // --> little discrim
-	var_list.push_back("tZq_pT");
+		if(region_choice=="tZq")
+		{
+			var_list.push_back("MEMvar_0");
+			var_list.push_back("MEMvar_1");
+			var_list.push_back("MEMvar_2");
+			var_list.push_back("MEMvar_8");
+		}
+	}
+	else
+	{
+		var_list.push_back("btagDiscri");
+	    var_list.push_back("dRAddLepQ");
+	    var_list.push_back("dRAddLepClosestJet");
+	    var_list.push_back("Zpt");
+	    var_list.push_back("ZEta");
+	    var_list.push_back("AddLepAsym");
+	    var_list.push_back("etaQ");
+	    var_list.push_back("ptQ"); // strong correlation with LeadJetPt
+	    var_list.push_back("dPhiZAddLep");
+	    var_list.push_back("dRjj");
+	    var_list.push_back("mtop");
+		var_list.push_back("dRZTop");
+		var_list.push_back("NJets");
+
+		var_list.push_back("MEMvar_1");
+		var_list.push_back("MEMvar_3");
+	}
 
 
 	vector<TString> chan_list;

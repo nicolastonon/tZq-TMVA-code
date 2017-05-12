@@ -1553,7 +1553,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 
 
 	bool create_syst_histos = false; //FIXME : for now ,simply disactivate systematics for control plots (too long)
-	if(syst_list.size() != 1)
+/*	if(syst_list.size() != 1)
 	{
 		string answer = "";
 		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
@@ -1568,7 +1568,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 		}
 
 		if(answer == "yes") create_syst_histos = true;
-	}
+	}*/
 
 	TFile* file_input;
 	TTree* tree = 0;
@@ -1879,7 +1879,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 
 	bool create_syst_histos = false; //FIXME -- allow user to choose ?
-	if(syst_list.size() != 1)
+/*	if(syst_list.size() != 1)
 	{
 		string answer = "";
 		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
@@ -1894,7 +1894,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 		}
 
 		if(answer == "yes") create_syst_histos = true;
-	}
+	}*/
 
 	int nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() * syst_list.size()) + total_var_list.size();
 	if(!create_syst_histos) nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() ) + total_var_list.size();
@@ -1986,6 +1986,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "MEMvar_4")						{h_tmp = new TH1F( "","", binning, -60, 10 );}
 					else if(total_var_list[ivar] == "MEMvar_5")						{h_tmp = new TH1F( "","", binning, -60, 10 );}
 					else if(total_var_list[ivar] == "MEMvar_7")						{h_tmp = new TH1F( "","", binning, 0, 15 );}
+					else if(total_var_list[ivar] == "MEMvar_8")						{h_tmp = new TH1F( "","", binning, 0, 35 );}
 
 					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", control_binning, 0, 150 );}
 
@@ -2429,7 +2430,12 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
 		//CHANGED
-		if (postfit && !f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) ) continue; //Check histo exists
+		if (postfit && !f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) )
+		{
+			cout<<total_var_list[ivar].Data()<<"_uuu_postfit not found !"<<endl;
+
+			continue;
+		}
 
 		TString histo_name = "";
 		if(postfit) histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqmcNLO"; //For postfit file only !
@@ -2587,7 +2593,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
-					if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
+					// if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
 
 					TH1F* histo_syst = 0; //Store the "systematic histograms"
 
@@ -2924,6 +2930,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else if(total_var_list[ivar] == "MEMvar_5")		{	stringv_list[ivar] = "MEM Kin w_{WZ}"; }
 		else if(total_var_list[ivar] == "MEMvar_6")		{	stringv_list[ivar] = "MEM LR tZq-ttZ-WZ"; }
 		else if(total_var_list[ivar] == "MEMvar_7")		{	stringv_list[ivar] = "MEM LR tZq-WZ"; }
+		else if(total_var_list[ivar] == "MEMvar_8")		{	stringv_list[ivar] = "MEM LR tZq-ttZ-WZ"; }
 		else {       stringv_list[ivar] = total_var_list[ivar] ; }
 
 
@@ -3133,7 +3140,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
  * @param  template_name Template name : BDT / BDTttZ / mTW
  * @param  allchannels   If true, sum all channels
  */
-int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bool allchannels)
+int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bool allchannels, bool cut_on_BDT)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots ---")<<endl;}
@@ -3142,6 +3149,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	// TString input_name = "outputs/Reader_" + template_name + this->filename_suffix + ".root";
 	TString input_name = "outputs/Combine_Input.root"; //FAKES RE-SCALED
+	if(cut_on_BDT) input_name = "outputs/Combine_Input_CutBDT.root";
 	TFile* file_input = 0;
 	file_input = TFile::Open( input_name.Data() );
 	if(file_input == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
@@ -3584,7 +3592,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
  * @param  template_name Template name :  BDT / BDTttZ / mTW
  * @param  allchannels   If true, sum all channels
  */
-int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, bool allchannels)
+int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, bool allchannels, bool cut_on_BDT)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots from Combine Output ---")<<endl;}
@@ -3593,6 +3601,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	//In mlfit.root, data is given as a TGraph. Instead, we take it directly from the Template file given to Combine (un-changed!)
 	TString input_name = "outputs/Combine_Input.root"; //FAKES RE-SCALED
+	if(cut_on_BDT) input_name = "outputs/Combine_Input_CutBDT.root";
 	TFile* file_data = 0;
 	file_data = TFile::Open( input_name.Data() );
 	if(file_data == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
@@ -4020,7 +4029,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	//Output
 	TString output_plot_name = "plots/postfit_" + template_name +"_template_" + channel+ this->filename_suffix + this->format;
-	if(channel == "" || allchannels) {output_plot_name = "plots/postfit_" + template_name +"_template_all" + this->filename_suffix + ".png";}
+	if(channel == "" || allchannels) {output_plot_name = "plots/postfit_" + template_name +"_template_all" + this->filename_suffix + this->format;}
 
 	c1->SaveAs(output_plot_name.Data());
 
@@ -4668,14 +4677,14 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	else {cout<<FRED("--- ERROR : invalid template_name value !")<<endl;}
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
-	TString input_name_noMEM = "outputs/files_noMEM_noCuts/Combine_Input.root";
+	TString input_name_noMEM = "outputs/files_noMEM/Combine_Input.root";
 	if(!Check_File_Existence(input_name_noMEM) ) {input_name_noMEM = "outputs/files_noMEM_noCuts/Reader_" + template_name + this->filename_suffix + ".root";}
 	if(!Check_File_Existence(input_name_noMEM) ) {cout<<"No template files in dir. outputs/files_noMEM_noCuts/ ! Abort"<<endl; return;}
 	TFile* file_input_noMEM = 0;
 	file_input_noMEM = TFile::Open( input_name_noMEM.Data() );
 	if(file_input_noMEM == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
 
-	TString input_name_MEM = "outputs/files_MEM/Combine_Input.root";
+	TString input_name_MEM = "outputs/files_nominal/Combine_Input.root";
 	if(!Check_File_Existence(input_name_MEM) ) {input_name_MEM = "outputs/files_MEM/Reader_" + template_name + this->filename_suffix + ".root";}
 	if(!Check_File_Existence(input_name_MEM) ) {cout<<"No template files in dir. outputs/files_MEM/ ! Abort"<<endl; return;}
 	TFile* file_input_MEM = 0;

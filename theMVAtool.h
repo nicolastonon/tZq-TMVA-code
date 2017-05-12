@@ -97,8 +97,8 @@ class theMVAtool
 	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
 	int Generate_PseudoData_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
 	int Draw_Control_Plots(TString, bool, bool, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
-	int Plot_Prefit_Templates(TString, TString, bool = false); //Plot prefit templates (given to Combine)
-	int Plot_Postfit_Templates(TString, TString, bool = false); //Plot postfit templates from Combine output
+	int Plot_Prefit_Templates(TString, TString, bool, bool); //Plot prefit templates (given to Combine)
+	int Plot_Postfit_Templates(TString, TString, bool, bool); //Plot postfit templates from Combine output
 	int Fit_Fake_Templates(TString, TString); //Fit the fake templates
 	int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
 	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
