@@ -31,7 +31,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Blinding
-    bool cut_on_BDT = true; //FOR BLINDING SIGNAL REGION (--> observed signif.)
+    bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
 
 
     //Matrix Element Method ==> TRUE
@@ -56,7 +56,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! //NOTE : this option will modify the Fakes rescaling
 
     //Outputs
-    TString format = ".pdf"; //'.png' or '.pdf' only
+    TString format = ".png"; //'.png' or '.pdf' only
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -154,20 +154,21 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
+    //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
+    if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    t_name = "Tree";
 
-    // if(include_MEM_variables) //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    {
-        if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-        else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-        t_name = "Tree";
-    }
 /*
-    else //--- CIEMAT : Default Ntuples
-    {
-        dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-        // dir_ntuples="../ntuples";
-        t_name = "Default";
-    }
+    //--- CIEMAT's Ntuples ---
+    dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+    // dir_ntuples="../ntuples";
+    t_name = "Default";
+
+
+    //--- Medium btag Ntuples ---
+    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/ntuples_mediumBTag"; //Medium btag //FIXME
+    // t_name = "Default";
 */
 
 
@@ -337,8 +338,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     vector<TString> v_add_var_names;
-    // v_add_var_names.push_back("mTW");
-    // if(!include_MEM_variables) v_add_var_names.push_back("METpt");
+    v_add_var_names.push_back("mTW");
+    v_add_var_names.push_back("METpt");
 
 
 
@@ -422,7 +423,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = false; //Plot input variables
+        bool draw_input_vars = true; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
@@ -526,6 +527,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], false);
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+
+            // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "tZqmcNLO", "JER");
         }
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", false);
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
@@ -923,7 +926,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         cout<<BOLD(FGRN("WILL TAKE CURRENT READER FILES LOCATED IN './outputs/' AS NOMINAL TEMPLATES FOR SIGNIFICANCE COMPUTATION !"))<<endl;
         mkdir("outputs/Templates_nominal", 0777);
         CopyFile( ("./outputs/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root"), ("./outputs/Templates_nominal/Reader_BDTttZ_NJetsMin1_NBJetsMin1.root") );
-        CopyFile( ("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root"), ("./outputs/Templates_nominal/Reader_BDTttZ_NJetsMin1Max4_NBJetsEq1.root") );
+        CopyFile( ("./outputs/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root"), ("./outputs/Templates_nominal/Reader_BDT_NJetsMin1Max4_NBJetsEq1.root") );
         CopyFile( ("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root"), ("./outputs/Templates_nominal/Reader_mTW_NJetsMin0_NBJetsEq0.root") );
 
 
@@ -1152,12 +1155,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(!isWZ && !isttZ) //tZq SR
         {
             v_worst_vars.push_back("");
-
         }
         else if(isttZ) //ttZ CR
         {
             v_worst_vars.push_back("");
-
         }
 
 

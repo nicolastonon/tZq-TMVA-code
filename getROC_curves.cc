@@ -815,8 +815,8 @@ int main()
 
 		string selection = "1";
 
-		name1 = dir + "files_noMEM_noCuts"; label1 = "BDTG";
-		name2 = dir + "files_MEM"; label2 = "BDTG + MEM";
+		name1 = dir + "files_noMEM"; label1 = "BDTG";
+		name2 = dir + "files_nominal"; label2 = "BDTG with MEM";
 		name3 = dir + ""; label3 = "";
 		name4 = dir + ""; label4 = "";
 		name5 = dir + ""; label5 = "";

@@ -105,6 +105,7 @@ class theMVAtool
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
 	void Rebin_Template_File(TString, int);
+	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString);
 	// void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members
