@@ -423,7 +423,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = true; //Plot input variables
+        bool draw_input_vars = false; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
@@ -529,6 +529,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "tZqmcNLO", "JER");
+            // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "tZqmcNLO", "JES");
+            MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
+
         }
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", false);
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);

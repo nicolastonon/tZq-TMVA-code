@@ -2566,8 +2566,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
 					{
-						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.026, 2); //Lumi error = 2.6%
-						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.026, 2);
+						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2); //Lumi error = 2.5% //CHANGED
+						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
 						//MC Stat error
 						v_eyl[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
 						v_eyh[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
@@ -5213,7 +5213,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 					histo_nominal_syst = (TH1F*) f->Get(histo_name_syst.Data())->Clone();
 					histo_nominal_syst->Scale(1./histo_nominal_syst->Integral());
 
-					histo_noMEM_syst = (TH1F*) f->Get(histo_name_syst.Data())->Clone();
+					histo_noMEM_syst = (TH1F*) f_noMEM->Get(histo_name_syst.Data())->Clone();
 					histo_noMEM_syst->Scale(1./histo_noMEM_syst->Integral());
 
 					for(int ibin=0; ibin<nofbins; ibin++)
@@ -5225,11 +5225,9 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 					//Add up here the different errors (quadratically), for each bin separately
 					for(int ibin=0; ibin<nofbins; ibin++)
 					{
-						double tmp = 0;
-
 						//NOTE : in TGraphAsymmErrors, should use fabs(errors) ; because it knows which are the "up" and "down" errors
 						//--------------------------
-						tmp = histo_nominal_syst->GetBinContent(ibin+1) - histo_nominal->GetBinContent(ibin+1);
+						double tmp = histo_nominal_syst->GetBinContent(ibin+1) - histo_nominal->GetBinContent(ibin+1);
 						if(tmp>0 && (fabs(tmp)>fabs(v_eyh[ibin])) ) v_eyh[ibin] = fabs(tmp);
 						else if(tmp<0 && (fabs(tmp)>fabs(v_eyl[ibin])) ) v_eyl[ibin] = fabs(tmp);
 
@@ -5238,15 +5236,15 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 						//--------------------------
 
-						tmp = histo_noMEM_syst->GetBinContent(ibin+1) - histo_noMEM->GetBinContent(ibin+1);
-						if(tmp>0 && (fabs(tmp)>fabs(v_eyh_noMEM[ibin])) ) v_eyh_noMEM[ibin] = fabs(tmp);
-						else if(tmp<0 && (fabs(tmp)>fabs(v_eyl_noMEM[ibin])) ) v_eyl_noMEM[ibin] = fabs(tmp);
+						double tmp_noMEM = histo_noMEM_syst->GetBinContent(ibin+1) - histo_noMEM->GetBinContent(ibin+1);
+						if(tmp_noMEM>0 && (fabs(tmp_noMEM)>fabs(v_eyh_noMEM[ibin])) ) v_eyh_noMEM[ibin] = fabs(tmp_noMEM);
+						else if(tmp_noMEM<0 && (fabs(tmp_noMEM)>fabs(v_eyl_noMEM[ibin])) ) v_eyl_noMEM[ibin] = fabs(tmp_noMEM);
 						//--------------------------
 
-						// if(ibin > 0) {continue;} //cout only first bin
-						// cout<<"syst = "<<syst_list[isyst]<<endl;
-						// cout<<"histo_noMEM_syst->GetBinContent(ibin+1) : "<<histo_noMEM_syst->GetBinContent(ibin+1)<<" , histo_noMEM->GetBinContent(ibin+1) : "<<histo_noMEM->GetBinContent(ibin+1)<<endl;
-						//
+						if(ibin > 0) {continue;} //cout only first bin
+						cout<<"syst = "<<syst_list[isyst]<<endl;
+						cout<<"histo_nominal_syst->GetBinContent(ibin+1) : "<<histo_nominal_syst->GetBinContent(ibin+1)<<" , histo_nominal->GetBinContent(ibin+1) : "<<histo_nominal->GetBinContent(ibin+1)<<endl;
+
 						// cout<<"tmp = "<<tmp<<endl;
 						//
 						// cout<<endl<<"ibin "<<ibin<<" "<<histo_nominal_syst->GetBinContent(ibin+1)<<" -- x = "<<v_x[ibin]<<", y = "<<v_y[ibin]<<endl;
@@ -5265,6 +5263,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 		TString sample_legend = sample;
 		if(sample.Contains("tZq")) sample_legend = "tZq";
+		else if(sample.Contains("Fakes")) sample_legend = "Non-prompt";
 
 		qw->AddEntry(histo_nominal, (sample_legend + " with MEM").Data() , "l");
 		qw->AddEntry(histo_noMEM, (sample_legend+" no MEM").Data() , "l");
@@ -5282,6 +5281,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		c1->cd();
 		histo_nominal->SetMinimum(0.0001);
 		histo_nominal->SetMaximum(histo_nominal->GetMaximum()*1.2);
+		if(sample=="Fakes") histo_nominal->SetMaximum(histo_nominal->GetMaximum()*1.4);
 		histo_nominal->Draw("HIST"); histo_nominal->GetXaxis()->SetLabelSize(0.0);
 		histo_noMEM->Draw("HIST same");
 
@@ -5293,20 +5293,24 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		//Need to take sqrt of total errors
 		for(int ibin=0; ibin<nofbins; ibin++)
 		{
-			// v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
-			// v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
 
 			// v_eyh[ibin] = 0.02;
 			// v_eyl[ibin] =  0.02;
 
-			// v_eyh_noMEM[ibin] = pow(v_eyh_noMEM[ibin], 0.5);
-			// v_eyl_noMEM[ibin] = pow(v_eyl_noMEM[ibin], 0.5);
 
 			if(ibin>0) continue;
+			// cout<<"--- chan "<<channel<<endl;
 			// cout<<"Bin 0 : y = "<<v_y[ibin]<<endl;
 			// cout<<"high = "<<v_eyh[ibin]<<" --> ratio = "<<v_eyh[ibin]/v_y[ibin]<<endl;
 			// cout<<"low = "<<v_eyl_noMEM[ibin]<<" --> ratio = "<<v_eyl_noMEM[ibin]/v_y_noMEM[ibin]<<endl;
 
+			// cout<<"histo_nominal->GetBinContent = "<<histo_nominal->GetBinContent(ibin+1)<<endl;
+			// cout<<"v_eyl = "<<v_eyl[ibin]<<endl;
+			// cout<<"v_eyh = "<<v_eyh[ibin]<<endl;
+			//
+			// cout<<endl<<"histo_noMEM->GetBinContent = "<<histo_noMEM->GetBinContent(ibin+1)<<endl;
+			// cout<<"v_eyl_noMEM = "<<v_eyl_noMEM[ibin]<<endl;
+			// cout<<"v_eyh_noMEM = "<<v_eyh_noMEM[ibin]<<endl;
 		}
 
 		//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
@@ -5451,8 +5455,11 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 		TH1::SetDefaultSumw2();
 
-		TH1F * histo_ratio_data = (TH1F*) histo_nominal->Clone();
 
+		TH1F * histo_ratio_data = 0;
+		histo_ratio_data = (TH1F*) histo_nominal->Clone();
+
+		if(!histo_ratio_data) {cout<<"histo_ratio_data is null !"<<endl; return;}
 
 		for(int ibin=1; ibin<histo_ratio_data->GetNbinsX()+1; ibin++)
 		{
@@ -5460,7 +5467,6 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 			histo_ratio_data->SetBinError(ibin, 0);
 		}
 
-			//CHANGED
 		histo_ratio_data->GetXaxis()->SetTitle(stringv_list[ivar].Data());
 		histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 
@@ -5577,6 +5583,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		//Iximumge name
 		TString outputname = "./plots/"+template_name;
 		outputname+= "_"+channel;
+		outputname+= "_"+sample;
 		outputname+= "_"+systematic+"_Variation";
 		outputname+= this->format;
 
