@@ -99,13 +99,16 @@ class theMVAtool
 	int Draw_Control_Plots(TString, bool, bool, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 	int Plot_Prefit_Templates(TString, TString, bool, bool); //Plot prefit templates (given to Combine)
 	int Plot_Postfit_Templates(TString, TString, bool, bool); //Plot postfit templates from Combine output
-	int Fit_Fake_Templates(TString, TString); //Fit the fake templates
-	int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
 	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
-	void Rebin_Template_File(TString, int);
-	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString);
+	void Rebin_Template_File(TString, int); //Rebin all the templates in input file
+	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString); //Shows the variation of 1 systematic on 1 template (e.g. compare JES/nominal in tZq)
+
+
+	//Obsolete functions
+	// int Fit_Fake_Templates(TString, TString); //Fit the fake templates
+	// int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
 	// void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members

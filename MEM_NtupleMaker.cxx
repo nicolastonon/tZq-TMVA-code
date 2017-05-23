@@ -969,45 +969,6 @@ int main()
   BDTvar_list.push_back("METpt");
 
 
-/*
-  //--- New vars
-  BDTvar_list.push_back("MAddLepB");
-  BDTvar_list.push_back("LeadJetPT");
-  BDTvar_list.push_back("dPhiZMET");
-  BDTvar_list.push_back("dPhiZTop");
-  BDTvar_list.push_back("dPhiAddLepQ");
-  BDTvar_list.push_back("TopEta");
-  BDTvar_list.push_back("tZq_mass");
-  BDTvar_list.push_back("tq_mass");
-  BDTvar_list.push_back("tq_pT");
-  BDTvar_list.push_back("tq_eta");
-  BDTvar_list.push_back("AdditionalMuonIso");
-  BDTvar_list.push_back("AdditionalEleIso");
-  BDTvar_list.push_back("FCNCTopMass");
-  BDTvar_list.push_back("CJetPT");
-  BDTvar_list.push_back("dRZCJet");
-  BDTvar_list.push_back("dRlWCJet");
-  BDTvar_list.push_back("dRSMtopFCNCTop");
-  BDTvar_list.push_back("dR_ZBJet");
-  BDTvar_list.push_back("dPhi_ZCJet");
-  BDTvar_list.push_back("dPhi_AddLepCJet");
-  BDTvar_list.push_back("dPhi_SMtopFCNCTop");
-  BDTvar_list.push_back("dPhi_ZBJet");
-  BDTvar_list.push_back("LeadElePT");
-  BDTvar_list.push_back("leadMuPT");
-  BDTvar_list.push_back("NMediumBjets");
-  BDTvar_list.push_back("LeadingJetCSV");
-  BDTvar_list.push_back("SecondJetCSV");
-  BDTvar_list.push_back("leadingLeptonPT");
-  BDTvar_list.push_back("leadingLeptonEta");
-  BDTvar_list.push_back("PV");
-  BDTvar_list.push_back("dupECALcl");
-  BDTvar_list.push_back("hitsNotRep");
-  BDTvar_list.push_back("badMuon");
-  BDTvar_list.push_back("duplMuon");
-*/
-
-
 //---------------------------------------------------------------------------
 //  ######  ##    ##  ######  ######## ######## ##     ##    ###    ######## ####  ######   ######
 // ##    ##  ##  ##  ##    ##    ##    ##       ###   ###   ## ##      ##     ##  ##    ## ##    ##
