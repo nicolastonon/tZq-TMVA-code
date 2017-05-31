@@ -35,7 +35,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Matrix Element Method ==> TRUE
-    bool include_MEM_variables = true;
+    bool include_MEM_variables = false;
 
 
 
@@ -155,15 +155,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    t_name = "Tree";
+    // if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    // else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    // t_name = "Tree";
 
-/*
+
     //--- CIEMAT's Ntuples ---
     dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/ntuples_mediumBTag";
     t_name = "Default";
-*/
+
 
 
 //---------------------------------------------------------------------------
@@ -202,9 +203,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
 
     //BKG
-    thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
-    thesamplelist.push_back("WZB");             v_color.push_back(921); //grey
-    thesamplelist.push_back("WZC");             v_color.push_back(922); //grey
+    // thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
+    // thesamplelist.push_back("WZB");             v_color.push_back(921); //grey
+    // thesamplelist.push_back("WZC");             v_color.push_back(922); //grey
+    thesamplelist.push_back("WZ");                 v_color.push_back(922); //grey
+
+
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow+1);
     thesamplelist.push_back("ttZ");             v_color.push_back(kRed+1); //Keep 3 'red' samples together for plots
     thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
@@ -326,8 +330,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
-    v_add_var_names.push_back("mTW");
-    v_add_var_names.push_back("METpt");
+    // v_add_var_names.push_back("mTW");
+    // v_add_var_names.push_back("METpt");
 
 
 
@@ -403,10 +407,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -630,7 +634,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // v_cut2_values.push_back(">0");
 
         //-- 2D scan of MET & mTW
-        //FIXME : change here the points to scan
+        //--- Change here the points to scan !!
         for(int icut=0; icut<=20; icut+=5)
         {
             TString cut_def = ">" + Convert_Number_To_TString(icut);

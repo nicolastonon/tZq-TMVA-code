@@ -20,6 +20,7 @@ cp ../COMBINE/datacards/Draw_Canvas.C ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Generate_Datacards.py ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Template_Datacard.txt ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Makefile ./COMBINE/datacards/.
+cp ../COMBINE/datacards/Create_Syst_Impact_Plot.sh ./COMBINE/datacards/.
 
 cp /home/nico/Bureau/these/tZq/MEM_Interfacing/MEM_NtupleMaker.h .
 cp /home/nico/Bureau/these/tZq/MEM_Interfacing/MEM_NtupleMaker.cxx .

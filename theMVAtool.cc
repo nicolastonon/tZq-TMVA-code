@@ -32,7 +32,7 @@ using namespace std;
 theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, vector<TString> v_add_vars, int nofbin_templates, bool in_isttZ, bool in_isWZ, TString extension_format, bool set_combine_naming_convention, TString set_dir_ntuples, TString set_t_name)
 {
 	//Each time a TF1 is created, this automatically creates a structure to store the sum of the squared weights of the entries (used to compute final bin errors)
-	//NOTE : apparently, if a bin has already been incremented via Fill(), then AddBinContent() & SetBinContent() do not modify it's error !!
+	//NOTE : if a bin has already been incremented via Fill(), then AddBinContent() & SetBinContent() do not modify it's error !!
 	//NOTE : this is why we exclusively modify the bin contents (e.g. put underflow in first bin) using the Fill() function !
 	TH1::SetDefaultSumw2();
 

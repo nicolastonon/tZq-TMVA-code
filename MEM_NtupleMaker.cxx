@@ -22,18 +22,22 @@
 using namespace std;
 
 //Overloaded constructor (default)
-MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice, double set_CSV_threshold, double set_eta_threshold)
+MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice, double set_CSV_threshold, double set_eta_threshold, TString set_tmp_dir)
 {
   if(region_choice != "MEM" && region_choice != "WZ") {cout<<endl<<BOLD( FRED("ERROR : choose WZ or (tZq+ttZ) region !") )<<endl;}
   MEM_or_WZ = region_choice;
 
+  tmp_dir = set_tmp_dir;
+  if(tmp_dir != "") cout<<"Input taken from dir. "<<tmp_dir<<endl;
+  if(tmp_dir != "") cout<<"Output written in dir. "<<tmp_dir<<endl;
+
   CSV_threshold = set_CSV_threshold; eta_threshold = set_eta_threshold;
 
-  mkdir("output_ntuples/ntuples_readyForMEM",0755);
-  mkdir("output_ntuples/ntuples_WZ",0755);
+  mkdir(("output_ntuples/ntuples_readyForMEM/"+tmp_dir).Data(),0755);
+  mkdir(("output_ntuples/ntuples_WZ/"+tmp_dir).Data(),0755);
 
-  if(MEM_or_WZ == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/";
-  else if(MEM_or_WZ == "WZ")  output_dir = "output_ntuples/ntuples_WZ/";
+  if(MEM_or_WZ == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/"+tmp_dir;
+  else if(MEM_or_WZ == "WZ")  output_dir = "output_ntuples/ntuples_WZ/"+tmp_dir;
   else {return;}
 
   //Initialize member vectors
@@ -593,7 +597,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   cout<<FYEL("--- Creating "<<samplename<<" Ntuple ---")<<endl;
   cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
-  TString filepath = "./input_ntuples/FCNCNTuple_" +samplename+ ".root"; //FOR LOCAL EXECUTION
+  TString filepath = "./input_ntuples/"+ tmp_dir +"/FCNCNTuple_" +samplename+ ".root"; //FOR LOCAL EXECUTION
 
   TFile* f_input = 0;
   f_input = new TFile(filepath.Data());
@@ -742,7 +746,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       int NBJets_tmp = 0; //NB : NJets contains both btag and non-btag
       for(int i=0; i<vSelectedJets->size(); i++)
       {
-        if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= CSV_threshold) {NBJets_tmp++;} //FIXME updated def
+        if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= CSV_threshold) {NBJets_tmp++;}
         // if( vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //No cut on eta
       }
 
@@ -916,18 +920,18 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("tZqmcNLO");
-  // v_samplenames.push_back("tZqQup");
-  // v_samplenames.push_back("tZqQdw");
-  // v_samplenames.push_back("WZB");
-  // v_samplenames.push_back("WZL");
-  // v_samplenames.push_back("WZC");
-  // v_samplenames.push_back("ttZ");
-  // v_samplenames.push_back("ZZ");
-  // v_samplenames.push_back("ttH");
-  // v_samplenames.push_back("ttW");
-  // v_samplenames.push_back("STtWll");
+  v_samplenames.push_back("Data");
+  v_samplenames.push_back("tZqmcNLO");
+  v_samplenames.push_back("tZqQup");
+  v_samplenames.push_back("tZqQdw");
+  v_samplenames.push_back("WZB");
+  v_samplenames.push_back("WZL");
+  v_samplenames.push_back("WZC");
+  v_samplenames.push_back("ttZ");
+  v_samplenames.push_back("ZZ");
+  v_samplenames.push_back("ttH");
+  v_samplenames.push_back("ttW");
+  v_samplenames.push_back("STtWll");
   v_samplenames.push_back("Fakes");
 
 
@@ -1018,11 +1022,15 @@ int main()
   TString region_choice; //Choose if produce samples which are going to be used for MEM or for WZ CR
 
   //Bjet definition -- Needed to select btagged jets in Jet vector ! Make sure it's updated !!
-  double CSV_threshold = 0.5426; //Medium CSV
+  // double CSV_threshold = 0.5426; //Loose CSV
+  double CSV_threshold = 0.8484; //Medium CSV
+
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
   bool do_MEM_regions = true;
 	bool do_WZ_region = true;
+
+  TString specific_dir = "medium_btag"; //specify specific input/output dir. name
 
 
 
@@ -1032,7 +1040,7 @@ int main()
     region_choice = "MEM";
     for(int isample=0; isample<v_samplenames.size(); isample++)
     {
-      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
       theNtupleMaker->Init();
       theNtupleMaker->NtupleMaker(v_samplenames[isample]);
       theNtupleMaker->~MEM_NtupleMaker();
@@ -1045,7 +1053,7 @@ int main()
     region_choice = "WZ";
     for(int isample=0; isample<v_samplenames.size(); isample++)
     {
-      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
       theNtupleMaker->Init();
       theNtupleMaker->NtupleMaker(v_samplenames[isample]);
       theNtupleMaker->~MEM_NtupleMaker();
@@ -1057,7 +1065,7 @@ int main()
 //--- Single Ntuple
   // region_choice = "MEM";
   // TString samplename = "WZjets";
-  // MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold);
+  // MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
   // theNtupleMaker->Init();
   // theNtupleMaker->NtupleMaker(samplename);
   // theNtupleMaker->~MEM_NtupleMaker();

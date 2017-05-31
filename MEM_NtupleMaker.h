@@ -32,7 +32,7 @@ class MEM_NtupleMaker
 {
 	public :
 
-		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, TString, double, double);
+		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, TString, double, double, TString);
 		~MEM_NtupleMaker();
 
 		void Init();
@@ -48,6 +48,8 @@ class MEM_NtupleMaker
 		TString output_dir;
 		TFile* f_output;
 		// TTree* tree_output;
+
+		TString tmp_dir; //specific name of input/output dirs (e.g. 'mediumBtag')
 
 	    vector<ciemat::Muon>*     vSelectedMuons;
 	    vector<ciemat::Electron>* vSelectedElectrons;
