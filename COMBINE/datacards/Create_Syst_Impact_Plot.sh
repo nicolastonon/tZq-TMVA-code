@@ -1,7 +1,8 @@
 #Produce plot showing impact of each Systematic
 #argument must be name of datacard without extension (e.g. "COMBINED_datacard_TemplateFit_tZq")
 
-echo "Usage : ./Create_Syst_Impact_Plot.sh [datacard_name_without_extension]"
+echo "--- Usage : ./Create_Syst_Impact_Plot.sh [datacard_name_without_extension]"
+echo "[-- NB : avoid including MC stat. error (too long) ]"
 
 text2workspace.py -m 125 $1
 combineTool.py -M Impacts -m 125 --doInitialFit -d $1

@@ -4566,8 +4566,8 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 						//--------------------------
 
 						if(ibin > 0) {continue;} //cout only first bin
-						// cout<<"syst = "<<syst_list[isyst]<<endl;
-						// cout<<"histo_nominal_syst->GetBinContent(ibin+1) : "<<histo_nominal_syst->GetBinContent(ibin+1)<<" , histo_nominal->GetBinContent(ibin+1) : "<<histo_nominal->GetBinContent(ibin+1)<<endl;
+						cout<<"syst = "<<syst_list[isyst]<<endl;
+						cout<<"histo_nominal_syst->GetBinContent(ibin+1) : "<<histo_nominal_syst->GetBinContent(ibin+1)<<" , histo_nominal->GetBinContent(ibin+1) : "<<histo_nominal->GetBinContent(ibin+1)<<endl;
 
 						// cout<<"tmp = "<<tmp<<endl;
 						//

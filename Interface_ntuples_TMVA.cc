@@ -57,7 +57,7 @@ TString Convert_Number_To_TString(int number)
  * @param thevarlist list of vars NOT related to MEM to be in the output ntuple
  * @param MEMvarlist list of vars RELATED to MEM to be in the output ntuple
  */
-void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> MEMvarlist, vector<TString> MEMvarlist_new, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString MEM_or_WZ)
+void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> MEMvarlist, vector<TString> MEMvarlist_new, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString MEM_or_WZ, TString tmp_dir)
 {
 	vector<float> v_floats; //Store all other variables as floats
 	vector<double> v_double_MEM; //Store MEM variables as doubles
@@ -67,40 +67,71 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 	//Input
 	TString input_filename;
-
+//
 	// FIXME -- Path of Ntuples with MEM
-	if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/FCNCNTuple_" + sample +  ".root";
-	// if(MEM_or_WZ == "MEM") 		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_" + sample +  ".root";
+	if(MEM_or_WZ == "MEM")
+	{
+		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_withMEM/";
+		// input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/";
+		if(tmp_dir != "") input_filename+= tmp_dir+"/";
+		input_filename+= "FCNCNTuple_" + sample +  ".root";
+	}
+
 
 	//Path of Ntuples for WZ CR
-	else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
-	// else if(MEM_or_WZ == "WZ") input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/FCNCNTuple_" + sample +  ".root";
+	else if(MEM_or_WZ == "WZ")
+	{
+		input_filename = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/";
+		if(tmp_dir != "") input_filename+= tmp_dir+"/";
+		input_filename+= "FCNCNTuple_" + sample +  ".root";
+	}
 
 	TFile* f_input = 0;
   	f_input = new TFile(input_filename.Data()); if(!f_input || f_input->IsZombie() ) {cout<<"Can't find input file !"<<endl; return;}
 
 	//Output
-	mkdir("input_ntuples/ntuples_MEM",0755);
-	mkdir("input_ntuples/ntuples_WZ",0755);
+
+	if(tmp_dir != "")
+	{
+		TString create_dir = "input_ntuples/"+tmp_dir;
+		mkdir(create_dir.Data(),0755);
+		create_dir = "input_ntuples/"+tmp_dir+"/ntuples_MEM";
+		mkdir(create_dir.Data(),0755);
+		create_dir = "input_ntuples/"+tmp_dir+"/ntuples_WZ";
+		mkdir(create_dir.Data(),0755);
+	}
+	else
+	{
+		TString create_dir = "input_ntuples/";
+		mkdir(create_dir.Data(),0755);
+		create_dir = "input_ntuples/ntuples_MEM";
+		mkdir(create_dir.Data(),0755);
+		create_dir = "input_ntuples/ntuples_WZ";
+		mkdir(create_dir.Data(),0755);
+	}
 
 	TString output_filename;
 	if(MEM_or_WZ == "MEM")
 	{
-		output_filename = "input_ntuples/ntuples_MEM/FCNCNTuple_" + sample +  ".root";
-		if(sample=="tWZ") output_filename 	= "input_ntuples/ntuples_MEM/FCNCNTuple_STtWll.root";
+		output_filename = "input_ntuples/";
+		if(tmp_dir != "") output_filename+= tmp_dir+"/";
+		output_filename+= "ntuples_MEM/FCNCNTuple_" + sample +  ".root";
+		// if(sample=="tWZ") output_filename 	= "input_ntuples/ntuples_MEM/FCNCNTuple_STtWll.root";
 	}
 	else if(MEM_or_WZ == "WZ")
 	{
-		output_filename 	= "input_ntuples/ntuples_WZ/FCNCNTuple_" + sample +  ".root";
-		if(sample=="tWZ") output_filename 	= "input_ntuples/ntuples_WZ/FCNCNTuple_STtWll.root";
+		output_filename 	= "input_ntuples/";
+		if(tmp_dir != "") output_filename+= tmp_dir+"/";
+		output_filename+= "ntuples_WZ/FCNCNTuple_" + sample +  ".root";
+		// if(sample=="tWZ") output_filename 	= "input_ntuples/ntuples_WZ/FCNCNTuple_STtWll.root";
 
 	}
 	else {cout<<"ERROR -- abort !"<<endl; return;}
 
 	cout<<endl<<endl<<"--- Creating new Ntuple from "<<input_filename.Data()<<endl;
-
+cout<<__LINE__<<endl;
 	TFile* f_output = TFile::Open( output_filename, "RECREATE" );
-
+cout<<__LINE__<<endl;
 	for(int itreesyst = 0; itreesyst<tree_syst_list.size(); itreesyst++)
 	{
 		//Only 'Tree' tree for data and fakes (+'Fakes' syst tree for fakes)
@@ -330,20 +361,20 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	sample_list.push_back("Data");
-	sample_list.push_back("tZq");
-	sample_list.push_back("tZqmcNLO");
-	sample_list.push_back("WZL");
-	sample_list.push_back("WZB");
-	sample_list.push_back("WZC");
-	sample_list.push_back("ttZ");
-	sample_list.push_back("ttW");
-	sample_list.push_back("ttH");
-	sample_list.push_back("ZZ");
-	sample_list.push_back("STtWll");
-	sample_list.push_back("tWZ");
-	sample_list.push_back("tZqQup");
-	sample_list.push_back("tZqQdw");
+	// sample_list.push_back("Data");
+	// sample_list.push_back("tZq");
+	// sample_list.push_back("tZqmcNLO");
+	// sample_list.push_back("WZL");
+	// sample_list.push_back("WZB");
+	// sample_list.push_back("WZC");
+	// sample_list.push_back("ttZ");
+	// sample_list.push_back("ttW");
+	// sample_list.push_back("ttH");
+	// sample_list.push_back("ZZ");
+	// sample_list.push_back("STtWll");
+	// sample_list.push_back("tWZ");
+	// sample_list.push_back("tZqQup");
+	// sample_list.push_back("tZqQdw");
 	sample_list.push_back("Fakes");
 
 
@@ -466,7 +497,9 @@ int main()
 //-----------------------------------------
 
 	bool do_MEM_regions = true;
-	bool do_WZ_region = true;
+	bool do_WZ_region = false;
+
+	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples
@@ -478,7 +511,7 @@ int main()
 		MEM_or_WZ = "MEM";
 		for(int isample=0; isample<sample_list.size(); isample++)
 		{
-			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
+			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ, tmp_dir);
 		}
 	}
 
@@ -488,7 +521,7 @@ int main()
 		MEM_or_WZ = "WZ";
 		for(int isample=0; isample<sample_list.size(); isample++)
 		{
-			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ);
+			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ, tmp_dir);
 		}
 	}
 

@@ -28,7 +28,7 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   MEM_or_WZ = region_choice;
 
   tmp_dir = set_tmp_dir;
-  if(tmp_dir != "") cout<<"Input taken from dir. "<<tmp_dir<<endl;
+  if(tmp_dir != "") cout<<endl<<"Input taken from dir. "<<tmp_dir<<endl;
   if(tmp_dir != "") cout<<"Output written in dir. "<<tmp_dir<<endl;
 
   CSV_threshold = set_CSV_threshold; eta_threshold = set_eta_threshold;
@@ -36,9 +36,11 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   mkdir(("output_ntuples/ntuples_readyForMEM/"+tmp_dir).Data(),0755);
   mkdir(("output_ntuples/ntuples_WZ/"+tmp_dir).Data(),0755);
 
-  if(MEM_or_WZ == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/"+tmp_dir;
-  else if(MEM_or_WZ == "WZ")  output_dir = "output_ntuples/ntuples_WZ/"+tmp_dir;
+  if(MEM_or_WZ == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/";
+  else if(MEM_or_WZ == "WZ")  output_dir = "output_ntuples/ntuples_WZ/";
   else {return;}
+
+  if(tmp_dir != "") output_dir+= tmp_dir + "/";
 
   //Initialize member vectors
   for(int isyst=0; isyst<weight_syst_list.size(); isyst++)
@@ -597,7 +599,9 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   cout<<FYEL("--- Creating "<<samplename<<" Ntuple ---")<<endl;
   cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
-  TString filepath = "./input_ntuples/"+ tmp_dir +"/FCNCNTuple_" +samplename+ ".root"; //FOR LOCAL EXECUTION
+  TString filepath = "./input_ntuples/";
+  if(tmp_dir != "") filepath+= tmp_dir + "/";
+  filepath+= "FCNCNTuple_" +samplename+ ".root"; //FOR LOCAL EXECUTION
 
   TFile* f_input = 0;
   f_input = new TFile(filepath.Data());
