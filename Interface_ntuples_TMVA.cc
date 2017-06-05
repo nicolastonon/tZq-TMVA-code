@@ -129,9 +129,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	else {cout<<"ERROR -- abort !"<<endl; return;}
 
 	cout<<endl<<endl<<"--- Creating new Ntuple from "<<input_filename.Data()<<endl;
-cout<<__LINE__<<endl;
 	TFile* f_output = TFile::Open( output_filename, "RECREATE" );
-cout<<__LINE__<<endl;
 	for(int itreesyst = 0; itreesyst<tree_syst_list.size(); itreesyst++)
 	{
 		//Only 'Tree' tree for data and fakes (+'Fakes' syst tree for fakes)
@@ -364,17 +362,17 @@ int main()
 	// sample_list.push_back("Data");
 	// sample_list.push_back("tZq");
 	// sample_list.push_back("tZqmcNLO");
-	// sample_list.push_back("WZL");
-	// sample_list.push_back("WZB");
-	// sample_list.push_back("WZC");
 	// sample_list.push_back("ttZ");
 	// sample_list.push_back("ttW");
 	// sample_list.push_back("ttH");
 	// sample_list.push_back("ZZ");
-	// sample_list.push_back("STtWll");
 	// sample_list.push_back("tWZ");
 	// sample_list.push_back("tZqQup");
 	// sample_list.push_back("tZqQdw");
+	// sample_list.push_back("WZL");
+	// sample_list.push_back("WZB");
+	// sample_list.push_back("WZC");
+	// sample_list.push_back("STtWll");
 	sample_list.push_back("Fakes");
 
 
@@ -496,8 +494,8 @@ int main()
  // #        #####  #     #  #####     #    ### ####### #     #     #####  #     # ####### #######  #####
 //-----------------------------------------
 
-	bool do_MEM_regions = true;
-	bool do_WZ_region = false;
+	bool do_MEM_regions = false;
+	bool do_WZ_region = true;
 
 	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
 

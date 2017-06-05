@@ -157,6 +157,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
     if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
     else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    // if(isWZ) 	dir_ntuples="input_ntuples/medium_btag/ntuples_WZ"; //Without MEM (empty vars)
+    // else 		dir_ntuples="input_ntuples/medium_btag/ntuples_MEM"; //With MEM
     t_name = "Tree";
 
 
@@ -345,7 +347,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = true;
+    bool use_systematics = false;
 //----------------
 
 //--- General names of systematics
