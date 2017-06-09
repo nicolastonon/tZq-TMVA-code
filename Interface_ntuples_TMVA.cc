@@ -361,19 +361,19 @@ int main()
 	vector<TString> sample_list;
 	// sample_list.push_back("Data");
 	// sample_list.push_back("tZq");
+	sample_list.push_back("tZqQup");
+	sample_list.push_back("tZqQdw");
 	// sample_list.push_back("tZqmcNLO");
 	// sample_list.push_back("ttZ");
 	// sample_list.push_back("ttW");
 	// sample_list.push_back("ttH");
 	// sample_list.push_back("ZZ");
 	// sample_list.push_back("tWZ");
-	// sample_list.push_back("tZqQup");
-	// sample_list.push_back("tZqQdw");
 	// sample_list.push_back("WZL");
 	// sample_list.push_back("WZB");
 	// sample_list.push_back("WZC");
 	// sample_list.push_back("STtWll");
-	sample_list.push_back("Fakes");
+	// sample_list.push_back("Fakes");
 
 
 
@@ -494,10 +494,10 @@ int main()
  // #        #####  #     #  #####     #    ### ####### #     #     #####  #     # ####### #######  #####
 //-----------------------------------------
 
-	bool do_MEM_regions = false;
-	bool do_WZ_region = true;
+	bool do_MEM_regions = true;
+	bool do_WZ_region = false;
 
-	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
+	TString tmp_dir = "medium_btag"; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples

@@ -56,7 +56,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! //NOTE : this option will modify the Fakes rescaling
 
     //Outputs
-    TString format = ".png"; //'.png' or '.pdf' only
+    TString format = ".pdf"; //'.png' or '.pdf' only
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -212,9 +212,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow+1);
-    thesamplelist.push_back("ttZ");             v_color.push_back(kRed+1); //Keep 3 'red' samples together for plots
-    thesamplelist.push_back("ttW");             v_color.push_back(kRed+1);
-    thesamplelist.push_back("ttH");             v_color.push_back(kRed+1);
+    thesamplelist.push_back("ttZ");             v_color.push_back(kRed+1);
+    thesamplelist.push_back("ttW");             v_color.push_back(kRed+2); //Keep ttW & ttH samples together (coloring)
+    thesamplelist.push_back("ttH");             v_color.push_back(kRed+2);
     thesamplelist.push_back("STtWll");          v_color.push_back(kOrange+1);
 
     //FAKES
@@ -332,8 +332,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
-    // v_add_var_names.push_back("mTW");
-    // v_add_var_names.push_back("METpt");
+    v_add_var_names.push_back("mTW");
+    v_add_var_names.push_back("METpt");
 
 
 
@@ -347,7 +347,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 //--- General names of systematics
@@ -419,7 +419,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
-        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
+        bool draw_templates = true; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 

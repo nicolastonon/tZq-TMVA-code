@@ -924,19 +924,20 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("Data");
-  v_samplenames.push_back("tZqmcNLO");
-  v_samplenames.push_back("tZqQup");
-  v_samplenames.push_back("tZqQdw");
-  v_samplenames.push_back("WZB");
-  v_samplenames.push_back("WZL");
-  v_samplenames.push_back("WZC");
-  v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("ZZ");
-  v_samplenames.push_back("ttH");
-  v_samplenames.push_back("ttW");
-  v_samplenames.push_back("STtWll");
-  v_samplenames.push_back("Fakes");
+  // v_samplenames.push_back("Data");
+  // v_samplenames.push_back("tZqmcNLO");
+  // v_samplenames.push_back("tZqQup");
+  // v_samplenames.push_back("tZqQdw");
+  // v_samplenames.push_back("WZB");
+  // v_samplenames.push_back("WZL");
+  // v_samplenames.push_back("WZC");
+  // v_samplenames.push_back("ttZ");
+  // v_samplenames.push_back("ZZ");
+  // v_samplenames.push_back("ttH");
+  // v_samplenames.push_back("ttW");
+  // v_samplenames.push_back("STtWll");
+  // v_samplenames.push_back("Fakes");
+  v_samplenames.push_back("tZqhwpp");
 
 
 
@@ -1026,15 +1027,15 @@ int main()
   TString region_choice; //Choose if produce samples which are going to be used for MEM or for WZ CR
 
   //Bjet definition -- Needed to select btagged jets in Jet vector ! Make sure it's updated !!
-  // double CSV_threshold = 0.5426; //Loose CSV
-  double CSV_threshold = 0.8484; //Medium CSV
+  double CSV_threshold = 0.5426; //Loose CSV
+  // double CSV_threshold = 0.8484; //Medium CSV
 
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
   bool do_MEM_regions = true;
 	bool do_WZ_region = true;
 
-  TString specific_dir = "medium_btag"; //specify specific input/output dir. name
+  TString specific_dir = ""; //specify specific input/output dir. name
 
 
 
