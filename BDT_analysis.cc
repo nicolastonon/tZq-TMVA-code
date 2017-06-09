@@ -419,7 +419,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
-        bool draw_templates = true; //Plot templates (mTW/BDT/BDTttZ)
+        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
