@@ -515,22 +515,9 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
  * @param  f               [File containing mTW templates]
  * @param  fakeLep_flavour [Fake lepton flavour for which we compute the SF	]
  */
-double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
+double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 {
-  if(fakeLep_flavour != "u" && fakeLep_flavour != "e") {cout<<__LINE__<<" : "<<"Wrong name for flavour of fake lepton ('e' or 'u') !"; return 0;}
-
-  vector<TString> channels_same_flavour;
-  if(fakeLep_flavour == "u")
-  {
-    channels_same_flavour.push_back("uuu");
-    channels_same_flavour.push_back("eeu");
-  }
-  else if(fakeLep_flavour == "e")
-  {
-    channels_same_flavour.push_back("eee");
-    channels_same_flavour.push_back("uue");
-  }
-
+	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return 0;}
 
   std::vector<TString> listSum;
   for(int isample=0; isample<sample_list.size(); isample++)
@@ -543,51 +530,43 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
   }
   cout<<endl<<endl;
 
-  vector<TString> channelfake;
-  if(fakeLep_flavour == "u")
-  {
-    channelfake.push_back("FakeMuMuMu");
-    channelfake.push_back("FakeElElMu");
-  }
-  else if(fakeLep_flavour == "e")
-  {
-    channelfake.push_back("FakeElElEl");
-    channelfake.push_back("FakeMuMuEl");
-  }
+	TString channelfake;
+	if(channel=="uuu"){channelfake = "FakeMuMuMu";}
+	else if(channel=="eeu"){channelfake = "FakeElElMu";}
+	else if(channel=="uue"){channelfake = "FakeMuMuEl";}
+	else if(channel=="eee"){channelfake = "FakeElElEl";}
+
 
   f->cd();
   TH1F * hdata, *hsum, * hfake, *h_tmp;
 
   //Treat Data / Fakes / Other samples separately
   TString myHist;
-  for(int ichan=0; ichan<channels_same_flavour.size(); ichan++)
-  {
-    //DATA
-    if(combine_naming_convention) myHist = "mTW_" + channels_same_flavour[ichan] + "__data_obs";
-    else myHist = "mTW_" + channels_same_flavour[ichan] + "__DATA";
 
-    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
-    h_tmp = (TH1F*)f->Get( myHist);
-    if(ichan==0) {hdata = (TH1F*) h_tmp->Clone();}
-    else {hdata->Add(h_tmp);}
+	//DATA
+	if(combine_naming_convention) myHist = "mTW_" + channel + "__data_obs";
+	else myHist = "mTW_" + channel + "__DATA";
 
-    //FAKES
-    myHist = "mTW_" + channels_same_flavour[ichan] + "__" + channelfake[ichan];
-    if ( !f->GetListOfKeys()->Contains( myHist.Data() ) )  {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
-    h_tmp = (TH1F*)f->Get( myHist);
-    if(ichan==0) {hfake = (TH1F*) h_tmp->Clone();}
-    else {hfake->Add(h_tmp);}
+	if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+	h_tmp = (TH1F*)f->Get( myHist);
+	hdata = (TH1F*) h_tmp->Clone();
 
-    //MC
-    for (int i = 0; i<listSum.size(); i++)
-    {
-      myHist = "mTW_" + channels_same_flavour[ichan] + "__" + listSum[i];
-      if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
-      h_tmp = (TH1F*)f->Get( myHist);
-      if(ichan==0 && i==0) {hsum = (TH1F*) h_tmp->Clone();}
-      else {hsum->Add(h_tmp);}
-    }
-  }
+	//FAKES
+	myHist = "mTW_" + channel + "__" + channelfake;
+	if ( !f->GetListOfKeys()->Contains( myHist.Data() ) )  {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+	h_tmp = (TH1F*)f->Get( myHist);
+	hfake = (TH1F*) h_tmp->Clone();
+
+	//MC
+	for (int i = 0; i<listSum.size(); i++)
+	{
+	  myHist = "mTW_" + channel + "__" + listSum[i];
+	  if ( !f->GetListOfKeys()->Contains( myHist.Data() ) ) {cout<<myHist.Data()<<" not found !"<<endl; return 0;}
+	  h_tmp = (TH1F*)f->Get( myHist);
+	  if(i==0) {hsum = (TH1F*) h_tmp->Clone();}
+	  else {hsum->Add(h_tmp);}
+	}
+
 
   // hfake->Print(); hsum->Print(); hdata->Print();
 
@@ -613,7 +592,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
 
   mkdir("plots",0777); //Create directory if inexistant
 
-  c1->SaveAs(("plots/ScaleFakes_"+fakeLep_flavour+".png").Data()); //Save fit plot
+  c1->SaveAs(("plots/ScaleFakes_"+channel+".png").Data()); //Save fit plot
 
   double fakes_postfit = r->Parameter(0); //Parameter 0 <--> Fitted Fraction of mc[0] == Fakes
 
@@ -621,7 +600,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString fakeLep_flavour)
 
   delete mc; delete fit; delete c1;
 
-  return (fakes_postfit/hfake->Integral() ) * hdata->Integral();
+  return fakes_postfit * (hdata->Integral() / hfake->Integral() ); //Return 'postfit fakes fraction' over 'prefit fakes fraction' ==> SF
 }
 
 
@@ -646,12 +625,16 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	file_mTW_templates_unscaled = TFile::Open(file_mTW_templates_unscaled_PATH, "READ"); //File containing the templates, from which can compute fake ratio
 	if(!file_mTW_templates_unscaled) {cout<<FRED(<<file_mTW_templates_unscaled_PATH.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
 
-	double SF_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, 'u');
-	double SF_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, 'e');
+	double SF_uuu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu");
+	double SF_eee = Compute_Fake_SF(file_mTW_templates_unscaled, "eee");
+	double SF_uue = Compute_Fake_SF(file_mTW_templates_unscaled, "uue");
+	double SF_eeu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu");
 
 	cout<<endl<<BOLD(FYEL("--- Re-scaling the Fake histograms ---"))<<endl;
-	cout<<FYEL("Muon SF = "<<SF_FakeMu<<"")<<endl;
-	cout<<FYEL("Electron SF = "<<SF_FakeEl<<"")<<endl;
+	cout<<FYEL("uuu channel SF = "<<SF_uuu<<"")<<endl;
+	cout<<FYEL("eeu channel SF = "<<SF_eeu<<"")<<endl;
+	cout<<FYEL("eee channel SF = "<<SF_eee<<"")<<endl;
+	cout<<FYEL("uue channel SF = "<<SF_uue<<"")<<endl;
 
 	delete file_mTW_templates_unscaled;
 
@@ -734,13 +717,18 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 				TH1F* h_tmp = (TH1F*) file_to_rescale->Get(histo_name);
 
-				if(h_tmp->Integral() < 50)
+				if(h_tmp->Integral() < 30)
 				{
-					cout<<BOLD(FMAG("Warning : "<<histo_name<<"->Integral() = "<<h_tmp->Integral()<<" < 50 ! Are you sure the fakes were not re-scaled already ?"))<<endl<<endl;
+					cout<<BOLD(FMAG("Warning : "<<histo_name<<"->Integral() = "<<h_tmp->Integral()<<" < 30 ! Make sure you didn't rescale the Fakes templates already"))<<endl<<endl;
 				}
 
-				if(channel_list[ichan] == "uuu" || channel_list[ichan] == "eeu") h_tmp->Scale(SF_FakeMu);
-				else if(channel_list[ichan] == "eee" || channel_list[ichan] == "uue") h_tmp->Scale(SF_FakeEl);
+				if(channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu);}
+				else if(channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu);}
+				else if(channel_list[ichan] == "eee") {h_tmp->Scale(SF_eee);}
+				else if(channel_list[ichan] == "uue") {h_tmp->Scale(SF_uue);}
+
+				// if(channel_list[ichan] == "uuu" || channel_list[ichan] == "eeu") h_tmp->Scale(SF_FakeMu); //OLD
+				// else if(channel_list[ichan] == "eee" || channel_list[ichan] == "uue") h_tmp->Scale(SF_FakeEl);
 
 				file_to_rescale->cd();
 				h_tmp->Write(histo_name, TObject::kOverwrite);
@@ -882,6 +870,13 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 
+			bool sum_fakes = false;
+			if(fakes_summed_channels && (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW")))
+			{
+				sum_fakes = true;
+			}
+
+
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 
 			//For these systematics, info stored in separate ntuples ! (events are not the same)
@@ -926,22 +921,16 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
+			if(!tree && syst_list[isyst]=="") {cout<<BOLD(FRED("ERROR : nominal tree not found ! Abort"))<<endl; return 0;}
+			else if(!tree) {cout<<BOLD(FRED("ERROR : tree "<<syst_list[isyst]<<" not found ! Skip this systematic"))<<endl; break;}
+
 //--- Prepare the event tree -- Set Branch Addresses
 //WARNING : the last SetBranchAddress overrides the previous ones !! Be careful not to associate branches twice !
 
-cout<<"v_add_var_names "<<v_add_var_names.size()<<endl;
-cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
-
-
-
 			for(int i=0; i<v_add_var_names.size(); i++)
 			{
-				cout<<__LINE__<<endl;
-
 				// if(v_add_var_names[i] == "passTrig" || v_add_var_names[i] == "RunNr") {continue;} //special vars
 				tree->SetBranchAddress(v_add_var_names[i].Data(), &v_add_var_floats[i]);
-
-				cout<<__LINE__<<endl;
 			}
 			for(int i=0; i<var_list.size(); i++)
 			{
@@ -957,18 +946,18 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 			float mTW = -666; tree->SetBranchAddress("mTW", &mTW);
 			float i_channel = 9; tree->SetBranchAddress("Channel", &i_channel);
 
-			// float passTrig = -999;
+			/*float passTrig = -999;
 			float RunNr = -999;
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes"))
 			{
-				// tree_passTrig->SetBranchAddress("passTrig", &passTrig);
-				// tree_passTrig->SetBranchAddress("RunNr", &RunNr);
+				tree_passTrig->SetBranchAddress("passTrig", &passTrig);
+				tree_passTrig->SetBranchAddress("RunNr", &RunNr);
 			}
 			else
 			{
-				// tree->SetBranchAddress("passTrig", &passTrig);
-				// tree->SetBranchAddress("RunNr", &RunNr);
-			}
+				tree->SetBranchAddress("passTrig", &passTrig);
+				tree->SetBranchAddress("RunNr", &RunNr);
+			}*/
 
 			float weight;
 			//For all other systematics, only the events weights change
@@ -977,6 +966,12 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 
 			cout<<endl<< "--- "<<sample_list[isample]<<" : Processing: " << tree->GetEntries() << " events" << std::endl;
 
+
+			//Store sum of weights of Fakes events coming from the current channel only ; needed in order to rescale correctly the template at the end even if we have summed events coming from 2 separate channels
+			double Integral_Faketemplate_uuu = 0;
+			double Integral_Faketemplate_uue = 0;
+			double Integral_Faketemplate_eeu = 0;
+			double Integral_Faketemplate_eee = 0;
 
 //------------------------------------------------------------
 // --- START EVENT LOOP ---
@@ -1109,13 +1104,6 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 //------------------------------------------------------------
 //--- CREATE OUTPUT HISTOGRAMS (TEMPLATES) ----
 
-				bool sum_fakes = false;
-				if(fakes_summed_channels && (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW")))
-				{
-					sum_fakes = true;
-				}
-
-
 				// --- Return the MVA outputs and fill into histograms
 
 				//Same boundaries & nbins for all 4 histos
@@ -1138,6 +1126,9 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 							mva_value = reader->EvaluateMVA( template_name+"_eeu"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_eeu->Fill(mva_value, weight);}
 							else {Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
+
+							if(i_channel==0) {Integral_Faketemplate_uuu+= weight;} //Store info for rescaling
+							else if(i_channel==2) {Integral_Faketemplate_eeu+= weight;}
 						}
 						else if(i_channel == 1 || i_channel == 3) //eee & uue
 						{
@@ -1148,6 +1139,9 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 							mva_value = reader->EvaluateMVA( template_name+"_uue"+this->filename_suffix+ " method");
 							if(mva_value < xmax_h ) {hist_uue->Fill(mva_value, weight);}
 							else {Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
+
+							if(i_channel==1) {Integral_Faketemplate_uue+= weight;} //Store info for rescaling
+							else if(i_channel==3) {Integral_Faketemplate_eee+= weight;}
 						}
 						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
 					}
@@ -1178,7 +1172,6 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 							if(mva_value < xmax_h ) {hist_eee->Fill(mva_value, weight);}
 							else {Fill_Last_Bin_TH1F(hist_eee, weight);} //Put overflow in last bin (no info lost)
 						}
-
 						else  {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
 					}
 				}
@@ -1192,11 +1185,17 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 						{
 							if(mTW < xmax_h ) {hist_uuu->Fill(mTW, weight); hist_eeu->Fill(mTW, weight);}
 							else {Fill_Last_Bin_TH1F(hist_uuu, weight); Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
+
+							if(i_channel==0) {Integral_Faketemplate_uuu+= weight;} //Store info for rescaling
+							else if(i_channel==2) {Integral_Faketemplate_eeu+= weight;}
 						}
 						else if(i_channel == 1 || i_channel == 3)
 						{
 							if(mTW < xmax_h ) {hist_eee->Fill(mTW, weight); hist_uue->Fill(mTW, weight);}
 							else {Fill_Last_Bin_TH1F(hist_eee, weight); Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
+
+							if(i_channel==1) {Integral_Faketemplate_uue+= weight;} //Store info for rescaling
+							else if(i_channel==3) {Integral_Faketemplate_eee+= weight;}
 						}
 						else {cout<<__LINE__<<BOLD(FRED(" : problem"))<<endl;}
 					}
@@ -1239,6 +1238,14 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 				hist_uuu->Scale(luminosity_rescale); hist_uue->Scale(luminosity_rescale); hist_eeu->Scale(luminosity_rescale); hist_eee->Scale(luminosity_rescale);
 			}
 
+			//If the fake channels have been summed 2 by 2 (to increase stat.), need to rescale the template to the integrals of the single channels ! Because we only want to have the same shapes in both channels, not the same normalizations !
+			if(sum_fakes) //CHANGED
+			{
+				hist_uuu->Scale(Integral_Faketemplate_uuu/hist_uuu->Integral()); hist_eeu->Scale(Integral_Faketemplate_eeu/hist_eeu->Integral()); hist_uue->Scale(Integral_Faketemplate_uue/hist_uue->Integral()); hist_eee->Scale(Integral_Faketemplate_eee/hist_eee->Integral());
+			}
+
+
+
 			// --- Write histograms
 			file_output->cd();
 
@@ -1264,10 +1271,10 @@ cout<<"v_add_var_floats "<<v_add_var_floats.size()<<endl;
 			{
 				output_histo_name = template_name+"_uuu__FakeMuMuMu" + syst_name;
 				hist_uuu->Write(output_histo_name.Data());
-				output_histo_name = template_name+"_uue__FakeMuMuEl" + syst_name;
-				hist_uue->Write(output_histo_name.Data());
 				output_histo_name = template_name+"_eeu__FakeElElMu" + syst_name;
 				hist_eeu->Write(output_histo_name.Data());
+				output_histo_name = template_name+"_uue__FakeMuMuEl" + syst_name;
+				hist_uue->Write(output_histo_name.Data());
 				output_histo_name = template_name+"_eee__FakeElElEl" + syst_name;
 				hist_eee->Write(output_histo_name.Data());
 			}
@@ -1505,7 +1512,7 @@ float theMVAtool::Determine_Control_Cut()
  * @param cut             [Cut value]
  * @param use_pseudodata  [If true, use pseudodata rather than real data]
  */
-void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, double cut, bool use_pseudodata)
+void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, double cut, bool use_pseudodata, bool revert_cutDirection=false)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("--- Create Control Trees ---")<<endl;
@@ -1758,10 +1765,20 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 //------------------------------------------------------------
 				if(cut_on_BDT)
 				{
-					if(i_channel == 0 && reader->EvaluateMVA( BDT_type + "_uuu"+this->filename_suffix+" method") > cut) 		{continue;}
-					else if(i_channel == 1 && reader->EvaluateMVA( BDT_type + "_uue"+this->filename_suffix+" method") > cut) 	{continue;}
-					else if(i_channel == 2 && reader->EvaluateMVA( BDT_type + "_eeu"+this->filename_suffix+" method") > cut) 	{continue;}
-					else if(i_channel == 3 && reader->EvaluateMVA( BDT_type + "_eee"+this->filename_suffix+" method") > cut) 	{continue;}
+					if(revert_cutDirection) //To keep only HIGH BDT values
+					{
+						if(i_channel == 0 && reader->EvaluateMVA( BDT_type + "_uuu"+this->filename_suffix+" method") < cut) 		{continue;}
+						else if(i_channel == 1 && reader->EvaluateMVA( BDT_type + "_uue"+this->filename_suffix+" method") < cut) 	{continue;}
+						else if(i_channel == 2 && reader->EvaluateMVA( BDT_type + "_eeu"+this->filename_suffix+" method") < cut) 	{continue;}
+						else if(i_channel == 3 && reader->EvaluateMVA( BDT_type + "_eee"+this->filename_suffix+" method") < cut) 	{continue;}
+					}
+					else //keep low BDT values (blind)
+					{
+						if(i_channel == 0 && reader->EvaluateMVA( BDT_type + "_uuu"+this->filename_suffix+" method") > cut) 		{continue;}
+						else if(i_channel == 1 && reader->EvaluateMVA( BDT_type + "_uue"+this->filename_suffix+" method") > cut) 	{continue;}
+						else if(i_channel == 2 && reader->EvaluateMVA( BDT_type + "_eeu"+this->filename_suffix+" method") > cut) 	{continue;}
+						else if(i_channel == 3 && reader->EvaluateMVA( BDT_type + "_eee"+this->filename_suffix+" method") > cut) 	{continue;}
+					}
 				}
 
 				tree_control->Fill();
@@ -1786,7 +1803,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 			delete tree_control; delete tree;
 			delete file_input;
 
-			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
+			cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 		} //end sample loop
 		cout<<"Done with "<<syst_list[isyst]<<" syst"<<endl;
 
@@ -2007,6 +2024,10 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					tree->SetBranchAddress("Weight", &weight);
 					tree->SetBranchAddress("Channel", &i_channel);
 
+
+					//Store sum of weights of Fakes events coming from the current channel only ; needed in order to rescale correctly the template at the end even if we have summed events coming from 2 separate channels
+					double Integral_Faketemplate_singleChan = 0;
+
 					int tree_nentries = tree->GetEntries();
 
 					for(int ientry = 0; ientry<tree_nentries; ientry++)
@@ -2030,6 +2051,13 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 							else if(channel_list[ichan] == "9") {cout<<__LINE__<<" : problem !"<<endl;}
 						}
 
+
+						if(channel_list[ichan] == "uuu" && i_channel== 0) {Integral_Faketemplate_singleChan+= weight;} //To rescale fake templates (if sum channels 2 by 2)
+						else if(channel_list[ichan] == "uue" && i_channel== 1) {Integral_Faketemplate_singleChan+= weight;}
+						else if(channel_list[ichan] == "eeu" && i_channel== 2) {Integral_Faketemplate_singleChan+= weight;}
+						else if(channel_list[ichan] == "eee" && i_channel== 3) {Integral_Faketemplate_singleChan+= weight;}
+
+
 						//Avoid to get overflow because of inappropriate binning --> Put it into last bin instead! (underflow in first bin)
 						if(tmp < h_tmp->GetXaxis()->GetXmax() && tmp > h_tmp->GetXaxis()->GetXmin() ) {h_tmp->Fill(tmp, weight);}
 						else if(tmp > h_tmp->GetXaxis()->GetXmax() ) {Fill_Last_Bin_TH1F(h_tmp, weight);} //overflow
@@ -2040,6 +2068,12 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					if(sample_list[isample] != "Data")
 					{
 						h_tmp->Scale(luminosity_rescale);
+					}
+
+					//If the fake channels have been summed 2 by 2 (to increase stat.), need to rescale the template to the integrals of the single channel ! Because we only want to have the same shapes in both channels, not the same normalizations !
+					if(sum_fakes)
+					{
+						h_tmp->Scale(Integral_Faketemplate_singleChan/h_tmp->Integral()); //CHANGED
 					}
 
 

@@ -236,10 +236,12 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 
 			//Retrieve number of jets/bjets to be able to determine to which region an event belongs (see protections below)
 			int njets = 0, nbjets = 0;
+			// int EvtNr=0;
 			for(int k=0; k<thevarlist.size(); k++)
 			{
 				if(thevarlist[k] == "NJets") njets = v_floats[k];
 				else if(thevarlist[k] == "NBJets") nbjets = v_floats[k];
+				// else if(thevarlist[k] == "EvtNr") EvtNr = v_floats[k]; //retrieve EvtNr for cross-check
 			}
 
 
@@ -301,6 +303,9 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 						{
 							cout<<BOLD(FRED("PROBLEM (tZq region event) !  : v_floats_modif["<<k<<"] = "))<<v_floats_modif[k]<<" -- Ignore event !"<<endl;
 
+							// cout<<"Event number is : "<<EvtNr<<endl;
+							cout<<"--- ientry is : "<<ientry<<endl;
+
 							event_problem = true;
 							break;
 						}
@@ -361,8 +366,8 @@ int main()
 	vector<TString> sample_list;
 	// sample_list.push_back("Data");
 	// sample_list.push_back("tZq");
-	sample_list.push_back("tZqQup");
-	sample_list.push_back("tZqQdw");
+	// sample_list.push_back("tZqQup");
+	// sample_list.push_back("tZqQdw");
 	// sample_list.push_back("tZqmcNLO");
 	// sample_list.push_back("ttZ");
 	// sample_list.push_back("ttW");
@@ -374,6 +379,7 @@ int main()
 	// sample_list.push_back("WZC");
 	// sample_list.push_back("STtWll");
 	// sample_list.push_back("Fakes");
+	sample_list.push_back("tZqhwpp");
 
 
 
@@ -397,6 +403,7 @@ int main()
 	thevarlist.push_back("NBJets");
 	thevarlist.push_back("mTW");
 	thevarlist.push_back("METpt");
+	// thevarlist.push_back("EvtNr");
 
 	thevarlist.push_back("btagDiscri");
 	thevarlist.push_back("dRAddLepQ");
@@ -497,7 +504,7 @@ int main()
 	bool do_MEM_regions = true;
 	bool do_WZ_region = false;
 
-	TString tmp_dir = "medium_btag"; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
+	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples

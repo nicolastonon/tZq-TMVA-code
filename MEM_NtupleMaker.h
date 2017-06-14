@@ -112,6 +112,8 @@ class MEM_NtupleMaker
 		Float_t NJets;
 		Float_t NBJets;
 		Float_t mTW;
+		Float_t EvtNr;
+		Float_t RunNr;
 
 		//Systematics
 		vector<TString> v_syst_weight;

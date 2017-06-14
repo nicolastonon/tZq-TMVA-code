@@ -53,7 +53,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Fakes
     bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete)
-    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! //NOTE : this option will modify the Fakes rescaling
+    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! But the rescaling is done separately for each channel
+    //NOTE : if TRUE, the mTW channels will have same shape but different normalizations in uuu/eeu & eee/uue respectively; however, in BDT & BDTttZ fake templates, the shapes won't be exactly the same in the two summed channels ; for example, for an 'uuu' event, we will do : h_uuu->Fill(MVA_uuu value) and h_eeu->Fill(MVA_eeu value). So this will double the stat. (since we fill a single event in two different histograms), but the values filled into the 2 histograms will be different (different BDT training b/w channels)!
 
     //Outputs
     TString format = ".pdf"; //'.png' or '.pdf' only
@@ -108,7 +109,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">30");            set_v_cut_IsUsedForBDT.push_back(false);
         // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
@@ -203,6 +204,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Signal --- must be placed before backgrounds
     thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
+    // thesamplelist.push_back("tZqhwpp");             v_color.push_back(kGreen+2);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
@@ -355,7 +357,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //--- Stored in separate Ntuples (tZq only)
     systematics_names_tmp.push_back("PSscale"); //
-    // systematics_names_tmp.push_back("Hadron"); //Need new herwig sample
+    //--- systematics_names_tmp.push_back("Hadron"); //OBSOLETE
 
 //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
@@ -485,8 +487,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(create_control_histograms)
         {
             if(cut_on_BDT_tmp) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates);
-            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT_tmp); //NOTE : very long ! You should only activate necessary syst./vars !
+
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, false);
+
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT_tmp);
         }
 
         //#############################################

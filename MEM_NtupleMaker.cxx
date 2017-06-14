@@ -147,6 +147,8 @@ void MEM_NtupleMaker::Init()
   NJets = -999;
   NBJets = -999;
   mTW = -999;
+  EvtNr = -999;
+  RunNr = -999;
 
   //Re-initialize vector contents
   for(int isyst=0; isyst<v_syst_float.size(); isyst++)
@@ -194,6 +196,8 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TStri
   tree_output->Branch("NJets",&NJets,"NJets/F");
   tree_output->Branch("NBJets",&NBJets,"NBJets/F");
   tree_output->Branch("mTW",&mTW,"mTW/F");
+  tree_output->Branch("EvtNr",&EvtNr,"EvtNr/F");
+  tree_output->Branch("RunNr",&RunNr,"RunNr/F");
 
   tree_output->Branch("catJets",&catJets,"catJets/I");
 
@@ -678,6 +682,8 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     t_vars_input->SetBranchAddress("mTW", &mTW);
     t_vars_input->SetBranchAddress("NJets", &NJets);
     t_vars_input->SetBranchAddress("NBJets", &NBJets);
+    t_vars_input->SetBranchAddress("EvtNr", &EvtNr); //CHANGED
+    t_vars_input->SetBranchAddress("RunNr", &RunNr); //CHANGED
 
     //---BDT
     for(int ivar=0; ivar<BDTvar_list.size(); ivar++)
@@ -924,7 +930,7 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  // v_samplenames.push_back("Data");
+  v_samplenames.push_back("Data");
   // v_samplenames.push_back("tZqmcNLO");
   // v_samplenames.push_back("tZqQup");
   // v_samplenames.push_back("tZqQdw");
@@ -937,7 +943,7 @@ int main()
   // v_samplenames.push_back("ttW");
   // v_samplenames.push_back("STtWll");
   // v_samplenames.push_back("Fakes");
-  v_samplenames.push_back("tZqhwpp");
+  // v_samplenames.push_back("tZqhwpp");
 
 
 
@@ -1033,7 +1039,7 @@ int main()
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
   bool do_MEM_regions = true;
-	bool do_WZ_region = true;
+	bool do_WZ_region = false;
 
   TString specific_dir = ""; //specify specific input/output dir. name
 

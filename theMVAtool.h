@@ -92,7 +92,7 @@ class theMVAtool
 	void Rescale_Fake_Histograms(TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
 	int Read(TString, bool, bool, bool, bool = false, double = 999); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
-	void Create_Control_Trees(bool, bool, double, bool); //Create new trees with events passing the cuts
+	void Create_Control_Trees(bool, bool, double, bool, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool, bool, bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
 	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
 	int Generate_PseudoData_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
