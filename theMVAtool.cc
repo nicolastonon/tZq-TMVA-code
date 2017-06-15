@@ -2996,7 +2996,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			if( std::isnan(histo_ratio_data->GetBinContent(ibin)) || std::isinf(histo_ratio_data->GetBinContent(ibin)) ) {histo_ratio_data->SetBinContent(ibin, 1);}
 		}
 
-			//CHANGED
 		// histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
 		histo_ratio_data->GetXaxis()->SetTitle(stringv_list[ivar].Data());
 		histo_ratio_data->GetYaxis()->SetTickLength(0.15);
@@ -3848,10 +3847,16 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	TH1F * histo_ratio_data = (TH1F*) h_data_new->Clone();
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
+
+
 	//NOTE : slightly different parameters than prefit function (need to add hand-made axis here)
+	histo_ratio_data->GetXaxis()->SetLabelSize(0.0); //Make this axis invisible because we are going to draw a new one (below)
+	histo_ratio_data->GetXaxis()->SetLabelOffset(999);
+	histo_ratio_data->GetXaxis()->SetTickLength(0.0);
+
+
 	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
 	histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
-	histo_ratio_data->GetXaxis()->SetLabelSize(0.0);
 	histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
 	histo_ratio_data->GetXaxis()->SetLabelFont(42);
 	histo_ratio_data->GetYaxis()->SetLabelFont(42);
@@ -3859,48 +3864,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->GetYaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetNdivisions(503);
 	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
-	histo_ratio_data->GetXaxis()->SetLabelOffset(999);
-	histo_ratio_data->GetXaxis()->SetTickLength(0.0);
 	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 	histo_ratio_data->SetMinimum(0.0);
 	histo_ratio_data->SetMaximum(1.999);
-	histo_ratio_data->SetMaximum(1.999);
-	histo_ratio_data->Draw("E1X0"); //Draw ratio points
-
-/* //CHANGED
-	histo_ratio_data->SetMinimum(0.0);
-	histo_ratio_data->SetMaximum(2.999);
-	histo_ratio_data->GetXaxis()->SetTitle(template_name.Data());
-	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
-	histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
-	histo_ratio_data->GetYaxis()->SetTitle("Data/MC");
-	histo_ratio_data->GetYaxis()->SetTitleOffset(1.4);
-	histo_ratio_data->GetYaxis()->SetLabelSize(0.04);
-	histo_ratio_data->GetYaxis()->SetNdivisions(6);
-	histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
-	histo_ratio_data->GetXaxis()->SetTickLength(0);
-*/
-
-	//To remove original Xaxis (we need to draw a custom Xaxis, see below)
-	histo_ratio_data->GetXaxis()->SetLabelOffset(999);
-	histo_ratio_data->GetXaxis()->SetLabelSize(0.0);
-	histo_ratio_data->GetXaxis()->SetTickLength(0.0);
-
-	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
-	histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
-	histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
-	histo_ratio_data->GetXaxis()->SetLabelSize(0.045);
-	// histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
-	histo_ratio_data->GetYaxis()->SetLabelSize(0.04);
-	histo_ratio_data->GetXaxis()->SetLabelFont(42);
-	histo_ratio_data->GetYaxis()->SetLabelFont(42);
-	histo_ratio_data->GetXaxis()->SetTitleFont(42);
-	histo_ratio_data->GetYaxis()->SetTitleFont(42);
-	// histo_ratio_data->GetYaxis()->SetNdivisions(6);
-	histo_ratio_data->GetYaxis()->SetNdivisions(303);
-	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
-	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 	histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
 
@@ -3937,6 +3904,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	axis->SetTitleOffset(1.4);
 	axis->SetLabelSize(0.05);
 	axis->Draw("same");
+
 
 
 	stack_MC->GetXaxis()->SetLabelFont(42);
@@ -4014,6 +3982,29 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		//latex.SetTextAlign(align_);
 		latex.SetTextSize(extraTextSize*t);
 		latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+
+
+		TString info_data;
+		if (channel=="eee")    info_data = "eee channel";
+		else if (channel=="eeu")  info_data = "ee#mu channel";
+		else if (channel=="uue")  info_data = "#mu#mu e channel";
+		else if (channel=="uuu") info_data = "#mu#mu #mu channel";
+		else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
+
+		TString extrainfo_data;
+		if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
+		else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
+		else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
+
+		TLatex text2 ; //= new TLatex(0, 0, info_data);
+		text2.SetNDC();
+		text2.SetTextAlign(13);
+		text2.SetTextFont(42);
+		text2.SetTextSize(0.04);
+		text2.DrawLatex(0.195,0.91,info_data);
+
+		text2.SetTextFont(62);
+		text2.DrawLatex(0.63,0.9,extrainfo_data);
 
 //------------------
 

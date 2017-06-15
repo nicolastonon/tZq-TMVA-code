@@ -114,6 +114,8 @@ class MEM_NtupleMaker
 		Float_t mTW;
 		Float_t EvtNr;
 		Float_t RunNr;
+		Float_t AdditionalMuonIso;
+		Float_t AdditionalEleIso;
 
 		//Systematics
 		vector<TString> v_syst_weight;
