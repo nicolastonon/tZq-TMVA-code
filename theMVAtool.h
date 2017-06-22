@@ -85,11 +85,13 @@ class theMVAtool
 //Methods
 	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString);
 	~theMVAtool() {delete reader;}; //Free memory
-
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
+	void Fill_Zpt_Vectors(); //Initialize the vectors with SFs for Zpt reweighting
+
 	void Train_Test_Evaluate(TString, TString, bool, bool); //Train, Test, Evaluate BDT with MC samples
 	double Compute_Fake_SF(TFile*, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
 	void Rescale_Fake_Histograms(TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
+	double Get_Zpt_Reweighting_SF(int, int, double); //Returns SF for Fakes event (Zpt reweighting)
 	int Read(TString, bool, bool, bool, bool = false, double = 999); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool, bool); //Create new trees with events passing the cuts
@@ -102,14 +104,15 @@ class theMVAtool
 	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
+	void Superpose_Fakes_Templates(TString, TString); //Superpose prefit templates for : signal, fakes, other
 	void Rebin_Template_File(TString, int); //Rebin all the templates in input file
 	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString); //Shows the variation of 1 systematic on 1 template (e.g. compare JES/nominal in tZq)
+	void Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString, bool);
 
 
 	//Obsolete functions
 	// int Fit_Fake_Templates(TString, TString); //Fit the fake templates
 	// int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
-	// void Compare_Negative_Weights_Effect_On_Distributions(TString, bool);
 
 //Members
 	TMVA::Reader *reader;
@@ -139,6 +142,8 @@ class theMVAtool
 
 	TString format; //Format extension for plots (pdf of png?)
 	bool combine_naming_convention; //Choose b/w Combine naming convention (true) or Theta ones (false)
+
+	double v_Zpt_el_tZq[10], v_Zpt_el_ttZ[10], v_Zpt_el_WZ1jet[10], v_Zpt_el_WZ2jet[10], v_Zpt_el_WZ3morejet[10], v_Zpt_mu_tZq[10], v_Zpt_mu_ttZ[10], v_Zpt_mu_WZ1jet[10], v_Zpt_mu_WZ2jet[10], v_Zpt_mu_WZ3morejet[10]; //For Zpt reweighting
 };
 
 #endif

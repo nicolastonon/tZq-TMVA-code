@@ -38,7 +38,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool include_MEM_variables = true;
 
 
-
     //Luminosity
     //NOTE: this value is compared to a hard-coded value in theMVAtool.cc & a rescaling factor is computed in case they are different
     double set_luminosity = 35.862; //Moriond 2017 - 35.862fb
@@ -52,12 +51,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Fakes
-    bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete)
+    bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
     bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! But the rescaling is done separately for each channel
     //NOTE : if TRUE, the mTW channels will have same shape but different normalizations in uuu/eeu & eee/uue respectively; however, in BDT & BDTttZ fake templates, the shapes won't be exactly the same in the two summed channels ; for example, for an 'uuu' event, we will do : h_uuu->Fill(MVA_uuu value) and h_eeu->Fill(MVA_eeu value). So this will double the stat. (since we fill a single event in two different histograms), but the values filled into the 2 histograms will be different (different BDT training b/w channels)!
 
     //Outputs
-    TString format = ".pdf"; //'.png' or '.pdf' only
+    TString format = ".png"; //'.png' or '.pdf' only
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -109,6 +108,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
+        // set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("<0.05");            set_v_cut_IsUsedForBDT.push_back(false);
+
         // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
         // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     }
@@ -165,7 +166,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //--- CIEMAT's Ntuples ---
     // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/ntuples_mediumBTag";
     // t_name = "Default";
 
 
@@ -204,12 +204,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Signal --- must be placed before backgrounds
     thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
-    // thesamplelist.push_back("tZqhwpp");             v_color.push_back(kGreen+2);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
     thesamplelist.push_back("WZB");             v_color.push_back(921); //grey
     thesamplelist.push_back("WZC");             v_color.push_back(922); //grey
+
     // thesamplelist.push_back("WZ");                 v_color.push_back(922); //grey
 
 
@@ -220,13 +220,20 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("STtWll");          v_color.push_back(kOrange+1);
 
     //FAKES
-    thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
+    if(fakes_from_data)
+    {
+        // thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
+        // thesamplelist.push_back("FakesNew");           v_color.push_back(kAzure-2); //Data-driven (DD)
+        thesamplelist.push_back("FakesNewNew");           v_color.push_back(kAzure-2); //Data-driven (DD) //FIXME
+    }
+    //WARNING : OBSOLETE -- don't use MC fakes (or update code) -- must be last samples !
+    else
+    {
+        thesamplelist.push_back("DY");              v_color.push_back(kAzure-4); //MC
+        thesamplelist.push_back("TT");              v_color.push_back(kAzure-4); //MC
+        // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
+    }
 
-
-    //WARNING : OBSOLETE -- don't use MC fakes (or update code)
-    // thesamplelist.push_back("DYjets");          v_color.push_back(kAzure-2); //MC
-    // thesamplelist.push_back("TT");              v_color.push_back(kRed-1); //MC
-    // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
 
 //-------------------
 
@@ -244,18 +251,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     std::vector<TString > thevarlist_ttZ; //Variables used in BDTttZ
 
 //------------------------ for tZq
+    thevarlist.push_back("etaQ");
+    thevarlist.push_back("LeadJetEta");
+    thevarlist.push_back("dRjj");
     thevarlist.push_back("btagDiscri");
-    thevarlist.push_back("dRAddLepClosestJet");
-    thevarlist.push_back("dPhiAddLepB");
     thevarlist.push_back("ZEta");
     thevarlist.push_back("mtop");
     thevarlist.push_back("AddLepAsym");
-    thevarlist.push_back("etaQ");
     thevarlist.push_back("AddLepETA");
-    thevarlist.push_back("LeadJetEta");
-    thevarlist.push_back("dPhiZAddLep");
-    thevarlist.push_back("dRjj");
     thevarlist.push_back("ptQ");
+    thevarlist.push_back("dPhiZAddLep");
+    thevarlist.push_back("dPhiAddLepB");
+    thevarlist.push_back("dRAddLepClosestJet");
 
 //-- After optimization, removed 4 vars :
     // thevarlist.push_back("dRAddLepQ");
@@ -287,18 +294,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 //------------------------ for ttZ
-    thevarlist_ttZ.push_back("btagDiscri");
-    thevarlist_ttZ.push_back("dRAddLepQ");
-    thevarlist_ttZ.push_back("dRAddLepClosestJet");
-    thevarlist_ttZ.push_back("Zpt");
-    thevarlist_ttZ.push_back("ZEta");
-    thevarlist_ttZ.push_back("AddLepAsym");
+    thevarlist_ttZ.push_back("dRjj");
     thevarlist_ttZ.push_back("etaQ");
     thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
-    thevarlist_ttZ.push_back("dPhiZAddLep");
-    thevarlist_ttZ.push_back("dRjj");
+    thevarlist_ttZ.push_back("btagDiscri");
+    thevarlist_ttZ.push_back("dRAddLepClosestJet");
+    thevarlist_ttZ.push_back("Zpt");
+    thevarlist_ttZ.push_back("AddLepAsym");
     thevarlist_ttZ.push_back("mtop");
     thevarlist_ttZ.push_back("dRZTop");
+    thevarlist_ttZ.push_back("dRAddLepQ");
+    thevarlist_ttZ.push_back("ZEta");
+    thevarlist_ttZ.push_back("dPhiZAddLep");
 
 //--- After optimization, removed 8 variables : (+NBJets & MEMvar_2)
     // thevarlist_ttZ.push_back("AddLepETA");
@@ -330,15 +337,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ##     ##    ##    ##     ## ##       ##    ##         ## ##   ##     ## ##    ##  ##    ##
 //  #######     ##    ##     ## ######## ##     ##         ###    ##     ## ##     ##  ######
 //---------------------------------------------------------------------------
-//Can add additionnal vars which are NOT used in TMVA NOR for cuts, only for CR plots
+//Can add additionnal vars which are NOT used in TMVA NOR for cuts, only for CR plots !
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
     v_add_var_names.push_back("mTW");
     v_add_var_names.push_back("METpt");
-
-    // v_add_var_names.push_back("AdditionalMuonIso"); //CHANGED
-    // v_add_var_names.push_back("AdditionalEleIso");
+    v_add_var_names.push_back("TopPT");
+    v_add_var_names.push_back("Zpt");
+    v_add_var_names.push_back("AdditionalMuonIso");
+    v_add_var_names.push_back("AdditionalEleIso");
+    // v_add_var_names.push_back("tZ_pT");
+    // v_add_var_names.push_back("tZ_mass");
 
 
 
@@ -358,9 +368,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //--- General names of systematics
     vector<TString> systematics_names_tmp;
 
+//--- Stored in vectors (class members) - only for data-driven Fakes
+    if(fakes_from_data) {systematics_names_tmp.push_back("ZptReweight");}
+
 //--- Stored in separate Ntuples (tZq only)
     systematics_names_tmp.push_back("PSscale"); //
-    //--- systematics_names_tmp.push_back("Hadron"); //OBSOLETE
+    //--- systematics_names_tmp.push_back("Hadron"); //OBSOLETE -- do not use !
 
 //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
@@ -536,14 +549,19 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
-            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], false);
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+            // MVAtool->Superpose_Fakes_Templates(template_name, thechannellist[ichan]);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
+
+            // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(thechannellist[ichan], false);
         }
 
-        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", false);
+        // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
+
+
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
+        // MVAtool->Superpose_Fakes_Templates(template_name, "allchan");
 
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 

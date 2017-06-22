@@ -134,7 +134,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 	{
 		//Only 'Tree' tree for data and fakes (+'Fakes' syst tree for fakes)
 	    if( (sample.Contains("Data") && tree_syst_list[itreesyst] != "Tree") || ( sample.Contains("Fakes") && tree_syst_list[itreesyst] != "Tree" && !tree_syst_list[itreesyst].Contains("Fakes") ) ) {continue;}
-	    if( tree_syst_list[itreesyst].Contains("Fakes") && !sample.Contains("Fakes") ) {continue;} //'Fakes' syst. tree only for Fakes sample
+	    if( tree_syst_list[itreesyst].Contains("Fakes") && !sample.Contains("Fakes") && !sample.Contains("DY") && !sample.Contains("TT") ) {continue;} //'Fakes' syst. tree only for Fakes sample
 
 	    cout<<FGRN("SYSTEMATIC TREE NAME : ")<<tree_syst_list[itreesyst]<<endl;
 
@@ -191,7 +191,7 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 			t_input = (TTree*) f_input->Get(tree_syst_list[itreesyst].Data());
 
 			if(tree_syst_list[itreesyst] == "Fakes__plus") {t_input = (TTree*) f_input->Get("Tree"); } //Fakes__plus = nominal !
-			if(!t_input) {cout<<"Tree "<<tree_syst_list[itreesyst]<<" not found !"<<endl; return;}
+			if(!t_input) {cout<<"Tree "<<tree_syst_list[itreesyst]<<" not found !"<<endl; continue;}
 		}
 		// else if(MEM_or_WZ == "WZ") {t_input = (TTree*) f_input->Get("Default"); if(!t_input) {cout<<"Tree 'Default' not found !"<<endl; return;} }
 
@@ -338,6 +338,8 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		f_output->cd();
 	  	tree_modif->Write(); //Write output tree in output ntuple
 
+		delete v_MET;
+
 	  	tree_modif->Delete();
 	} //end tree syst loop
 
@@ -364,21 +366,24 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	sample_list.push_back("Data");
-	sample_list.push_back("tZq");
-	sample_list.push_back("tZqQup");
-	sample_list.push_back("tZqQdw");
-	sample_list.push_back("tZqmcNLO");
-	sample_list.push_back("ttZ");
-	sample_list.push_back("ttW");
-	sample_list.push_back("ttH");
-	sample_list.push_back("ZZ");
-	sample_list.push_back("tWZ");
-	sample_list.push_back("WZL");
-	sample_list.push_back("WZB");
-	sample_list.push_back("WZC");
-	sample_list.push_back("STtWll");
-	sample_list.push_back("Fakes");
+	// sample_list.push_back("Data");
+	// sample_list.push_back("tZq");
+	// sample_list.push_back("tZqQup");
+	// sample_list.push_back("tZqQdw");
+	// sample_list.push_back("tZqmcNLO");
+	// sample_list.push_back("ttZ");
+	// sample_list.push_back("ttW");
+	// sample_list.push_back("ttH");
+	// sample_list.push_back("ZZ");
+	// sample_list.push_back("tWZ");
+	// sample_list.push_back("WZL");
+	// sample_list.push_back("WZB");
+	// sample_list.push_back("WZC");
+	// sample_list.push_back("STtWll");
+	// sample_list.push_back("Fakes");
+	// sample_list.push_back("DY");
+	// sample_list.push_back("TT");
+	sample_list.push_back("FakesNewNew");
 
 	// sample_list.push_back("tZqhwpp");
 
@@ -505,7 +510,7 @@ int main()
  // #        #####  #     #  #####     #    ### ####### #     #     #####  #     # ####### #######  #####
 //-----------------------------------------
 
-	bool do_MEM_regions = false;
+	bool do_MEM_regions = true;
 	bool do_WZ_region = true;
 
 	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples

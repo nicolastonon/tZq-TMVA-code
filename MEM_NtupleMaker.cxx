@@ -151,6 +151,8 @@ void MEM_NtupleMaker::Init()
   RunNr = -999;
   AdditionalMuonIso = -999;
   AdditionalEleIso = -999;
+  tZ_pT = -999;
+  tZ_mass = -999;
 
   //Re-initialize vector contents
   for(int isyst=0; isyst<v_syst_float.size(); isyst++)
@@ -202,6 +204,8 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TStri
   tree_output->Branch("RunNr",&RunNr,"RunNr/F");
   tree_output->Branch("AdditionalMuonIso",&AdditionalMuonIso,"AdditionalMuonIso/F");
   tree_output->Branch("AdditionalEleIso",&AdditionalEleIso,"AdditionalEleIso/F");
+  tree_output->Branch("tZ_pT",&tZ_pT,"tZ_pT/F");
+  tree_output->Branch("tZ_mass",&tZ_mass,"tZ_mass/F");
 
   tree_output->Branch("catJets",&catJets,"catJets/I");
 
@@ -591,6 +595,250 @@ void MEM_NtupleMaker::OrderJets(vector<ciemat::Jet>* vSelectedJets, const int ib
 
 
 
+
+
+
+//-------------------------------------------
+// ######## ########         ########  ########    ##     ##    ###    ########
+//    ##         ##          ##     ##    ##       ##     ##   ## ##   ##     ##
+//    ##        ##           ##     ##    ##       ##     ##  ##   ##  ##     ##
+//    ##       ##            ########     ##       ##     ## ##     ## ########
+//    ##      ##             ##           ##        ##   ##  ######### ##   ##
+//    ##     ##              ##           ##         ## ##   ##     ## ##    ##  ###
+//    ##    ######## ####### ##           ##          ###    ##     ## ##     ## ###
+//-------------------------------------------
+
+/**
+ * Compute manually the pT or mass of the top+Z system, from TLorentzVectors, in tZq region events
+ * @param  vSelectedElectrons
+ * @param  vSelectedMuons
+ * @param  vSelectedJets
+ * @param  bjet_index         index of bjet (only 1 in tZq region)
+ * @param  is_tZq_region
+ * @return                    computed value for tZ_pT or tZq_mass
+ */
+double MEM_NtupleMaker::Compute_tZ_pT(vector<ciemat::Electron>* vSelectedElectrons, vector<ciemat::Muon>* vSelectedMuons, vector<ciemat::Jet>* vSelectedJets, ciemat::MET* METCollection, int bjet_index, bool is_tZq_region, bool return_pT)
+{
+  if(!is_tZq_region) {return -99;} //Only compute value in tZq region (single bjet)
+
+  double result=-99;
+
+  TLorentzVector lep1, lep2, lep3, bjet, MET;
+  TLorentzVector lepZ1, lepZ2, lepW;
+  int charge_lep1 = 0;
+  int charge_lep2 = 0;
+  int charge_lep3 = 0;
+
+  MET.SetPtEtaPhiE( METCollection[0].met, 0, METCollection[0].phi, METCollection[0].met); //neglect neutrino mass
+  bjet.SetPtEtaPhiE( vSelectedJets->at(bjet_index).pt, vSelectedJets->at(bjet_index).eta, vSelectedJets->at(bjet_index).phi, vSelectedJets->at(bjet_index).energy);
+
+
+  //3 muons && 0 electrons
+  if(vSelectedMuons->size() == 3 && vSelectedElectrons->size()==0)
+  {
+    lep1.SetPtEtaPhiM(vSelectedMuons->at(0).pt,     vSelectedMuons->at(0).eta,     vSelectedMuons->at(0).phi, 0.106);
+    lep2.SetPtEtaPhiM(vSelectedMuons->at(1).pt,     vSelectedMuons->at(1).eta,     vSelectedMuons->at(1).phi, 0.106);
+    lep3.SetPtEtaPhiM(vSelectedMuons->at(2).pt,     vSelectedMuons->at(2).eta,     vSelectedMuons->at(2).phi, 0.106);
+    charge_lep1 = vSelectedMuons->at(0).charge ;
+    charge_lep2 = vSelectedMuons->at(1).charge ;
+    charge_lep3 = vSelectedMuons->at(2).charge ;
+
+    if(charge_lep1 != charge_lep2)
+    {
+      if(charge_lep1 == charge_lep3)
+      {
+        if( fabs( (lep1+lep2).M() - 91) < fabs( (lep2+lep3).M() - 91) )
+        {
+          lepZ1 = lep1;
+          lepZ2 = lep2;
+          lepW  = lep3;
+        }
+        else
+        {
+          lepZ1 = lep3;
+          lepZ2 = lep2;
+          lepW  = lep1;
+        }
+      }
+
+      else if (charge_lep2 == charge_lep3)
+      {
+        if( fabs( (lep1+lep2).M() - 91) < fabs( (lep1+lep3).M() - 91) )
+        {
+          lepZ1 = lep1;
+          lepZ2 = lep2;
+          lepW  = lep3;
+        }
+        else
+        {
+          lepZ1 = lep3;
+          lepZ2 = lep1;
+          lepW  = lep2;
+        }
+      }
+    }
+
+    else //charge.lept1 == charge.lept2
+    {
+      if(charge_lep1 != charge_lep3)
+      {
+        if( fabs( (lep1+lep3).M() - 91) < fabs( (lep2+lep3).M() - 91) )
+        {
+          lepZ1 = lep1;
+          lepZ2 = lep3;
+          lepW  = lep2;
+        }
+        else
+        {
+          lepZ1 = lep3;
+          lepZ2 = lep2;
+          lepW  = lep1;
+        }
+      }
+    }
+  }
+
+//0 muons && 3 electrons
+  else if(vSelectedMuons->size() == 0 && vSelectedElectrons->size()==3)
+  {
+    lep1.SetPtEtaPhiM(vSelectedElectrons->at(0).pt, vSelectedElectrons->at(0).eta, vSelectedElectrons->at(0).phi, 511*pow(10,-6));
+    lep2.SetPtEtaPhiM(vSelectedElectrons->at(1).pt, vSelectedElectrons->at(1).eta, vSelectedElectrons->at(1).phi, 511*pow(10,-6));
+    lep3.SetPtEtaPhiM(vSelectedElectrons->at(2).pt, vSelectedElectrons->at(2).eta, vSelectedElectrons->at(2).phi, 511*pow(10,-6));
+    charge_lep1 = vSelectedElectrons->at(0).charge ;
+    charge_lep2 = vSelectedElectrons->at(1).charge ;
+    charge_lep3 = vSelectedElectrons->at(2).charge ;
+
+    if(charge_lep1 != charge_lep2)
+    {
+      if(charge_lep1 == charge_lep3)
+      {
+        if( fabs( (lep1+lep2).M() - 91) < fabs( (lep2+lep3).M() - 91) )
+        {
+          lepZ1 = lep1;
+          lepZ2 = lep2;
+          lepW  = lep3;
+        }
+        else
+        {
+          lepZ1 = lep3;
+          lepZ2 = lep2;
+          lepW  = lep1;
+        }
+      }
+
+      else if (charge_lep2 == charge_lep3)
+      {
+        if( fabs( (lep1+lep2).M() - 91) < fabs( (lep1+lep3).M() - 91) )
+        {
+          lepZ1 = lep1;
+          lepZ2 = lep2;
+          lepW  = lep3;
+        }
+        else
+        {
+          lepZ1 = lep3;
+          lepZ2 = lep1;
+          lepW  = lep2;
+        }
+      }
+    }
+
+    else //charge.lept1 == charge.lept2
+    {
+      if(charge_lep1 != charge_lep3)
+      {
+        if( fabs( (lep1+lep3).M() - 91) < fabs( (lep2+lep3).M() - 91) )
+        {
+          lepZ1 = lep1;
+          lepZ2 = lep3;
+          lepW  = lep2;
+        }
+        else
+        {
+          lepZ1 = lep3;
+          lepZ2 = lep2;
+          lepW  = lep1;
+        }
+      }
+    }
+  }
+
+
+//1 muon && 2 electrons
+  else if(vSelectedElectrons->size() == 2 && vSelectedMuons->size()==1)
+  {
+    lep1.SetPtEtaPhiM(vSelectedElectrons->at(0).pt, vSelectedElectrons->at(0).eta, vSelectedElectrons->at(0).phi, 511*pow(10,-6));
+    lep2.SetPtEtaPhiM(vSelectedElectrons->at(1).pt, vSelectedElectrons->at(1).eta, vSelectedElectrons->at(1).phi, 511*pow(10,-6));
+    lep3.SetPtEtaPhiM(vSelectedMuons->at(0).pt, vSelectedMuons->at(0).eta, vSelectedMuons->at(0).phi, 0.106);
+    charge_lep1 = vSelectedElectrons->at(0).charge ;
+    charge_lep2 = vSelectedElectrons->at(1).charge ;
+    charge_lep3 = vSelectedMuons->at(0).charge ;
+
+    if(charge_lep1 != charge_lep2)
+    {
+      lepZ1 = lep1;
+      lepZ2 = lep2;
+      lepW  = lep3;
+    }
+  }
+
+//2 muons && 1 electron
+  else if(vSelectedElectrons->size() == 1 && vSelectedMuons->size()==2)
+  {
+    lep1.SetPtEtaPhiM(vSelectedMuons->at(0).pt, vSelectedMuons->at(0).eta, vSelectedMuons->at(0).phi, 0.106);
+    lep2.SetPtEtaPhiM(vSelectedMuons->at(1).pt, vSelectedMuons->at(1).eta, vSelectedMuons->at(1).phi, 0.106);
+    lep3.SetPtEtaPhiM(vSelectedElectrons->at(0).pt, vSelectedElectrons->at(0).eta, vSelectedElectrons->at(0).phi, 511*pow(10,-6));
+    charge_lep1 = vSelectedMuons->at(0).charge ;
+    charge_lep2 = vSelectedMuons->at(1).charge ;
+    charge_lep3 = vSelectedElectrons->at(0).charge ;
+
+    if(charge_lep1 != charge_lep2)
+    {
+      lepZ1 = lep1;
+      lepZ2 = lep2;
+      lepW  = lep3;
+    }
+  }
+
+
+
+
+  //---- Create TLorentzVectors for Top and Z
+  TLorentzVector Z, top;
+  Z.SetPtEtaPhiM( (lepZ1+lepZ2).Pt(), (lepZ1+lepZ2).Eta(), (lepZ1+lepZ2).Phi(), (lepZ1+lepZ2).M() );
+  top.SetPtEtaPhiM( (lepW+MET+bjet).Pt(), (lepW+MET+bjet).Eta(), (lepW+MET+bjet).Phi(), (lepW+MET+bjet).M() );
+
+  if(return_pT) result = (Z+top).Pt();
+  else result = (Z+top).M();
+
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //-------------------------------------------
 //  ######  ########  ########    ###    ######## ########       ##    ## ######## ##     ## ########  ##       ########
 // ##    ## ##     ## ##         ## ##      ##    ##             ###   ##    ##    ##     ## ##     ## ##       ##
@@ -620,7 +868,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   {
     //Only 'Default' tree for data and fakes (+'Fakes' syst tree for fakes)
     if( (samplename.Contains("Data") && v_syst_tree[itreesyst] != "Default") || ( samplename.Contains("Fakes") && v_syst_tree[itreesyst] != "Default" && !v_syst_tree[itreesyst].Contains("Fakes") ) ) {continue;}
-    if( v_syst_tree[itreesyst].Contains("Fakes") && !samplename.Contains("Fakes") ) {continue;} //'Fakes' syst. tree only for Fakes sample
+    if( v_syst_tree[itreesyst].Contains("Fakes") && !samplename.Contains("Fakes") && !samplename.Contains("DY") && !samplename.Contains("TT") ) {continue;} //'Fakes' syst. tree only for Fakes sample
 
     cout<<FGRN("SYSTEMATIC TREE NAME : ")<<v_syst_tree[itreesyst]<<endl;
 
@@ -635,7 +883,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     if(t_MEM_input == 0) {cout<<"Can't find tree 'MEMCollection' !"<<endl; return;}
 
     TTree* t_vars_input = 0; //Tree containing all the BDT vars and more
-    t_vars_input = (TTree*) f_input->Get( v_syst_tree[itreesyst] ); if(t_vars_input == 0) {cout<<"Can't find tree '"<<v_syst_tree[itreesyst]<<"' !"<<endl; return;}
+    t_vars_input = (TTree*) f_input->Get( v_syst_tree[itreesyst] ); if(t_vars_input == 0) {cout<<"Can't find tree '"<<v_syst_tree[itreesyst]<<"' !"<<endl; continue;}
 
 
 
@@ -744,6 +992,8 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
         // if(passTrig != 1) {continue;}
       }
+
+      //Compute tZ_pT variable
 
 
 
@@ -878,6 +1128,13 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
   //-------------------
 
+      //CHANGED : compute here tZ_pT for events in tZq_region
+      tZ_pT = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);
+      tZ_mass = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);
+
+
+  //-------------------
+
       tree_output->Fill();
     }
 
@@ -936,19 +1193,23 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("Data");
-  v_samplenames.push_back("tZqmcNLO");
-  v_samplenames.push_back("tZqQup");
-  v_samplenames.push_back("tZqQdw");
-  v_samplenames.push_back("WZB");
-  v_samplenames.push_back("WZL");
-  v_samplenames.push_back("WZC");
-  v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("ZZ");
-  v_samplenames.push_back("ttH");
-  v_samplenames.push_back("ttW");
-  v_samplenames.push_back("STtWll");
-  v_samplenames.push_back("Fakes");
+  // v_samplenames.push_back("Data");
+  // v_samplenames.push_back("tZqmcNLO");
+  // v_samplenames.push_back("tZqQup");
+  // v_samplenames.push_back("tZqQdw");
+  // v_samplenames.push_back("WZB");
+  // v_samplenames.push_back("WZL");
+  // v_samplenames.push_back("WZC");
+  // v_samplenames.push_back("ttZ");
+  // v_samplenames.push_back("ZZ");
+  // v_samplenames.push_back("ttH");
+  // v_samplenames.push_back("ttW");
+  // v_samplenames.push_back("STtWll");
+  // v_samplenames.push_back("Fakes");
+  // v_samplenames.push_back("DY");
+  // v_samplenames.push_back("TT");
+  v_samplenames.push_back("FakesNewNew");
+
   // v_samplenames.push_back("tZqhwpp");
 
 
@@ -1044,7 +1305,7 @@ int main()
 
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
-  bool do_MEM_regions = false;
+  bool do_MEM_regions = true;
 	bool do_WZ_region = true;
 
   TString specific_dir = ""; //specify specific input/output dir. name
