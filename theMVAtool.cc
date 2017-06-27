@@ -1476,9 +1476,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			//If the fake channels have been summed 2 by 2 (to increase stat.), need to rescale the template to the integrals of the single channels ! Because we only want to have the same shapes in both channels, not the same normalizations !
-			// if(sum_fakes) //CHANGED
 
-			if(fakes_from_data && sample_list[isample].Contains("Fakes") )
+			// if(sum_fakes) //CHANGED
+			// if(fakes_from_data && sample_list[isample].Contains("Fakes") )
+			if(sum_fakes || (syst_list[isyst].Contains("Zpt") && sample_list[isample].Contains("Fakes")) )
 			{
 				hist_uuu->Scale(Integral_FakeTemplate_nominal_uuu/hist_uuu->Integral()); hist_eeu->Scale(Integral_FakeTemplate_nominal_eeu/hist_eeu->Integral()); hist_uue->Scale(Integral_FakeTemplate_nominal_uue/hist_uue->Integral()); hist_eee->Scale(Integral_FakeTemplate_nominal_eee/hist_eee->Integral());
 			}
@@ -4631,7 +4632,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 /**
  * Superpose prefit templates for : signal / fakes / other backgrounds
  */
-void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channel)
+void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channel, bool normalized)
 {
 	if(channel != "allchan" && channel != "uuu" && channel != "uue" && channel != "eeu" && channel != "eee" )
 	{
@@ -4650,9 +4651,9 @@ void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channe
 	file_input = TFile::Open( input_name.Data() );
 	if(file_input == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
 
-	TFile* file2 = 0;
-	file2 = TFile::Open( "outputs/files_noMEM/fakesNewNew/Combine_Input.root" );
-	if(file2 == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+	// TFile* file2 = 0;
+	// file2 = TFile::Open( "outputs/files_noMEM/fakesNewNew/Combine_Input.root" );
+	// if(file2 == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
 
 	mkdir("plots",0777);
 	TH1::SetDefaultSumw2();
@@ -4706,13 +4707,13 @@ void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channe
 				}
 
 				//--- Add 2nd fake histo
-				if(!file2->GetListOfKeys()->Contains(histo_name.Data())  ) {cout<<histo_name<<" : not found"<<endl;}
-				else
-				{
-					h_tmp = (TH1F*) file2->Get(histo_name.Data())->Clone();
-					if(h_fakes2 == 0) {h_fakes2 = (TH1F*) h_tmp->Clone();}
-					else {h_fakes2->Add(h_tmp);}
-				}
+				// if(!file2->GetListOfKeys()->Contains(histo_name.Data())  ) {cout<<histo_name<<" : not found"<<endl;}
+				// else
+				// {
+				// 	h_tmp = (TH1F*) file2->Get(histo_name.Data())->Clone();
+				// 	if(h_fakes2 == 0) {h_fakes2 = (TH1F*) h_tmp->Clone();}
+				// 	else {h_fakes2->Add(h_tmp);}
+				// }
 			}
 			else if(sample_list[isample].Contains("tZq") ) //Signal
 			{
@@ -4726,11 +4727,13 @@ void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channe
 
 	} //end channel loop
 
-
-	h_sum_background->Scale(1./h_sum_background->Integral() );
-	h_signal->Scale(1./h_signal->Integral() );
-	h_fakes->Scale(1./h_fakes->Integral() );
-	h_fakes2->Scale(1./h_fakes2->Integral() );
+	if(normalized)
+	{
+		h_sum_background->Scale(1./h_sum_background->Integral() );
+		h_signal->Scale(1./h_signal->Integral() );
+		h_fakes->Scale(1./h_fakes->Integral() );
+		// h_fakes2->Scale(1./h_fakes2->Integral() );
+	}
 
 
 	h_sum_background->SetLineColor(kViolet-6);
@@ -4739,9 +4742,9 @@ void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channe
 	h_fakes->SetLineColor(kAzure-2);
 	h_fakes->SetLineWidth(2);
 
-	h_fakes2->SetLineColor(kAzure-2);
-	h_fakes2->SetLineWidth(2);
-	h_fakes2->SetLineStyle(2);
+	// h_fakes2->SetLineColor(kAzure-2);
+	// h_fakes2->SetLineWidth(2);
+	// h_fakes2->SetLineStyle(2);
 
 	h_signal->SetLineColor(kGreen+2);
 	h_signal->SetLineWidth(2);
@@ -4773,11 +4776,11 @@ void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channe
 	h_signal->Draw("hist");
 	h_sum_background->Draw("same hist");
 	h_fakes->Draw("same hist");
-	h_fakes2->Draw("same hist");
+	// h_fakes2->Draw("same hist");
 
 	qw->AddEntry(h_signal, "tZq" , "L");
 	qw->AddEntry(h_fakes, "Non-prompt" , "L");
-	qw->AddEntry(h_fakes2, "Non-prompt (new)" , "L");
+	// qw->AddEntry(h_fakes2, "Non-prompt (new)" , "L");
 	qw->AddEntry(h_sum_background, "Other backgrounds" , "L");
 
 	//-------------------
@@ -4890,7 +4893,8 @@ void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channe
 	mkdir("plots/Superpose",0777); //Create directory if inexistant
 
 	//Output
-	TString output_plot_name = "plots/Superpose/SuperposeFakes_" + template_name +"_" + channel + this->filename_suffix + "_norm" + this->format;
+	TString output_plot_name = "plots/Superpose/SuperposeFakes_" + template_name +"_" + channel + this->filename_suffix + this->format;
+	if(normalized) output_plot_name = "plots/Superpose/SuperposeFakes_" + template_name +"_" + channel + this->filename_suffix + "_norm" + this->format;
 
 	c1->SaveAs(output_plot_name.Data());
 

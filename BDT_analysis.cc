@@ -52,8 +52,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Fakes
     bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
-    bool fakes_summed_channels = true; //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! But the rescaling is done separately for each channel
+    bool fakes_summed_channels = false; //CHANGED
+    //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! But the rescaling is done separately for each channel
     //NOTE : if TRUE, the mTW channels will have same shape but different normalizations in uuu/eeu & eee/uue respectively; however, in BDT & BDTttZ fake templates, the shapes won't be exactly the same in the two summed channels ; for example, for an 'uuu' event, we will do : h_uuu->Fill(MVA_uuu value) and h_eeu->Fill(MVA_eeu value). So this will double the stat. (since we fill a single event in two different histograms), but the values filled into the 2 histograms will be different (different BDT training b/w channels)!
+    //OBSOLETE ! We have enough Fakes stat. now, so get rid of this approximation !
 
     //Outputs
     TString format = ".png"; //'.png' or '.pdf' only
@@ -108,10 +110,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        // set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-
         // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">80");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //-------------------
@@ -359,7 +359,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = true;
+    bool use_systematics = false;
 //----------------
 
 //--- General names of systematics
@@ -547,7 +547,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
-            // MVAtool->Superpose_Fakes_Templates(template_name, thechannellist[ichan]);
+            MVAtool->Superpose_Fakes_Templates(template_name, thechannellist[ichan], true);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
 
@@ -558,7 +558,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
-        // MVAtool->Superpose_Fakes_Templates(template_name, "allchan");
+        MVAtool->Superpose_Fakes_Templates(template_name, "allchan", true);
 
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 

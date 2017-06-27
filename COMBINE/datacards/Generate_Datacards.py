@@ -19,15 +19,16 @@ shapeSyst = ""
 total = len(sys.argv)
 cmdargs = str(sys.argv)
 
-print ("Script name: %s" % str(sys.argv[0]))
-print ("First argument: %s" % str(sys.argv[1]))
-print ("Second argument: %s" % str(sys.argv[2]))
+#print ("Script name: %s" % str(sys.argv[0]))
+#print ("First argument: %s" % str(sys.argv[1]))
+#print ("Second argument: %s" % str(sys.argv[2]))
 
 channel = str(sys.argv[1])
 theVar = str(sys.argv[2])
 theFiletoRead= sys.argv[3]
 systList = str(sys.argv[4])
 Signal = str(sys.argv[5])
+Corrrelate_Fakes = str(sys.argv[6])
 
 if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
     print "wrong channel"
@@ -38,25 +39,33 @@ if channel=="uuu":
     theFlll = "FakeMuMuMu"
     Fakes_ch = "10"
     theFakeRate_type = "FakeRate_mu"
+    if Corrrelate_Fakes=='n':
+        theFakeRate_type = "FakeRate_uuu"
     trigsyst = "1.01"
 if channel=="uue":
     theFlll = "FakeMuMuEl"
     Fakes_ch = "11"
     theFakeRate_type = "FakeRate_el"
+    if Corrrelate_Fakes=='n':
+        theFakeRate_type = "FakeRate_uue"
     trigsyst = "1.01"
 if channel=="eeu":
     theFlll = "FakeElElMu"
     Fakes_ch = "12"
     theFakeRate_type = "FakeRate_mu"
+    if Corrrelate_Fakes=='n':
+        theFakeRate_type = "FakeRate_eeu"
     trigsyst = "1.01"
 if channel=="eee":
     theFlll = "FakeElElEl"
     Fakes_ch= "13"
     theFakeRate_type = "FakeRate_el"
+    if Corrrelate_Fakes=='n':
+        theFakeRate_type = "FakeRate_eee"
     trigsyst = "1.02"
 
 FakeRate_Numb = "5.0"
-FakeBgd_Numb = "1.3"
+# FakeBgd_Numb = "1.3"
 
 
 if(systList!="allSyst" and systList!="noSyst"):
@@ -92,7 +101,7 @@ if Signal=="tZqANDFakes":
     ttZ_ch = "3"
     ttZsyst = "1.3"
     FakeRate_Numb = "-"
-    FakeBgd_Numb = "-"
+    # FakeBgd_Numb = "-"
 
     if channel=="uuu":
         Fakes_ch = "-1"
@@ -120,7 +129,7 @@ s = s.replace("ttZ_ch", ttZ_ch)
 s = s.replace("tZqsyst", tZqsyst)
 s = s.replace("ttZsyst", ttZsyst)
 s = s.replace("FakeRate_Numb", FakeRate_Numb)
-s = s.replace("FakeBgd_Numb", FakeBgd_Numb)
+# s = s.replace("FakeBgd_Numb", FakeBgd_Numb)
 s = s.replace("trigsyst", trigsyst)
 
 print 'datacard created'

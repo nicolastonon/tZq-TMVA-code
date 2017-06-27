@@ -26,9 +26,9 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(char include_systematics, int signal_choice)
+void Script_Datacards_InputVars(char include_systematics, int signal_choice, char correlate_fakes)
 {
-	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3)  ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
+	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3) || (correlate_fakes!='y' && correlate_fakes != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
 	TString systList;
 	if(include_systematics == 'y') {systList = "allSyst";}
@@ -115,7 +115,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + signal<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + signal + " " + correlate_fakes<<endl;
 		}
 
 		file_out<<endl;
@@ -153,9 +153,9 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice)
 
 
 
-void Script_Datacards_TemplateFit(char include_systematics, int signal_choice)
+void Script_Datacards_TemplateFit(char include_systematics, int signal_choice, char correlate_fakes)
 {
-	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3)  ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
+	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3) || (correlate_fakes!='y' && correlate_fakes != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
 	TString systList;
 	if(include_systematics == 'y') {systList = "allSyst";}
@@ -189,7 +189,7 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + signal<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + signal + " " + correlate_fakes<<endl;
 		}
 
 		file_out<<endl;
@@ -234,6 +234,7 @@ int main()
 {
 	char include_systematics = 'n';
 	int signal_choice = -1;
+	char correlate_fakes = 'y';
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
 
@@ -261,6 +262,17 @@ int main()
 		cin>>signal_choice;
 	}
 
+	cout<<endl<<FYEL("--- Do you want to use same nuisance for Fakes channels uuu/eeu & eee/uue ? (y/n)")<<endl;
+	cin>>correlate_fakes;
+	while(correlate_fakes != 'y' && correlate_fakes != 'n')
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		cout<<"Wrong answer ! Need to type 'y' or 'n' ! Retry :"<<endl;
+		cin>>correlate_fakes;
+	}
+
 	cout<<FYEL("--- Do you want to create datacard for a Template Fit ? (y/n) ")<<endl;
 	cin>>datacard_template_fit;
 	while(datacard_template_fit != 'y' && datacard_template_fit != 'n')
@@ -284,9 +296,9 @@ int main()
 	}
 
 
-	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, signal_choice);
+	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, signal_choice, correlate_fakes);
 
-	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, signal_choice);
+	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, signal_choice, correlate_fakes);
 
 	return 0;
 }
