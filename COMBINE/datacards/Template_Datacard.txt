@@ -45,7 +45,7 @@ FakeBgd_rate  lnN      -	             -	    	  -           -	     		-           
 [*]JES			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]JER			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 
-[*]ZptReweight	shape     - 		 	     - 		  	  - 			- 			- 			  -					1			-			   -		-
+#[*]ZptReweight	shape     - 		 	     - 		  	  - 			- 			- 			  -					1			-			   -		-
 
 [*]PSscale		 shape    0.7071 	     - 		  	  - 			- 			- 			  -					-			-			   -		-
 

@@ -108,7 +108,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all regions ---
     if(!isWZ)
     {
-        // set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("<0.05");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("AdditionalMuonIso");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
 
         // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
         // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
@@ -159,8 +159,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
     if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
     else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    // if(isWZ) 	dir_ntuples="input_ntuples/medium_btag/ntuples_WZ"; //Without MEM (empty vars)
-    // else 		dir_ntuples="input_ntuples/medium_btag/ntuples_MEM"; //With MEM
     t_name = "Tree";
 
 
@@ -222,9 +220,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //FAKES
     if(fakes_from_data)
     {
-        // thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD)
-        // thesamplelist.push_back("FakesNew");           v_color.push_back(kAzure-2); //Data-driven (DD)
-        thesamplelist.push_back("FakesNewNew");           v_color.push_back(kAzure-2); //Data-driven (DD) //FIXME
+        // thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD) //old, fake = 3rd lepton
+        thesamplelist.push_back("FakesNewNew");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
     }
     //WARNING : OBSOLETE -- don't use MC fakes (or update code) -- must be last samples !
     else

@@ -366,7 +366,7 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	// sample_list.push_back("Data");
+	sample_list.push_back("Data");
 	// sample_list.push_back("tZq");
 	// sample_list.push_back("tZqQup");
 	// sample_list.push_back("tZqQdw");
@@ -380,10 +380,10 @@ int main()
 	// sample_list.push_back("WZB");
 	// sample_list.push_back("WZC");
 	// sample_list.push_back("STtWll");
-	// sample_list.push_back("Fakes");
 	// sample_list.push_back("DY");
 	// sample_list.push_back("TT");
-	sample_list.push_back("FakesNewNew");
+	// sample_list.push_back("Fakes");
+	// sample_list.push_back("FakesNewNew");
 
 	// sample_list.push_back("tZqhwpp");
 

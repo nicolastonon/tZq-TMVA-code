@@ -477,7 +477,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 		else if(!isWZ && !isttZ)
 		{
 			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );} //CHANGED
+			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );} //FIXME
 			// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
 			// else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
 			cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
@@ -886,6 +886,15 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 
 
+
+
+
+
+
+
+
+
+
 //---------------------------------------------------------------------------
 // ######## ########  ########    ########  ######## ##      ## ######## ####  ######   ##     ## ########
 //      ##  ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
@@ -1050,7 +1059,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TFile* file_input;
 	TTree* tree(0);
-	// TTree* tree_passTrig = 0;
 
 	TH1F *hist_uuu = 0, *hist_uue = 0, *hist_eeu = 0, *hist_eee = 0;
 	TH1F *h_sum_fake = 0;
@@ -1079,8 +1087,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if( (sample_list[isample]=="Data" && syst_list[isyst]!="")
 				|| ( (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && (syst_list[isyst]!="" && !syst_list[isyst].Contains("Fakes") && !syst_list[isyst].Contains("Zpt") ) ) ) {continue;} //Only 'Fakes' syst. taken into account for Fakes
 
-			if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW"))   {continue;} //"Fakes" syst only in fakes samples
-			if(syst_list[isyst].Contains("Zpt") && !sample_list[isample].Contains("Fakes")) {continue;}
+			if( (syst_list[isyst].Contains("Fakes") || syst_list[isyst].Contains("Zpt") ) && !sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW"))   {continue;} //"Fakes" syst only in fakes samples
 
 			if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
@@ -1127,14 +1134,11 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			tree = 0;
-			// tree_passTrig = 0;
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
 			{
 				tree = (TTree*) file_input->Get(syst_list[isyst].Data());
-
-				// tree_passTrig = (TTree*) file_input->Get(t_name.Data()); //passTrig info is in Default Tree only
 			}
 			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
@@ -1144,37 +1148,34 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 //--- Prepare the event tree -- Set Branch Addresses
 //WARNING : the last SetBranchAddress overrides the previous ones !! Be careful not to associate branches twice !
 
+			Float_t *Zpt=0, *njets=0; //For ZptReweight syst., need to access Zpt and njet values for each fake event. However, can SetBranchAddress only once per variable, and this has to be done already for vectors for automation. So need to create dedicated pointers to access these values in the event loop.
+
 			for(int i=0; i<v_add_var_names.size(); i++)
 			{
-				// if(v_add_var_names[i] == "passTrig" || v_add_var_names[i] == "RunNr") {continue;} //special vars
 				tree->SetBranchAddress(v_add_var_names[i].Data(), &v_add_var_floats[i]);
+
+				if(v_add_var_names[i]=="Zpt") {Zpt = &v_add_var_floats[i];}
+				else if(v_add_var_names[i]=="NJets") {njets = &v_add_var_floats[i];}
 			}
 			for(int i=0; i<var_list.size(); i++)
 			{
-				// if(var_list[i] == "passTrig" || var_list[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(var_list[i].Data(), &var_list_floats[i]);
+
+				if(var_list[i]=="Zpt") {Zpt = &var_list_floats[i];}
+				else if(var_list[i]=="NJets") {njets = &var_list_floats[i];}
 			}
 			for(int i=0; i<v_cut_name.size(); i++)
 			{
-				// if(v_cut_name[i] == "passTrig" || v_cut_name[i] == "RunNr") {continue;}
 				tree->SetBranchAddress(v_cut_name[i].Data(), &v_cut_float[i]);
+
+				if(v_cut_name[i]=="Zpt") {Zpt = &v_cut_float[i];}
+				else if(v_cut_name[i]=="NJets") {njets = &v_cut_float[i];}
 			}
 
+			//Dedicated variables, easier to access in event loop
 			float mTW = -666; tree->SetBranchAddress("mTW", &mTW);
 			float i_channel = 9; tree->SetBranchAddress("Channel", &i_channel);
 
-			/*float passTrig = -999;
-			float RunNr = -999;
-			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes"))
-			{
-				tree_passTrig->SetBranchAddress("passTrig", &passTrig);
-				tree_passTrig->SetBranchAddress("RunNr", &RunNr);
-			}
-			else
-			{
-				tree->SetBranchAddress("passTrig", &passTrig);
-				tree->SetBranchAddress("RunNr", &RunNr);
-			}*/
 
 			float weight;
 			//For all other systematics, only the events weights change
@@ -1197,10 +1198,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				if(dbgMode) {cout<<endl<<"--- Syst "<<syst_list[isyst]<<" / Sample : "<<sample_list[isample]<<endl;}
 
 				weight = 0; i_channel = 9; mTW=-666;
-				// passTrig = -999; RunNr = -999;
 
 				tree->GetEntry(ievt);
-				// if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes")) {tree_passTrig->GetEntry(ievt);}
 
         		bool isChannelToKeep = false;
 
@@ -1242,8 +1241,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					if(v_cut_name[ivar] == "mTW") {v_cut_float[ivar] = mTW;}
 					//Idem for channel value
 					if(v_cut_name[ivar] == "Channel") {v_cut_float[ivar] = i_channel;}
-					// if(v_cut_name[ivar] == "passTrig") {v_cut_float[ivar] = passTrig;}
-					// if(v_cut_name[ivar] == "RunNr") {v_cut_float[ivar] = RunNr;}
 
 					// cout<<v_cut_name[ivar]<<" "<<v_cut_float[ivar]<<endl;
 
@@ -1321,17 +1318,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 				// --- Return the MVA outputs and fill into histograms
 
-				//Add systematic to reweight data-driven Fakes sample
-				if(syst_list[isyst].Contains("Zpt") )
+				//Add 1-sided systematic to reweight data-driven Fakes sample
+				if(syst_list[isyst] == "ZptReweight__minus")
 				{
-					//Read the channel, njets, and Zpt infos of fake events in order to get associated SF
-					//NB : resetting the branch adress, the previous SetBranchAddress is not valid anymore ; but that's no problem because we don't need the channel/njets/Zpt anymore in this loop !
-					Float_t Zpt=-99, njets=-99;
-					tree->SetBranchAddress("Zpt", &Zpt);
-					tree->SetBranchAddress("NJets", &njets);
-					tree->GetEntry(ievt);
-
-					weight*= Get_Zpt_Reweighting_SF(i_channel, njets, Zpt); //Multiply by scale-factor
+					weight*= Get_Zpt_Reweighting_SF(i_channel, *njets, *Zpt); //Multiply by scale-factor ; njets & Zpt are dedicated variables, see where they are defined
 				}
 
 				//Same boundaries & nbins for all 4 histos
@@ -1545,7 +1535,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			//cout<<"Done with "<<sample_list[isample]<<" sample"<<endl;
 
 			delete tree; //Free memory
-			// if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") ) {delete tree_passTrig;}
 			delete hist_uuu; delete hist_uue; delete hist_eeu; delete hist_eee; //Free memory
 			delete file_input; //CHANGED -- free memory
 		} //end sample loop
@@ -3945,6 +3934,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 				if(!sample_list[isample].Contains("Fakes"))
 				{
 					h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
+					if(!h_tmp) {cout<<__LINE__<<" : h_tmp is null ! "<<endl;}
 
 					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
 
