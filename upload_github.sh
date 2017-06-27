@@ -8,7 +8,7 @@ cp ../README.txt .
 
 cp ../other/getROC_curves.cc .
 
-cp ../Matching_Events/Match_MEM_events.cxx
+cp ../Matching_Events/Match_MEM_events.cxx .
 
 #cp ../outputs/Reader* ./outputs/
 
