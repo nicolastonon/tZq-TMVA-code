@@ -111,7 +111,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     if(!isWZ)
     {
         // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">80");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
     }
 
 //-------------------
@@ -261,6 +261,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist.push_back("dPhiAddLepB");
     thevarlist.push_back("dRAddLepClosestJet");
 
+    // thevarlist.push_back("mTW"); //FIXME
+
+
 //-- After optimization, removed 4 vars :
     // thevarlist.push_back("dRAddLepQ");
     // thevarlist.push_back("dRZAddLep");
@@ -293,7 +296,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //------------------------ for ttZ
     thevarlist_ttZ.push_back("dRjj");
     thevarlist_ttZ.push_back("etaQ");
-    thevarlist_ttZ.push_back("ptQ"); // strong correlation with LeadJetPt
+    thevarlist_ttZ.push_back("ptQ");
     thevarlist_ttZ.push_back("btagDiscri");
     thevarlist_ttZ.push_back("dRAddLepClosestJet");
     thevarlist_ttZ.push_back("Zpt");
@@ -306,9 +309,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //--- After optimization, removed 8 variables : (+NBJets & MEMvar_2)
     // thevarlist_ttZ.push_back("AddLepETA");
-    // thevarlist_ttZ.push_back("dRZAddLep"); // --> little discrim --> to be included
+    // thevarlist_ttZ.push_back("dRZAddLep"); //
     // thevarlist_ttZ.push_back("dRAddLepB");
-    // thevarlist_ttZ.push_back("TopPT"); // low discri power
+    // thevarlist_ttZ.push_back("TopPT"); //
     // thevarlist_ttZ.push_back("m3l");
     // thevarlist_ttZ.push_back("tZq_pT");
 
@@ -344,8 +347,17 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     v_add_var_names.push_back("Zpt");
     v_add_var_names.push_back("AdditionalMuonIso");
     v_add_var_names.push_back("AdditionalEleIso");
-    // v_add_var_names.push_back("tZ_pT");
-    // v_add_var_names.push_back("tZ_mass");
+    v_add_var_names.push_back("tZ_pT");
+    v_add_var_names.push_back("tZ_mass");
+    v_add_var_names.push_back("bj_mass_leadingJet");
+    v_add_var_names.push_back("bj_mass_subleadingJet");
+    v_add_var_names.push_back("bj_mass_leadingJet_pT40");
+    v_add_var_names.push_back("bj_mass_leadingJet_pT50");
+    v_add_var_names.push_back("bj_mass_leadingJet_pTlight40");
+    v_add_var_names.push_back("bj_mass_leadingJet_pTlight50");
+    v_add_var_names.push_back("bj_mass_leadingJet_etaCut");
+    v_add_var_names.push_back("LeadingJetCSV");
+    v_add_var_names.push_back("SecondJetCSV");
 
 
 
@@ -501,7 +513,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             if(cut_on_BDT_tmp) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
 
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, false);
+            bool keep_high_BDT_events = false; //else, keep only low BDT events (blind)
+            // cut_BDT_value = 0.4;
+
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, keep_high_BDT_events); //FIXME
 
             MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT_tmp);
         }
@@ -541,27 +556,30 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  Additional functions
         //#############################################
 
-        TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
+        TString file_to_rescale = "./outputs/Control_Histograms"+MVAtool->filename_suffix+"_CutBDT.root";
+        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
+
+        bool superpose_fakes_signal = false;
 
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
-            MVAtool->Superpose_Fakes_Templates(template_name, thechannellist[ichan], true);
+
+            if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, false);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
 
             // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(thechannellist[ichan], false);
         }
 
-        // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
-
-
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
-        MVAtool->Superpose_Fakes_Templates(template_name, "allchan", true);
+
+        if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, false);
 
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 
+        // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object

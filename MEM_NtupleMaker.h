@@ -41,6 +41,7 @@ class MEM_NtupleMaker
 		void OrderLeptons(TString, vector<ciemat::Muon>*, vector<ciemat::Electron>*);
 		void OrderJets(vector<ciemat::Jet>*, const int, const int, int&, int&, int&, int&, int&, int&);
 		double Compute_tZ_pT(vector<ciemat::Electron>*, vector<ciemat::Muon>*, vector<ciemat::Jet>*, ciemat::MET*, int, bool, bool);
+		double Compute_mbj(vector<ciemat::Jet>*, int, bool, int);
 		void NtupleMaker(TString);
 
 		TString MEM_or_WZ;
@@ -119,6 +120,13 @@ class MEM_NtupleMaker
 		Float_t AdditionalEleIso;
 		Float_t tZ_pT;
 		Float_t tZ_mass;
+		Float_t bj_mass_leadingJet;
+		Float_t bj_mass_subleadingJet;
+		Float_t bj_mass_leadingJet_pT40;
+		Float_t bj_mass_leadingJet_pTlight40;
+		Float_t bj_mass_leadingJet_pT50;
+		Float_t bj_mass_leadingJet_pTlight50;
+		Float_t bj_mass_leadingJet_etaCut;
 
 		//Systematics
 		vector<TString> v_syst_weight;

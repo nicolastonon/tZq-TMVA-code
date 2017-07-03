@@ -153,6 +153,13 @@ void MEM_NtupleMaker::Init()
   AdditionalEleIso = -999;
   tZ_pT = -999;
   tZ_mass = -999;
+  bj_mass_leadingJet = -999;
+  bj_mass_subleadingJet = -999;
+  bj_mass_leadingJet_pT40 = -999;
+  bj_mass_leadingJet_pT50 = -999;
+  bj_mass_leadingJet_pTlight40 = -999;
+  bj_mass_leadingJet_pTlight50 = -999;
+  bj_mass_leadingJet_etaCut = -999;
 
   //Re-initialize vector contents
   for(int isyst=0; isyst<v_syst_float.size(); isyst++)
@@ -206,6 +213,13 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TStri
   tree_output->Branch("AdditionalEleIso",&AdditionalEleIso,"AdditionalEleIso/F");
   tree_output->Branch("tZ_pT",&tZ_pT,"tZ_pT/F");
   tree_output->Branch("tZ_mass",&tZ_mass,"tZ_mass/F");
+  tree_output->Branch("bj_mass_leadingJet",&bj_mass_leadingJet,"bj_mass_leadingJet/F");
+  tree_output->Branch("bj_mass_subleadingJet",&bj_mass_subleadingJet,"bj_mass_subleadingJet/F");
+  tree_output->Branch("bj_mass_leadingJet_pT40",&bj_mass_leadingJet_pT40,"bj_mass_leadingJet_pT40/F");
+  tree_output->Branch("bj_mass_leadingJet_pT50",&bj_mass_leadingJet_pT50,"bj_mass_leadingJet_pT50/F");
+  tree_output->Branch("bj_mass_leadingJet_pTlight40",&bj_mass_leadingJet_pTlight40,"bj_mass_leadingJet_pTlight40/F");
+  tree_output->Branch("bj_mass_leadingJet_pTlight50",&bj_mass_leadingJet_pTlight50,"bj_mass_leadingJet_pTlight50/F");
+  tree_output->Branch("bj_mass_leadingJet_etaCut",&bj_mass_leadingJet_etaCut,"bj_mass_leadingJet_etaCut/F");
 
   tree_output->Branch("catJets",&catJets,"catJets/I");
 
@@ -592,6 +606,120 @@ void MEM_NtupleMaker::OrderJets(vector<ciemat::Jet>* vSelectedJets, const int ib
 
   //cout<<ij1<<", "<<ij2<<", "<<ik1<<", "<<ik2<<", "<<ie1<<", "<<ie2<<endl;
 }
+
+
+
+
+
+
+//-------------------------------------------
+// ##     ##    ### ########                ## ###      ##     ##    ###    ########
+// ###   ###   ##   ##     ##               ##   ##     ##     ##   ## ##   ##     ##
+// #### ####  ##    ##     ##               ##    ##    ##     ##  ##   ##  ##     ##
+// ## ### ##  ##    ########  #######       ##    ##    ##     ## ##     ## ########
+// ##     ##  ##    ##     ##         ##    ##    ##     ##   ##  ######### ##   ##
+// ##     ##   ##   ##     ##         ##    ##   ##       ## ##   ##     ## ##    ##  ###
+// ##     ##    ### ########           ######  ###         ###    ##     ## ##     ## ###
+//-------------------------------------------
+
+// Compute manually the invariant mass of bjet + light jet (either leading or subleading, in case there are 2) in SR
+/* NOTE : the last argument determines in which conditions we compute the invariant mass :
+- 0 : use leading Jet
+- 1 : use subleading Jet
+- 2 : require pT>40 for btag and light
+- 3 : require pT>50 for btag and light
+- 4 : require pT>40 for light only
+- 5 : require pT>50 for light only
+- 6 : require eta OUTSIDE [2.7;3] for light only
+==> Fill different variables
+ */
+double MEM_NtupleMaker::Compute_mbj(vector<ciemat::Jet>* vSelectedJets, int bjet_index, bool is_tZq_region, int var_choice)
+{
+  if(!is_tZq_region) {return -1;} //Only compute value in tZq region (single bjet)
+
+  double result=-1;
+  int jet_index=-99;
+
+  TLorentzVector b, l;
+
+  //in SR, only 1 bjet
+  b.SetPtEtaPhiE(vSelectedJets->at(bjet_index).pt, vSelectedJets->at(bjet_index).eta, vSelectedJets->at(bjet_index).phi, vSelectedJets->at(bjet_index).energy);
+
+  //if only 1 light jet
+  if(vSelectedJets->size() == 2)
+  {
+    if(var_choice == 1) {return -1;} //No subleading jet in case where there's only 1 light jet
+
+    if(bjet_index==0) {l.SetPtEtaPhiE(vSelectedJets->at(1).pt, vSelectedJets->at(1).eta, vSelectedJets->at(1).phi, vSelectedJets->at(1).energy);}
+    else if(bjet_index==1) {l.SetPtEtaPhiE(vSelectedJets->at(0).pt, vSelectedJets->at(0).eta, vSelectedJets->at(0).phi, vSelectedJets->at(0).energy);}
+    else {cout<<"ERROR : wrong bjet index ? abort ! "<<bjet_index<<endl; return -99;}
+  }
+  else if(vSelectedJets->size() == 3)
+  {
+    double pt1=0, pt2=0;
+
+    if(bjet_index==0)
+    {
+      pt1 = vSelectedJets->at(1).pt; pt2 = vSelectedJets->at(2).pt;
+
+      if(var_choice != 1)
+      {
+        if(pt1>pt2) {jet_index = 1;}
+        else {jet_index = 2;}
+      }
+      else
+      {
+        if(pt1>pt2) {jet_index = 2;}
+        else {jet_index = 1;}
+      }
+    }
+    else if(bjet_index==1)
+    {
+      pt1 = vSelectedJets->at(0).pt; pt2 = vSelectedJets->at(2).pt;
+
+      if(var_choice != 1)
+      {
+        if(pt1>pt2) {jet_index = 0;}
+        else {jet_index = 2;}
+      }
+      else
+      {
+        if(pt1>pt2) {jet_index = 2;}
+        else {jet_index = 0;}
+      }
+    }
+    else if(bjet_index==2)
+    {
+      pt1 = vSelectedJets->at(0).pt; pt2 = vSelectedJets->at(1).pt;
+
+      if(var_choice !=1)
+      {
+        if(pt1>pt2) {jet_index = 0;}
+        else {jet_index = 1;}
+      }
+      else
+      {
+        if(pt1>pt2) {jet_index = 1;}
+        else {jet_index = 0;}
+      }
+    }
+    else {cout<<"ERROR : wrong bjet index ? abort ! "<<bjet_index<<endl; return -99;}
+
+    l.SetPtEtaPhiE(vSelectedJets->at(jet_index).pt, vSelectedJets->at(jet_index).eta, vSelectedJets->at(jet_index).phi, vSelectedJets->at(jet_index).energy);
+  }
+  else {cout<<"ERROR : wrong NJets value in SR ? abort !"<<endl; return -99;}
+
+  if(var_choice==2 && (l.Pt()<40 || b.Pt()<40 ) ) {return -1;}
+  else if(var_choice==3 && (l.Pt()<50 || b.Pt()<50 ) ) {return -1;}
+  else if(var_choice==4 && l.Pt()<40) {return -1;}
+  else if(var_choice==5 && l.Pt()<50) {return -1;}
+  else if(var_choice==6 && fabs(l.Eta())>2.7 && fabs(l.Eta())<3 ) {return -1;}
+
+  result = (b+l).M();
+
+  return result;
+}
+
 
 
 
@@ -1132,6 +1260,14 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       tZ_pT = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);
       tZ_mass = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);
 
+      bj_mass_leadingJet = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 0);
+      bj_mass_subleadingJet = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 1);
+      bj_mass_leadingJet_pT40 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 2);
+      bj_mass_leadingJet_pT50 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 3);
+      bj_mass_leadingJet_pTlight40 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 4);
+      bj_mass_leadingJet_pTlight50 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 5);
+      bj_mass_leadingJet_etaCut = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 6);
+
 
   //-------------------
 
@@ -1193,23 +1329,23 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("tZqmcNLO");
-  // v_samplenames.push_back("tZqQup");
-  // v_samplenames.push_back("tZqQdw");
-  // v_samplenames.push_back("WZB");
-  // v_samplenames.push_back("WZL");
-  // v_samplenames.push_back("WZC");
-  // v_samplenames.push_back("ttZ");
-  // v_samplenames.push_back("ZZ");
-  // v_samplenames.push_back("ttH");
-  // v_samplenames.push_back("ttW");
-  // v_samplenames.push_back("STtWll");
-  // v_samplenames.push_back("Fakes");
-  // v_samplenames.push_back("DY");
-  // v_samplenames.push_back("TT");
+  v_samplenames.push_back("Data");
+  v_samplenames.push_back("tZqmcNLO");
+  v_samplenames.push_back("tZqQup");
+  v_samplenames.push_back("tZqQdw");
+  v_samplenames.push_back("WZB");
+  v_samplenames.push_back("WZL");
+  v_samplenames.push_back("WZC");
+  v_samplenames.push_back("ttZ");
+  v_samplenames.push_back("ZZ");
+  v_samplenames.push_back("ttH");
+  v_samplenames.push_back("ttW");
+  v_samplenames.push_back("STtWll");
+  v_samplenames.push_back("DY");
+  v_samplenames.push_back("TT");
   v_samplenames.push_back("FakesNewNew");
 
+  // v_samplenames.push_back("Fakes");
   // v_samplenames.push_back("tZqhwpp");
 
 
@@ -1249,6 +1385,8 @@ int main()
   BDTvar_list.push_back("TopPT");
   BDTvar_list.push_back("m3l");
   BDTvar_list.push_back("METpt");
+  BDTvar_list.push_back("LeadingJetCSV");
+  BDTvar_list.push_back("SecondJetCSV");
 
 
 //---------------------------------------------------------------------------
@@ -1306,7 +1444,7 @@ int main()
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
   bool do_MEM_regions = true;
-	bool do_WZ_region = true;
+	bool do_WZ_region = false;
 
   TString specific_dir = ""; //specify specific input/output dir. name
 

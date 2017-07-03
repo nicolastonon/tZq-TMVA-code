@@ -1310,6 +1310,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				TString MVA_method_name = template_name + "_" + chan_name + this->filename_suffix + " method";
 				if(cut_on_BDT && !template_name.Contains("BDT")) {MVA_method_name = "BDT_" + chan_name + this->filename_suffix + " method";} //For mTW templates with cut on BDT
 
+				// if(cut_on_BDT && reader->EvaluateMVA(MVA_method_name.Data() ) < 0.4) {continue;} //CHANGE HERE IF WANT TO KEEP HIGH BDT VALUES INSTEAD !!
 				if(cut_on_BDT && reader->EvaluateMVA(MVA_method_name.Data() ) >= BDT_cut_value) {continue;} //Cut on BDT value
 
 //------------------------------------------------------------
@@ -2252,6 +2253,15 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "MEMvar_8")						{h_tmp = new TH1F( "","", binning, 0, 35 );}
 					else if(total_var_list[ivar] == "tZ_mass")						{h_tmp = new TH1F( "","", binning, 0, 1500 );}
 					else if(total_var_list[ivar] == "tZ_pT")						{h_tmp = new TH1F( "","", binning, 0, 500 );}
+					else if(total_var_list[ivar] == "bj_mass_leadingJet")			{h_tmp = new TH1F( "","", 20, 0, 1000 );}
+					else if(total_var_list[ivar] == "bj_mass_subleadingJet")		{h_tmp = new TH1F( "","", 20, 0, 400 );}
+					else if(total_var_list[ivar] == "bj_mass_leadingJet_pT40")		{h_tmp = new TH1F( "","", 20, 0, 1000 );}
+					else if(total_var_list[ivar] == "bj_mass_leadingJet_pT50")		{h_tmp = new TH1F( "","", 20, 0, 1000 );}
+					else if(total_var_list[ivar] == "bj_mass_leadingJet_pTlight40")		{h_tmp = new TH1F( "","", 20, 0, 1000 );}
+					else if(total_var_list[ivar] == "bj_mass_leadingJet_pTlight50")		{h_tmp = new TH1F( "","", 20, 0, 1000 );}
+					else if(total_var_list[ivar] == "bj_mass_leadingJet_etaCut")		{h_tmp = new TH1F( "","", 20, 0, 1000 );}
+					else if(total_var_list[ivar] == "LeadingJetCSV")		{h_tmp = new TH1F( "","", 22, -0.1, 1.2 );}
+					else if(total_var_list[ivar] == "SecondJetCSV")		{h_tmp = new TH1F( "","", 22, -0.1, 1.2 );}
 
 					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", control_binning, 0, 150 );}
 
@@ -2657,8 +2667,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 	mkdir("plots",0777); //Create directory if inexistant
 
-	TH1F *h_tmp = 0, *h_data = 0;
-
 	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
 	thechannellist.push_back("uuu");
 	thechannellist.push_back("uue");
@@ -2690,7 +2698,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 //Retrieve histograms, stack, compare, plot
 	for(int ivar=0; ivar<total_var_list.size(); ivar++)
 	{
-		h_data = 0;
+		TH1F *h_tmp = 0, *h_data = 0;
+
 		vector<TH1F*> v_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
 
 		TLegend* qw = new TLegend(.85,.7,0.99,0.99);
@@ -3385,9 +3394,11 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		delete c1; //Must free dinamically-allocated memory
 		// delete canvas_2;
 		delete qw; delete stack; delete gr;
+
+		delete h_tmp; delete h_data;
 	} //end var loop
 
-	delete f; delete h_tmp;
+	delete f;
 
 	return 0;
 }
@@ -4298,6 +4309,24 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 
 
+
+//-----------------------------------------------------------------------------------------
+// ##     ## ######## ##     ##    ##     ##          ######  ##     ## ########  ######  ##    ##  ######
+// ###   ### ##       ###   ###     ##   ##          ##    ## ##     ## ##       ##    ## ##   ##  ##    ##
+// #### #### ##       #### ####      ## ##           ##       ##     ## ##       ##       ##  ##   ##
+// ## ### ## ######   ## ### ##       ###    ####### ##       ######### ######   ##       #####     ######
+// ##     ## ##       ##     ##      ## ##           ##       ##     ## ##       ##       ##  ##         ##
+// ##     ## ##       ##     ##     ##   ##          ##    ## ##     ## ##       ##    ## ##   ##  ##    ##
+// ##     ## ######## ##     ##    ##     ##          ######  ##     ## ########  ######  ##    ##  ######
+//-----------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 //-----------------------------------------------------------------------------------------
 //  ######  ##     ## ########  ######## ########  ########   #######   ######  ########    ##     ## ######## ##     ##
 // ##    ## ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##    ## ##          ###   ### ##       ###   ###
@@ -4609,312 +4638,6 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 
 	return;
 }
-
-
-
-
-
-
-
-
-
-
-//-----------------------------------------------------------------------------------------
-//  ######  ##     ## ########  ######## ########  ########   #######   ######  ########    ########    ###    ##    ## ########  ######
-// ##    ## ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##    ## ##          ##         ## ##   ##   ##  ##       ##    ##
-// ##       ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##       ##          ##        ##   ##  ##  ##   ##       ##
-//  ######  ##     ## ########  ######   ########  ########  ##     ##  ######  ######      ######   ##     ## #####    ######    ######
-//       ## ##     ## ##        ##       ##   ##   ##        ##     ##       ## ##          ##       ######### ##  ##   ##             ##
-// ##    ## ##     ## ##        ##       ##    ##  ##        ##     ## ##    ## ##          ##       ##     ## ##   ##  ##       ##    ##
-//  ######   #######  ##        ######## ##     ## ##         #######   ######  ########    ##       ##     ## ##    ## ########  ######
-//-----------------------------------------------------------------------------------------
-
-/**
- * Superpose prefit templates for : signal / fakes / other backgrounds
- */
-void theMVAtool::Superpose_Fakes_Templates(TString template_name, TString channel, bool normalized)
-{
-	if(channel != "allchan" && channel != "uuu" && channel != "uue" && channel != "eeu" && channel != "eee" )
-	{
-		cout<<"Wrong channel  Abort"<<endl; return;
-	}
-
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots ---")<<endl;}
-	else {cout<<FRED("--- ERROR : invalid template_name value !")<<endl;}
-	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
-
-
-	TString input_name = "outputs/Combine_Input.root";
-	cout<<"Reading file "<<input_name<<endl;
-	TFile* file_input = 0;
-	file_input = TFile::Open( input_name.Data() );
-	if(file_input == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
-
-	// TFile* file2 = 0;
-	// file2 = TFile::Open( "outputs/files_noMEM/fakesNewNew/Combine_Input.root" );
-	// if(file2 == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
-
-	mkdir("plots",0777);
-	TH1::SetDefaultSumw2();
-
-	TH1F *h_tmp = 0, *h_signal  = 0, *h_fakes  = 0, *h_sum_background = 0, *h_fakes2=0;
-
-	//TLegend* qw = new TLegend(.80,.60,.95,.90);
-	TLegend* qw = new TLegend(.6,.77,0.85,.915);
-	qw->SetShadowColor(0);
-	qw->SetFillColor(0);
-	qw->SetLineColor(0);
-	// qw->SetLineWidth(3);
-	qw->SetTextSize(0.03);
-
-	for(int ichan=0; ichan<channel_list.size(); ichan++)
-	{
-		if(channel != "allchan" && channel_list[ichan] != channel) {continue;}
-
-	//--- All MC samples but fakes
-		for(int isample = 0; isample < sample_list.size(); isample++)
-		{
-			if(sample_list[isample].Contains("Data") ) {continue;}
-
-			TString histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
-			if(!file_input->GetListOfKeys()->Contains(histo_name.Data()) && !sample_list[isample].Contains("Fakes") ) {cout<<histo_name<<" : not found"<<endl; continue;}
-
-			if(!sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("tZq") )
-			{
-				h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
-
-				if(h_sum_background == 0) {h_sum_background = (TH1F*) h_tmp->Clone();}
-				else {h_sum_background->Add(h_tmp);}
-			}
-			else if(sample_list[isample].Contains("Fakes") ) //fakes
-			{
-				TString template_fake_name = "";
-
-				if(   channel_list[ichan] == "uuu" )      {template_fake_name = "FakeMuMuMu";}
-				else if(   channel_list[ichan] == "uue" ) {template_fake_name = "FakeMuMuEl";}
-				else if(   channel_list[ichan] == "eeu" ) {template_fake_name = "FakeElElMu";}
-				else if(   channel_list[ichan] == "eee" ) {template_fake_name = "FakeElElEl";}
-
-				histo_name = template_name + "_" + channel_list[ichan] + "__" + template_fake_name;
-				if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
-				else
-				{
-					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
-
-					if(h_fakes == 0) {h_fakes = (TH1F*) h_tmp->Clone();}
-					else {h_fakes->Add(h_tmp);}
-				}
-
-				//--- Add 2nd fake histo
-				// if(!file2->GetListOfKeys()->Contains(histo_name.Data())  ) {cout<<histo_name<<" : not found"<<endl;}
-				// else
-				// {
-				// 	h_tmp = (TH1F*) file2->Get(histo_name.Data())->Clone();
-				// 	if(h_fakes2 == 0) {h_fakes2 = (TH1F*) h_tmp->Clone();}
-				// 	else {h_fakes2->Add(h_tmp);}
-				// }
-			}
-			else if(sample_list[isample].Contains("tZq") ) //Signal
-			{
-				h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
-
-				if(h_signal == 0) {h_signal = (TH1F*) h_tmp->Clone();}
-				else {h_signal->Add(h_tmp);}
-			}
-		} //end sample loop
-
-
-	} //end channel loop
-
-	if(normalized)
-	{
-		h_sum_background->Scale(1./h_sum_background->Integral() );
-		h_signal->Scale(1./h_signal->Integral() );
-		h_fakes->Scale(1./h_fakes->Integral() );
-		// h_fakes2->Scale(1./h_fakes2->Integral() );
-	}
-
-
-	h_sum_background->SetLineColor(kViolet-6);
-	h_sum_background->SetLineWidth(2);
-
-	h_fakes->SetLineColor(kAzure-2);
-	h_fakes->SetLineWidth(2);
-
-	// h_fakes2->SetLineColor(kAzure-2);
-	// h_fakes2->SetLineWidth(2);
-	// h_fakes2->SetLineStyle(2);
-
-	h_signal->SetLineColor(kGreen+2);
-	h_signal->SetLineWidth(2);
-
-
-	h_signal->GetXaxis()->SetTitleOffset(1.4);
-	h_signal->GetXaxis()->SetLabelSize(0.045);
-	h_signal->GetXaxis()->SetLabelFont(42);
-	h_signal->GetXaxis()->SetLabelSize(0.05);
-	h_signal->GetYaxis()->SetLabelSize(0.048);
-	h_signal->GetXaxis()->SetTitleFont(42);
-	h_signal->GetYaxis()->SetTitleOffset(1.42);
-	h_signal->GetYaxis()->SetLabelFont(42);
-	h_signal->GetYaxis()->SetTitleFont(42);
-	h_signal->GetYaxis()->SetTitleSize(0.04);
-
-	h_signal->SetMinimum(0);
-	h_signal->SetMaximum(h_signal->GetMaximum()*1.3);
-	h_signal->GetYaxis()->SetTitle("Events");
-	if(template_name=="BDT") h_signal->GetXaxis()->SetTitle("BDT output (1 tag)");
-	else if(template_name=="BDTttZ") h_signal->GetXaxis()->SetTitle("BDT output (2 tags)");
-	else if(template_name=="mTW") h_signal->GetXaxis()->SetTitle("mTW [GeV]");
-
-
-	//Canvas definition
-	Load_Canvas_Style();
-	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-
-	h_signal->Draw("hist");
-	h_sum_background->Draw("same hist");
-	h_fakes->Draw("same hist");
-	// h_fakes2->Draw("same hist");
-
-	qw->AddEntry(h_signal, "tZq" , "L");
-	qw->AddEntry(h_fakes, "Non-prompt" , "L");
-	// qw->AddEntry(h_fakes2, "Non-prompt (new)" , "L");
-	qw->AddEntry(h_sum_background, "Other backgrounds" , "L");
-
-	//-------------------
-	//CAPTIONS
-	//-------------------
-
-	// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines //CHANGED
-			//
-			TString cmsText     = "CMS";
-			float cmsTextFont   = 61;  // default is helvetic-bold
-
-			bool writeExtraText = false;
-			TString extraText   = "Preliminary";
-			float extraTextFont = 52;  // default is helvetica-italics
-
-			// text sizes and text offsets with respect to the top frame
-			// in unit of the top margin size
-			float lumiTextSize     = 0.6;
-			float lumiTextOffset   = 0.2;
-			float cmsTextSize      = 0.75;
-			float cmsTextOffset    = 0.1;  // only used in outOfFrame version
-
-			float relPosX    = 0.045;
-			float relPosY    = 0.035;
-			float relExtraDY = 1.2;
-
-			// ratio of "CMS" and extra text size
-			float extraOverCmsTextSize  = 0.76;
-
-			float lumi = 35.9 * luminosity_rescale; //CHANGED
-			TString lumi_13TeV = Convert_Number_To_TString(lumi);
-			lumi_13TeV += " fb^{-1} (13 TeV)";
-
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-
-			float H = c1->GetWh();
-			float W = c1->GetWw();
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
-			float r = c1->GetRightMargin();
-			float b = c1->GetBottomMargin();
-
-			float extraTextSize = extraOverCmsTextSize*cmsTextSize;
-
-			latex.SetTextFont(42);
-			latex.SetTextAlign(31);
-			latex.SetTextSize(lumiTextSize*t);
-			//	Change position w.r.t. CMS recommendation, only for control plots
-			//      latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumi_13TeV);
-			// latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
-			latex.DrawLatex(0.8,1-t+lumiTextOffset*t,lumi_13TeV); //CHANGED
-
-			latex.SetTextFont(cmsTextFont);
-			latex.SetTextAlign(11);
-			latex.SetTextSize(cmsTextSize*t);
-			latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
-
-			//float posX_ =   l +  relPosX*(1-l-r);
-			//float posY_ =   1-t+lumiTextOffset*t;
-
-			latex.SetTextFont(extraTextFont);
-			//latex.SetTextAlign(align_);
-			latex.SetTextSize(extraTextSize*t);
-			latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
-
-
-	//------------------
-
-			TString info_data;
-			if (channel=="eee")    info_data = "eee channel";
-			else if (channel=="eeu")  info_data = "ee#mu channel";
-			else if (channel=="uue")  info_data = "#mu#mu e channel";
-			else if (channel=="uuu") info_data = "#mu#mu #mu channel";
-			else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
-	/*
-			TLatex* text2 = new TLatex(0.45,0.98, info_data);
-			text2->SetNDC();
-			text2->SetTextAlign(13);
-			text2->SetX(0.18);
-			text2->SetY(0.92);
-			text2->SetTextFont(42);
-			text2->SetTextSize(0.0610687);
-			//text2->SetTextSizePixels(24);// dflt=28
-			text2->Draw();
-	*/
-
-			TString extrainfo_data;
-			if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
-			else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
-			else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
-
-			TLatex text2 ; //= new TLatex(0, 0, info_data);
-			text2.SetNDC();
-			text2.SetTextAlign(13);
-			text2.SetTextFont(42);
-			text2.SetTextSize(0.04);
-			text2.DrawLatex(0.195,0.91,info_data);
-
-			text2.SetTextFont(62);
-			text2.DrawLatex(0.63,0.9,extrainfo_data);
-
-			qw->Draw(); //Draw legend
-
-//------------------
-
-	mkdir("plots",0777); //Create directory if inexistant
-	mkdir("plots/Superpose",0777); //Create directory if inexistant
-
-	//Output
-	TString output_plot_name = "plots/Superpose/SuperposeFakes_" + template_name +"_" + channel + this->filename_suffix + this->format;
-	if(normalized) output_plot_name = "plots/Superpose/SuperposeFakes_" + template_name +"_" + channel + this->filename_suffix + "_norm" + this->format;
-
-	c1->SaveAs(output_plot_name.Data());
-
-	delete file_input;
-	delete c1;
-	delete qw;
-
-	return;
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -5502,6 +5225,469 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+// ########    ###    ##    ## ########  ######     ##     ##          ######  ##     ## ########  ######  ##    ##  ######
+// ##         ## ##   ##   ##  ##       ##    ##     ##   ##          ##    ## ##     ## ##       ##    ## ##   ##  ##    ##
+// ##        ##   ##  ##  ##   ##       ##            ## ##           ##       ##     ## ##       ##       ##  ##   ##
+// ######   ##     ## #####    ######    ######        ###    ####### ##       ######### ######   ##       #####     ######
+// ##       ######### ##  ##   ##             ##      ## ##           ##       ##     ## ##       ##       ##  ##         ##
+// ##       ##     ## ##   ##  ##       ##    ##     ##   ##          ##    ## ##     ## ##       ##    ## ##   ##  ##    ##
+// ##       ##     ## ##    ## ########  ######     ##     ##          ######  ##     ## ########  ######  ##    ##  ######
+//-----------------------------------------------------------------------------------------
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//  ######  ##     ## ########  ######## ########  ########   #######   ######  ########    ########    ###    ##    ## ########  ######
+// ##    ## ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##    ## ##          ##         ## ##   ##   ##  ##       ##    ##
+// ##       ##     ## ##     ## ##       ##     ## ##     ## ##     ## ##       ##          ##        ##   ##  ##  ##   ##       ##
+//  ######  ##     ## ########  ######   ########  ########  ##     ##  ######  ######      ######   ##     ## #####    ######    ######
+//       ## ##     ## ##        ##       ##   ##   ##        ##     ##       ## ##          ##       ######### ##  ##   ##             ##
+// ##    ## ##     ## ##        ##       ##    ##  ##        ##     ## ##    ## ##          ##       ##     ## ##   ##  ##       ##    ##
+//  ######   #######  ##        ######## ##     ## ##         #######   ######  ########    ##       ##     ## ##    ## ########  ######
+//-----------------------------------------------------------------------------------------
+
+/**
+ * Superpose prefit templates or input variables for : signal / fakes / other backgrounds
+ */
+void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString channel, bool normalized, bool draw_templates)
+{
+	if(channel != "allchan" && channel != "uuu" && channel != "uue" && channel != "eeu" && channel != "eee" )
+	{
+		cout<<"Wrong channel  Abort"<<endl; return;
+	}
+
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	cout<<FYEL("--- Producing comparison plots (Fakes .vs. Signal shapes) ---")<<endl;
+	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
+
+
+	TString input_name = "outputs/Combine_Input.root";
+	if(!draw_templates)
+	{
+		input_name = "outputs/Control_Histograms" + this->filename_suffix + ".root";
+	}
+	cout<<"Reading file "<<input_name<<endl;
+	TFile* file_input = 0;
+	file_input = TFile::Open( input_name.Data() );
+	if(file_input == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+
+	// TFile* file2 = 0;
+	// file2 = TFile::Open( "outputs/files_noMEM/fakesNewNew/Combine_Input.root" );
+	// if(file2 == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+
+	mkdir("plots",0777);
+	TH1::SetDefaultSumw2();
+
+	//Want to plot ALL activated variables (inside the 2 different variable vectors !)
+	vector<TString> total_var_list;
+	for(int i=0; i<v_cut_name.size(); i++)
+	{
+		total_var_list.push_back(v_cut_name[i].Data());
+	}
+	for(int i=0; i<var_list.size(); i++)
+	{
+		total_var_list.push_back(var_list[i].Data());
+	}
+	for(int i=0; i<v_add_var_names.size(); i++)
+	{
+		total_var_list.push_back(v_add_var_names[i].Data());
+	}
+
+
+	for(int ivar=0; ivar<total_var_list.size(); ivar++)
+	{
+		TH1F *h_tmp = 0, *h_signal  = 0, *h_fakes  = 0, *h_sum_background = 0, *h_fakes2=0;
+
+		TString varname_tmp = total_var_list[ivar];
+
+		//TLegend* qw = new TLegend(.80,.60,.95,.90);
+		TLegend* qw = new TLegend(.6,.77,0.85,.915);
+		qw->SetShadowColor(0);
+		qw->SetFillColor(0);
+		qw->SetLineColor(0);
+		// qw->SetLineWidth(3);
+		qw->SetTextSize(0.03);
+
+		if(draw_templates) {varname_tmp = template_name;}
+
+		for(int ichan=0; ichan<channel_list.size(); ichan++)
+		{
+			if(channel != "allchan" && channel_list[ichan] != channel) {continue;}
+
+		//--- All MC samples but fakes
+			for(int isample = 0; isample < sample_list.size(); isample++)
+			{
+				h_tmp = 0;
+
+				if(sample_list[isample].Contains("Data") ) {continue;}
+
+				TString histo_name = varname_tmp + "_" + channel_list[ichan] + "__" + sample_list[isample];
+				if(!file_input->GetListOfKeys()->Contains(histo_name.Data()) && !sample_list[isample].Contains("Fakes") ) {cout<<histo_name<<" : not found"<<endl; continue;}
+
+				if(!sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("tZq") )
+				{
+					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+					if(h_sum_background == 0) {h_sum_background = (TH1F*) h_tmp->Clone();}
+					else {h_sum_background->Add(h_tmp);}
+				}
+				else if(sample_list[isample].Contains("Fakes") ) //fakes
+				{
+					TString template_fake_name = "";
+
+					if(   channel_list[ichan] == "uuu" )      {template_fake_name = "FakeMuMuMu";}
+					else if(   channel_list[ichan] == "uue" ) {template_fake_name = "FakeMuMuEl";}
+					else if(   channel_list[ichan] == "eeu" ) {template_fake_name = "FakeElElMu";}
+					else if(   channel_list[ichan] == "eee" ) {template_fake_name = "FakeElElEl";}
+
+					histo_name = varname_tmp + "_" + channel_list[ichan] + "__" + template_fake_name;
+					if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
+					else
+					{
+						h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+
+						if(h_fakes == 0) {h_fakes = (TH1F*) h_tmp->Clone();}
+						else {h_fakes->Add(h_tmp);}
+					}
+
+					//--- Add 2nd fake histo
+					// if(!file2->GetListOfKeys()->Contains(histo_name.Data())  ) {cout<<histo_name<<" : not found"<<endl;}
+					// else
+					// {
+					// 	h_tmp = (TH1F*) file2->Get(histo_name.Data())->Clone();
+					// 	if(h_fakes2 == 0) {h_fakes2 = (TH1F*) h_tmp->Clone();}
+					// 	else {h_fakes2->Add(h_tmp);}
+					// }
+				}
+				else if(sample_list[isample].Contains("tZq") ) //Signal
+				{
+					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+
+					if(h_signal == 0) {h_signal = (TH1F*) h_tmp->Clone();}
+					else {h_signal->Add(h_tmp);}
+				}
+			} //end sample loop
+
+
+		} //end channel loop
+
+		if(normalized)
+		{
+			h_sum_background->Scale(1./h_sum_background->Integral() );
+			h_signal->Scale(1./h_signal->Integral() );
+			h_fakes->Scale(1./h_fakes->Integral() );
+			// h_fakes2->Scale(1./h_fakes2->Integral() );
+		}
+
+
+		h_sum_background->SetLineColor(kViolet);
+		h_sum_background->SetLineWidth(2);
+
+		h_fakes->SetLineColor(kAzure-2);
+		h_fakes->SetLineWidth(2);
+
+		// h_fakes2->SetLineColor(kAzure-2);
+		// h_fakes2->SetLineWidth(2);
+		// h_fakes2->SetLineStyle(2);
+
+		h_signal->SetLineColor(kGreen+2);
+		h_signal->SetLineWidth(2);
+
+
+		h_signal->GetXaxis()->SetTitleOffset(1.4);
+		h_signal->GetXaxis()->SetLabelSize(0.045);
+		h_signal->GetXaxis()->SetLabelFont(42);
+		h_signal->GetXaxis()->SetLabelSize(0.05);
+		h_signal->GetYaxis()->SetLabelSize(0.048);
+		h_signal->GetXaxis()->SetTitleFont(42);
+		h_signal->GetYaxis()->SetTitleOffset(1.42);
+		h_signal->GetYaxis()->SetLabelFont(42);
+		h_signal->GetYaxis()->SetTitleFont(42);
+		h_signal->GetYaxis()->SetTitleSize(0.04);
+
+		h_signal->SetMinimum(0);
+		h_signal->SetMaximum(h_signal->GetMaximum()*1.3);
+		h_signal->GetYaxis()->SetTitle("Events");
+
+		TString title_tmp = "";
+		if(varname_tmp=="BDT") title_tmp = "BDT output (1 tag)";
+		else if(varname_tmp=="BDTttZ") title_tmp = "BDT output (2 tags)";
+		else if(varname_tmp=="mTW") title_tmp = "mTW [GeV]";
+
+		//--------------------------
+		//SET VARIABLES LABELS
+		//--------------------------
+
+		if(varname_tmp == "mTW")                       {       title_tmp = "M_{T}_{W} [GeV]"; }
+		else if(varname_tmp == "METpt")                {       title_tmp = "E_{T}^{miss} [GeV]"; }
+		else if(varname_tmp == "m3l")          {       title_tmp = "Trilepton mass [GeV]"; }
+		else if(varname_tmp == "ZMass")                {       title_tmp = "M_{Z} [GeV]"; }
+		else if(varname_tmp == "dPhiAddLepB")  {       title_tmp = "#Delta#Phi(l_{W},b)"; }
+		else if(varname_tmp == "Zpt")          {       title_tmp = "Z p_{T} [GeV]"; }
+		else if(varname_tmp == "ZEta")         {       title_tmp = "Z #eta"; }
+		else if(varname_tmp == "AddLepAsym")   {       title_tmp = " q_{#font[12]{l}}|#eta(#font[12]{l})|"; }
+		else if(varname_tmp == "mtop")                 {       title_tmp = "M_{top} [GeV]"; }
+		else if(varname_tmp == "btagDiscri")   {       title_tmp = "CSVv2 discriminant"; }
+		else if(varname_tmp == "etaQ")         {       title_tmp = "#eta(#font[12]{j'})"; }
+		else if(varname_tmp == "NBJets")               {       title_tmp = "B Jets multiplicity"; }
+		else if(varname_tmp == "AddLepPT")             {       title_tmp = "l_{W} p_{T} [GeV]"; }
+		else if(varname_tmp == "AddLepETA")            {       title_tmp = "l_{W} #eta"; }
+		else if(varname_tmp == "LeadJetPT")            {       title_tmp = "p_{T}(#font[12]{j'}) [GeV]"; }
+		else if(varname_tmp == "LeadJetEta")           {       title_tmp = "Leading jet #eta"; }
+		else if(varname_tmp == "dPhiZMET")             {       title_tmp = "#Delta#Phi(Z,E_{T}^{miss})"; }
+		else if(varname_tmp == "dPhiZAddLep")  {       title_tmp = "#Delta#Phi(Z,l_{W})"; }
+		else if(varname_tmp == "dRAddLepB")            {       title_tmp = "#Delta R(b,l_{W})"; }
+		else if(varname_tmp == "dRZAddLep")            {       title_tmp = "#Delta R(Z,l_{W})"; }
+		else if(varname_tmp == "dRZTop")               {       title_tmp = "#Delta R(Z,top)"; }
+		else if(varname_tmp == "TopPT")                {       title_tmp = "top p_{T} [GeV]"; }
+		else if(varname_tmp == "NJets")                {       title_tmp = "Jets multiplicity"; }
+		else if(varname_tmp == "ptQ")          {       title_tmp = "p_{T}(#font[12]{j'}) [GeV]"; }
+		else if(varname_tmp == "dRjj")         {       title_tmp = "#Delta R(b,#font[12]{j'})"; }
+		else if(varname_tmp == "AdditionalEleIso")     {       title_tmp = "e_{W} isolation"; }
+		else if(varname_tmp == "AdditionalMuonIso")    {       title_tmp = "#mu_{W} isolation"; }
+		else if(varname_tmp == "dRAddLepQ")            {       title_tmp = "#Delta R(l_{W},#font[12]{j'})"; }
+		else if(varname_tmp == "dRAddLepClosestJet")   {       title_tmp = "#Delta R(closest jet, l_{W})"; }
+		else if(varname_tmp == "tZq_pT")               {       title_tmp = "tZq system p_{T} [GeV]"; }
+		else if(varname_tmp == "tZq_mass")             {       title_tmp = "tZq system mass [GeV]"; }
+		else if(varname_tmp == "leadingLeptonPT")    {       title_tmp = "Leading lepton p_{T} [GeV]"; }
+		else if(varname_tmp == "MAddLepB")           {       title_tmp = "l_{W}+b system mass "; }
+		else if(varname_tmp == "MEMvar_0")             {       title_tmp = "MEM LR tZq-ttZ"; }
+		else if(varname_tmp == "MEMvar_1")             {       title_tmp = "MEM Kin w_{tZq}"; }
+		else if(varname_tmp == "MEMvar_2")             {       title_tmp = "MEM Kin w_{ttZ}"; }
+		else if(varname_tmp == "MEMvar_3")             {       title_tmp = "MEM LR tZq-ttZ"; }
+		else if(varname_tmp == "MEMvar_4")             {       title_tmp = "MEM w_{WZ}"; }
+		else if(varname_tmp == "MEMvar_5")             {       title_tmp = "MEM Kin w_{WZ}"; }
+		else if(varname_tmp == "MEMvar_6")             {       title_tmp = "MEM LR tZq-ttZ-WZ"; }
+		else if(varname_tmp == "MEMvar_7")             {       title_tmp = "MEM LR tZq-WZ"; }
+		else if(varname_tmp == "MEMvar_8")             {       title_tmp = "MEM LR tZq-ttZ-WZ"; }
+		else if(varname_tmp == "tZ_mass")             {       title_tmp = "M_{tZ}"; }
+		else if(varname_tmp == "tZ_pT")             {       title_tmp = "tZ_{p_{T}} [GeV]"; }
+		else {       title_tmp = varname_tmp ; }
+
+		h_signal->GetXaxis()->SetTitle(title_tmp);
+
+
+		//Canvas definition
+		Load_Canvas_Style();
+		TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+
+		if(h_sum_background->GetMaximum() > h_signal->GetMaximum() && h_sum_background->GetMaximum() > h_fakes->GetMaximum())
+		{
+			h_signal->SetMaximum(h_sum_background->GetMaximum()*1.2);
+		}
+		else if(h_fakes->GetMaximum() > h_signal->GetMaximum() && h_fakes->GetMaximum() > h_sum_background->GetMaximum())
+		{
+			h_signal->SetMaximum(h_fakes->GetMaximum()*1.2);
+		}
+
+		if(draw_templates)
+		{
+			h_signal->Draw("hist E");
+			h_sum_background->Draw("same hist E");
+			h_fakes->Draw("same hist E");
+			// h_fakes2->Draw("same hist E");
+		}
+		else
+		{
+			h_signal->Draw("hist");
+			h_sum_background->Draw("same hist");
+			h_fakes->Draw("same hist");
+			// h_fakes2->Draw("same hist");
+		}
+
+		qw->AddEntry(h_signal, "tZq" , "L");
+		qw->AddEntry(h_fakes, "Non-prompt" , "L");
+		// qw->AddEntry(h_fakes2, "Non-prompt (new)" , "L");
+		qw->AddEntry(h_sum_background, "Other backgrounds" , "L");
+
+		//-------------------
+		//CAPTIONS
+		//-------------------
+
+		// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines //CHANGED
+
+		TString cmsText     = "CMS";
+		float cmsTextFont   = 61;  // default is helvetic-bold
+
+		bool writeExtraText = false;
+		TString extraText   = "Preliminary";
+		float extraTextFont = 52;  // default is helvetica-italics
+
+		// text sizes and text offsets with respect to the top frame
+		// in unit of the top margin size
+		float lumiTextSize     = 0.6;
+		float lumiTextOffset   = 0.2;
+		float cmsTextSize      = 0.75;
+		float cmsTextOffset    = 0.1;  // only used in outOfFrame version
+
+		float relPosX    = 0.045;
+		float relPosY    = 0.035;
+		float relExtraDY = 1.2;
+
+		// ratio of "CMS" and extra text size
+		float extraOverCmsTextSize  = 0.76;
+
+		float lumi = 35.9 * luminosity_rescale; //CHANGED
+		TString lumi_13TeV = Convert_Number_To_TString(lumi);
+		lumi_13TeV += " fb^{-1} (13 TeV)";
+
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+
+		float H = c1->GetWh();
+		float W = c1->GetWw();
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
+		float r = c1->GetRightMargin();
+		float b = c1->GetBottomMargin();
+
+		float extraTextSize = extraOverCmsTextSize*cmsTextSize;
+
+		latex.SetTextFont(42);
+		latex.SetTextAlign(31);
+		latex.SetTextSize(lumiTextSize*t);
+		//	Change position w.r.t. CMS recommendation, only for control plots
+		//      latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumi_13TeV);
+		// latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
+		latex.DrawLatex(0.8,1-t+lumiTextOffset*t,lumi_13TeV); //CHANGED
+
+		latex.SetTextFont(cmsTextFont);
+		latex.SetTextAlign(11);
+		latex.SetTextSize(cmsTextSize*t);
+		latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
+
+		//float posX_ =   l +  relPosX*(1-l-r);
+		//float posY_ =   1-t+lumiTextOffset*t;
+
+		latex.SetTextFont(extraTextFont);
+		//latex.SetTextAlign(align_);
+		latex.SetTextSize(extraTextSize*t);
+		latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+
+
+		//------------------
+
+		TString info_data;
+		if (channel=="eee")    info_data = "eee channel";
+		else if (channel=="eeu")  info_data = "ee#mu channel";
+		else if (channel=="uue")  info_data = "#mu#mu e channel";
+		else if (channel=="uuu") info_data = "#mu#mu #mu channel";
+		else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
+
+		TString extrainfo_data;
+		if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
+		else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
+		else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+
+		TLatex text2 ; //= new TLatex(0, 0, info_data);
+		text2.SetNDC();
+		text2.SetTextAlign(13);
+		text2.SetTextFont(42);
+		text2.SetTextSize(0.04);
+		text2.DrawLatex(0.195,0.91,info_data);
+
+		text2.SetTextFont(62);
+		text2.DrawLatex(0.63,0.9,extrainfo_data);
+
+		qw->Draw(); //Draw legend
+
+	//------------------
+
+		mkdir("plots",0777); //Create directory if inexistant
+		mkdir("plots/Superpose",0777); //Create directory if inexistant
+
+		if(draw_templates)
+		{
+			mkdir("plots/Superpose/templates",0777); //Create directory if inexistant
+			mkdir("plots/Superpose/templates/allchans",0777); //Create directory if inexistant
+		}
+		else
+		{
+			mkdir("plots/Superpose/input_vars",0777); //Create directory if inexistant
+			mkdir("plots/Superpose/input_vars/allchans",0777); //Create directory if inexistant
+		}
+
+		//Output
+		TString output_plot_name = "plots/Superpose/";
+		if(draw_templates) {output_plot_name+= "templates/";}
+		else {output_plot_name+= "input_vars/";}
+		if(channel.Contains("all")) output_plot_name+= "allchans/";
+
+		if(normalized) output_plot_name+= "SuperposeFakes_" + varname_tmp +"_" + channel + this->filename_suffix + "_norm" + this->format;
+		else output_plot_name+= "SuperposeFakes_" + varname_tmp +"_" + channel + this->filename_suffix + this->format;
+
+		c1->SaveAs(output_plot_name.Data());
+
+		delete h_fakes; delete h_signal; delete h_sum_background; delete h_tmp;
+		delete qw;
+		delete c1;
+
+		if(draw_templates) {break;} //don't look on variable if only want to plot template
+	}
+
+	delete file_input;
+
+	return;
+}
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//  #######  ######## ##     ## ######## ########
+// ##     ##    ##    ##     ## ##       ##     ##
+// ##     ##    ##    ##     ## ##       ##     ##
+// ##     ##    ##    ######### ######   ########
+// ##     ##    ##    ##     ## ##       ##   ##
+// ##     ##    ##    ##     ## ##       ##    ##
+//  #######     ##    ##     ## ######## ##     ##
+//-----------------------------------------------------------------------------------------
 
 
 

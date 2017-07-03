@@ -96,7 +96,7 @@ bool Check_File_Existence(const TString& name)
  	TFile* f_readyForMEM = TFile::Open( f_readyForMEM_path);
 
  	//File containing the information "which events pass the cut on BDT?"
- 	TString f_withMEM_path = "/home/nico/root/tmva/test/outputs/files_nominal/CutBDT02/Control_Trees_NJetsMin1Max4_NBJetsEq1_CutBDT.root";
+ 	TString f_withMEM_path = "/home/nico/root/tmva/test/outputs/Control_Trees_NJetsMin1Max4_NBJetsEq1_CutBDT.root";
  	if(!Check_File_Existence(f_withMEM_path)) {cout<<f_withMEM_path<<" doesn't exist!"<<endl; return;}
  	TFile* f_withMEM = TFile::Open(f_withMEM_path);
 
@@ -309,7 +309,7 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
 
     if(!t_withInfo) {cout<<"Tree "<<v_TTrees[itree]<<" not found ! Skip"<<endl; continue;}
 
-    Float_t EvtNr, RunNr, mTW, btagDiscri, mtop, AdditionalMuonIso, AdditionalEleIso, NJets, NBJets, tZ_pT, tZ_mass;
+    Float_t EvtNr, RunNr, mTW, btagDiscri, mtop, AdditionalMuonIso, AdditionalEleIso, NJets, NBJets, tZ_pT, tZ_mass, bj_mass_leadingJet, bj_mass_subleadingJet, bj_mass_leadingJet_pT40, bj_mass_leadingJet_pT50, bj_mass_leadingJet_pTlight40, bj_mass_leadingJet_pTlight50, bj_mass_leadingJet_etaCut, LeadingJetCSV, SecondJetCSV;
 
   	t_withInfo->SetBranchAddress("NJets", &NJets);
   	t_withInfo->SetBranchAddress("NBJets", &NBJets);
@@ -322,12 +322,21 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
     t_withInfo->SetBranchAddress("AdditionalEleIso", &AdditionalEleIso);
     t_withInfo->SetBranchAddress("tZ_pT", &tZ_pT);
     t_withInfo->SetBranchAddress("tZ_mass", &tZ_mass);
+    t_withInfo->SetBranchAddress("bj_mass_leadingJet", &bj_mass_leadingJet);
+    t_withInfo->SetBranchAddress("bj_mass_subleadingJet", &bj_mass_subleadingJet);
+    t_withInfo->SetBranchAddress("bj_mass_leadingJet_pT40", &bj_mass_leadingJet_pT40);
+    t_withInfo->SetBranchAddress("bj_mass_leadingJet_pT50", &bj_mass_leadingJet_pT50);
+    t_withInfo->SetBranchAddress("bj_mass_leadingJet_pTlight40", &bj_mass_leadingJet_pTlight40);
+    t_withInfo->SetBranchAddress("bj_mass_leadingJet_pTlight50", &bj_mass_leadingJet_pTlight50);
+    t_withInfo->SetBranchAddress("bj_mass_leadingJet_etaCut", &bj_mass_leadingJet_etaCut);
+    t_withInfo->SetBranchAddress("LeadingJetCSV", &LeadingJetCSV);
+    t_withInfo->SetBranchAddress("SecondJetCSV", &SecondJetCSV);
 
     TTree* t_withMEM = 0;
     t_withMEM = (TTree*) f_withMEM->Get(v_TTrees[itree]);
     if(!t_withMEM) {cout<<"Tree "<<v_TTrees[itree]<<" not found ! Skip"<<endl; continue;}
 
-    Float_t mTW_MEM, btagDiscri_MEM, mtop_MEM, AdditionalMuonIso_MEM, AdditionalEleIso_MEM, RunNr_MEM, EvtNr_MEM, NJets_MEM, NBJets_MEM, tZ_pT_MEM, tZ_mass_MEM;
+    Float_t mTW_MEM, btagDiscri_MEM, mtop_MEM, AdditionalMuonIso_MEM, AdditionalEleIso_MEM, RunNr_MEM, EvtNr_MEM, NJets_MEM, NBJets_MEM, tZ_pT_MEM, tZ_mass_MEM, bj_mass_leadingJet_MEM, bj_mass_subleadingJet_MEM, bj_mass_leadingJet_pT40_MEM, bj_mass_leadingJet_pT50_MEM, bj_mass_leadingJet_pTlight40_MEM, bj_mass_leadingJet_pTlight50_MEM, bj_mass_leadingJet_etaCut_MEM, LeadingJetCSV_MEM, SecondJetCSV_MEM;
 
   	t_withMEM->SetBranchAddress("NJets", &NJets_MEM);
   	t_withMEM->SetBranchAddress("NBJets", &NBJets_MEM);
@@ -343,6 +352,15 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
     TBranch *b_EvtNr = t_withMEM->Branch("EvtNr",&EvtNr_MEM,"EvtNr/F");
     TBranch *b_tZ_pT = t_withMEM->Branch("tZ_pT",&tZ_pT_MEM,"tZ_pT/F");
     TBranch *b_tZ_mass = t_withMEM->Branch("tZ_mass",&tZ_mass_MEM,"tZ_mass/F");
+    TBranch *b_bj_mass_leadingJet = t_withMEM->Branch("bj_mass_leadingJet",&bj_mass_leadingJet_MEM,"bj_mass_leadingJet/F");
+    TBranch *b_bj_mass_subleadingJet = t_withMEM->Branch("bj_mass_subleadingJet",&bj_mass_subleadingJet_MEM,"bj_mass_subleadingJet/F");
+    TBranch *b_bj_mass_leadingJet_pT40 = t_withMEM->Branch("bj_mass_leadingJet_pT40",&bj_mass_leadingJet_pT40_MEM,"bj_mass_leadingJet_pT40/F");
+    TBranch *b_bj_mass_leadingJet_pT50 = t_withMEM->Branch("bj_mass_leadingJet_pT50",&bj_mass_leadingJet_pT50_MEM,"bj_mass_leadingJet_pT50/F");
+    TBranch *b_bj_mass_leadingJet_pTlight40 = t_withMEM->Branch("bj_mass_leadingJet_pTlight40",&bj_mass_leadingJet_pTlight40_MEM,"bj_mass_leadingJet_pTlight40/F");
+    TBranch *b_bj_mass_leadingJet_pTlight50 = t_withMEM->Branch("bj_mass_leadingJet_pTlight50",&bj_mass_leadingJet_pTlight50_MEM,"bj_mass_leadingJet_pTlight50/F");
+    TBranch *b_bj_mass_leadingJet_etaCut = t_withMEM->Branch("bj_mass_leadingJet_etaCut",&bj_mass_leadingJet_etaCut_MEM,"bj_mass_leadingJet_etaCut/F");
+    TBranch *b_LeadingJetCSV = t_withMEM->Branch("LeadingJetCSV",&LeadingJetCSV_MEM,"LeadingJetCSV/F");
+    TBranch *b_SecondJetCSV = t_withMEM->Branch("SecondJetCSV",&SecondJetCSV_MEM,"SecondJetCSV/F");
 
 
   	int nentries = t_withInfo->GetEntries();
@@ -353,13 +371,15 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
   	cout<<endl<<"*** STARTING FILLING VARIABLES VECTORS ***"<<endl;
 
   	//Rather than looping on "ready_forMEM" file, we store the relevant variables into vectors ; this is probably faster than reading a file, and allows to remove events already matched
-  	vector<Float_t> v_btagDiscri, v_mTW, v_EvtNr, v_RunNr, v_mtop, v_AdditionalMuonIso, v_AdditionalEleIso, v_tZ_pT, v_tZ_mass;
+  	vector<Float_t> v_btagDiscri, v_mTW, v_EvtNr, v_RunNr, v_mtop, v_AdditionalMuonIso, v_AdditionalEleIso, v_tZ_pT, v_tZ_mass, v_bj_mass_leadingJet, v_bj_mass_subleadingJet, v_bj_mass_leadingJet_pT40, v_bj_mass_leadingJet_pT50, v_bj_mass_leadingJet_pTlight40, v_bj_mass_leadingJet_pTlight50, v_bj_mass_leadingJet_etaCut, v_LeadingJetCSV, v_SecondJetCSV;
+
+
   	for(int ientry=0; ientry<nentries; ientry++)
   	{
   		if(ientry%10000==0) {cout<<"-- "<<ientry<<" / "<<nentries<<endl;}
 
 
-  		EvtNr=-999; btagDiscri = -999; mTW=-999; mtop=-999; RunNr=-999; NJets=-999; NBJets=-999; AdditionalEleIso=-999; AdditionalMuonIso=-999; tZ_pT=-999; tZ_mass=-999;
+  		EvtNr=-999; btagDiscri = -999; mTW=-999; mtop=-999; RunNr=-999; NJets=-999; NBJets=-999; AdditionalEleIso=-999; AdditionalMuonIso=-999; tZ_pT=-999; tZ_mass=-999; bj_mass_leadingJet=-999; bj_mass_subleadingJet=-999; bj_mass_leadingJet_pT40=-999; bj_mass_leadingJet_pT50=-999; bj_mass_leadingJet_pTlight40=-999; bj_mass_leadingJet_pTlight50=-999; bj_mass_leadingJet_etaCut=-999; LeadingJetCSV=-999; SecondJetCSV=-999;
   		t_withInfo->GetEntry(ientry);
 
       if(!(NJets>1 && NJets<4 && NBJets==1) && !(NJets>1 && NBJets>1) ) {continue;} //not MEM region
@@ -373,6 +393,15 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
       v_AdditionalEleIso.push_back(AdditionalEleIso);
       v_tZ_pT.push_back(tZ_pT);
       v_tZ_mass.push_back(tZ_mass);
+      v_bj_mass_leadingJet.push_back(bj_mass_leadingJet);
+      v_bj_mass_subleadingJet.push_back(bj_mass_subleadingJet);
+      v_bj_mass_leadingJet_pT40.push_back(bj_mass_leadingJet_pT40);
+      v_bj_mass_leadingJet_pT50.push_back(bj_mass_leadingJet_pT50);
+      v_bj_mass_leadingJet_pTlight40.push_back(bj_mass_leadingJet_pTlight40);
+      v_bj_mass_leadingJet_pTlight50.push_back(bj_mass_leadingJet_pTlight50);
+      v_bj_mass_leadingJet_etaCut.push_back(bj_mass_leadingJet_etaCut);
+      v_LeadingJetCSV.push_back(LeadingJetCSV);
+      v_SecondJetCSV.push_back(SecondJetCSV);
   	}
 
 
@@ -385,7 +414,7 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
   		if(ientry_MEM%10000==0) {cout<<"-- "<<ientry_MEM<<" / "<<nentries_MEM<<endl;}
 
   		// NJets_MEM=-999; NBJets_MEM=-999;
-  		btagDiscri_MEM=-999; mTW_MEM=-999; mtop_MEM=-999; NJets_MEM=-999; NBJets_MEM=-999; AdditionalEleIso_MEM=-999; AdditionalMuonIso_MEM=-999; tZ_pT_MEM=-999; tZ_mass_MEM=-999;
+  		btagDiscri_MEM=-999; mTW_MEM=-999; mtop_MEM=-999; NJets_MEM=-999; NBJets_MEM=-999; AdditionalEleIso_MEM=-999; AdditionalMuonIso_MEM=-999; tZ_pT_MEM=-999; tZ_mass_MEM=-999; bj_mass_leadingJet_MEM=-999; bj_mass_subleadingJet_MEM=-999; bj_mass_leadingJet_pT40_MEM=-999; bj_mass_leadingJet_pT50_MEM=-999; bj_mass_leadingJet_pTlight40_MEM=-999; bj_mass_leadingJet_pTlight50_MEM=-999; bj_mass_leadingJet_etaCut_MEM=-999; LeadingJetCSV_MEM=-999; SecondJetCSV_MEM=-999;
   		t_withMEM->GetEntry(ientry_MEM);
 
 
@@ -414,6 +443,15 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
               EvtNr_MEM = v_EvtNr[i];
               tZ_pT_MEM = v_tZ_pT[i];
               tZ_mass_MEM = v_tZ_mass[i];
+              bj_mass_leadingJet_MEM = v_bj_mass_leadingJet[i];
+              bj_mass_subleadingJet_MEM = v_bj_mass_subleadingJet[i];
+              bj_mass_leadingJet_pT40_MEM = v_bj_mass_leadingJet_pT40[i];
+              bj_mass_leadingJet_pT50_MEM = v_bj_mass_leadingJet_pT50[i];
+              bj_mass_leadingJet_pTlight40_MEM = v_bj_mass_leadingJet_pTlight40[i];
+              bj_mass_leadingJet_pTlight50_MEM = v_bj_mass_leadingJet_pTlight50[i];
+              bj_mass_leadingJet_etaCut_MEM = v_bj_mass_leadingJet_etaCut[i];
+              LeadingJetCSV_MEM = v_LeadingJetCSV[i];
+              SecondJetCSV_MEM = v_SecondJetCSV[i];
 
               //Fill the new branches
               b_AdditionalMuonIso->Fill();
@@ -422,6 +460,15 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
               b_EvtNr->Fill();
               b_tZ_pT->Fill();
               b_tZ_mass->Fill();
+              b_bj_mass_leadingJet->Fill();
+              b_bj_mass_subleadingJet->Fill();
+              b_bj_mass_leadingJet_pT40->Fill();
+              b_bj_mass_leadingJet_pT50->Fill();
+              b_bj_mass_leadingJet_pTlight40->Fill();
+              b_bj_mass_leadingJet_pTlight50->Fill();
+              b_bj_mass_leadingJet_etaCut->Fill();
+              b_LeadingJetCSV->Fill();
+              b_SecondJetCSV->Fill();
 
 
   						v_mTW.erase(v_mTW.begin() + i);
@@ -433,6 +480,15 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees)
               v_AdditionalEleIso.erase(v_AdditionalEleIso.begin() + i);
               v_tZ_pT.erase(v_tZ_pT.begin() + i);
               v_tZ_mass.erase(v_tZ_mass.begin() + i);
+              v_bj_mass_leadingJet.erase(v_bj_mass_leadingJet.begin() + i);
+              v_bj_mass_subleadingJet.erase(v_bj_mass_subleadingJet.begin() + i);
+              v_bj_mass_leadingJet_pT40.erase(v_bj_mass_leadingJet_pT40.begin() + i);
+              v_bj_mass_leadingJet_pT50.erase(v_bj_mass_leadingJet_pT50.begin() + i);
+              v_bj_mass_leadingJet_pTlight40.erase(v_bj_mass_leadingJet_pTlight40.begin() + i);
+              v_bj_mass_leadingJet_pTlight50.erase(v_bj_mass_leadingJet_pTlight50.begin() + i);
+              v_bj_mass_leadingJet_etaCut.erase(v_bj_mass_leadingJet_etaCut.begin() + i);
+              v_LeadingJetCSV.erase(v_LeadingJetCSV.begin() + i);
+              v_SecondJetCSV.erase(v_SecondJetCSV.begin() + i);
 
   						break;
   					}
@@ -491,14 +547,15 @@ int main()
 	sample_list.push_back("ttZ");
 	sample_list.push_back("ttH");
 	sample_list.push_back("ZZ");
-	sample_list.push_back("tWZ");
 	sample_list.push_back("WZL");
 	sample_list.push_back("WZB");
 	sample_list.push_back("WZC");
 	sample_list.push_back("STtWll");
-	sample_list.push_back("Fakes");
 	sample_list.push_back("ttW");
+  sample_list.push_back("FakesNewNew");
 
+  // sample_list.push_back("Fakes");
+  // sample_list.push_back("tWZ");
 
 
 

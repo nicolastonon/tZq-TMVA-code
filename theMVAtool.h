@@ -104,9 +104,9 @@ class theMVAtool
 	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
-	void Superpose_Fakes_Templates(TString, TString, bool); //Superpose prefit templates for : signal, fakes, other
-	void Rebin_Template_File(TString, int); //Rebin all the templates in input file
 	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString); //Shows the variation of 1 systematic on 1 template (e.g. compare JES/nominal in tZq)
+	void Superpose_Shapes_Fakes_Signal(TString, TString, bool, bool); //Superpose prefit templates for : signal, fakes, other
+	void Rebin_Template_File(TString, int); //Rebin all the templates in input file
 	void Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString, bool);
 
 
