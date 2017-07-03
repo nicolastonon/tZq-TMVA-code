@@ -477,7 +477,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 		else if(!isWZ && !isttZ)
 		{
 			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );} //FIXME
+			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );} //CHANGED
 			// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
 			// else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
 			cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
@@ -856,10 +856,10 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 				TH1F* h_tmp = (TH1F*) file_to_rescale->Get(histo_name);
 
-				if(h_tmp->Integral() < 30)
-				{
-					cout<<BOLD(FMAG("Warning : "<<histo_name<<"->Integral() = "<<h_tmp->Integral()<<" < 30 ! Make sure you didn't rescale the Fakes templates already"))<<endl<<endl;
-				}
+				// if(h_tmp->Integral() < 30)
+				// {
+				// 	cout<<BOLD(FMAG("Warning : "<<histo_name<<"->Integral() = "<<h_tmp->Integral()<<" < 30 ! Make sure you didn't rescale the Fakes templates already"))<<endl<<endl;
+				// }
 
 				if(channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu);}
 				else if(channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu);}

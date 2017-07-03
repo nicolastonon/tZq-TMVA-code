@@ -14,8 +14,6 @@ cp ../Matching_Events/Match_MEM_events.cxx .
 
 cp ../COMBINE/README_Combine.txt ./COMBINE/
 
-cp ../COMBINE/templates/Combine_Input.root ./COMBINE/templates/.
-
 cp ../COMBINE/datacards/Create_Script_Datacard_Generation.cc ./COMBINE/datacards/.
 cp ../COMBINE/datacards/AddBinByBin.py ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Draw_Canvas.C ./COMBINE/datacards/.

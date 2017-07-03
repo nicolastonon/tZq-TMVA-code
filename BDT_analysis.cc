@@ -261,7 +261,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist.push_back("dPhiAddLepB");
     thevarlist.push_back("dRAddLepClosestJet");
 
-    // thevarlist.push_back("mTW"); //FIXME
+    // thevarlist.push_back("mTW");
 
 
 //-- After optimization, removed 4 vars :
@@ -371,7 +371,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 //--- General names of systematics
@@ -516,7 +516,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             bool keep_high_BDT_events = false; //else, keep only low BDT events (blind)
             // cut_BDT_value = 0.4;
 
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, keep_high_BDT_events); //FIXME
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, keep_high_BDT_events);
 
             MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT_tmp);
         }
