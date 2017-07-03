@@ -26,6 +26,7 @@ WZb_rate       lnN     -                 -           -           -	    		-      
 WZc_rate       lnN     -                 -           -           -	    		-             -					-			-			   -		1.3
 
 FakeRate_type lnN      -		  	 	 -	    	  -           -	     		-             -			FakeRate_Numb		-			   -		-
+FakeBgd_rate  lnN      -	             -	    	  -           -	     		-             -			FakeBgd_Numb		-			   -		-
 
 [*]Q2 			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1
 [*]pdf			 shape    1 		 	     1 		  	  1 			1 			1 			  -					-			1			   1		1
@@ -40,16 +41,11 @@ FakeRate_type lnN      -		  	 	 -	    	  -           -	     		-             -			
 [*]HFcont		 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]LFstats1	 	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]LFstats2	 	 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
-
 [*]JES			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
 [*]JER			 shape    1 		 	     1 		  	  1 			1 			1 			  1					-			1			   1		1
-
 [*]PSscale		 shape    0.7071 	     	- 		  	  - 			- 			- 			  -					-			-			   -		-
-
 [*]Fakes		 shape    - 		 	     - 		  	  - 			-			- 			  -					1			-			   -		-
 
 
-
 #[*]ZptReweight	shape     - 		 	     - 		  	  - 			- 			- 			  -					1			-			   -		-
-#FakeBgd_rate  lnN      -	             -	    	  -           -	     		-             -			FakeBgd_Numb		-			   -		-
 #1/sqrt(2) ~ 0.707106781

@@ -65,7 +65,10 @@ if channel=="eee":
     trigsyst = "1.02"
 
 FakeRate_Numb = "5.0"
-# FakeBgd_Numb = "1.3"
+
+FakeBgd_Numb = "1.3"
+if Corrrelate_Fakes=='n':
+    FakeBgd_Numb = "-"
 
 
 if(systList!="allSyst" and systList!="noSyst"):
