@@ -32,7 +32,7 @@ class MEM_NtupleMaker
 {
 	public :
 
-		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, TString, double, double, TString);
+		MEM_NtupleMaker(TString, vector<TString>, vector<TString>, vector<TString>, vector<TString>, TString, double, double, TString);
 		~MEM_NtupleMaker();
 
 		void Init();
@@ -57,6 +57,8 @@ class MEM_NtupleMaker
 	    vector<ciemat::Electron>* vSelectedElectrons;
 	    vector<ciemat::Jet>*      vSelectedJets;
 	    ciemat::MET*              METCollection;
+
+		vector<TString> v_variablesToCreate; vector<Float_t> v_variablesToCreate_float;
 
 		Int_t catJets;
 		Char_t is_3l_TTZ_CR;

@@ -22,7 +22,7 @@
 using namespace std;
 
 //Overloaded constructor (default)
-MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice, double set_CSV_threshold, double set_eta_threshold, TString set_tmp_dir)
+MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> v_variablesToCreate, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice, double set_CSV_threshold, double set_eta_threshold, TString set_tmp_dir)
 {
   if(region_choice != "MEM" && region_choice != "WZ") {cout<<endl<<BOLD( FRED("ERROR : choose WZ or (tZq+ttZ) region !") )<<endl;}
   MEM_or_WZ = region_choice;
@@ -59,6 +59,12 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   {
     v_syst_tree.push_back(tree_syst_list[itree]);
   }
+  for(int ivar=0; ivar<v_variablesToCreate.size(); ivar++)
+  {
+    this->v_variablesToCreate.push_back(v_variablesToCreate[ivar]);
+    v_variablesToCreate_float.push_back(-999);
+  }
+
 
 
   Init();
@@ -149,17 +155,24 @@ void MEM_NtupleMaker::Init()
   mTW = -999;
   EvtNr = -999;
   RunNr = -999;
-  AdditionalMuonIso = -999;
-  AdditionalEleIso = -999;
-  tZ_pT = -999;
-  tZ_mass = -999;
-  bj_mass_leadingJet = -999;
-  bj_mass_subleadingJet = -999;
-  bj_mass_leadingJet_pT40 = -999;
-  bj_mass_leadingJet_pT50 = -999;
-  bj_mass_leadingJet_pTlight40 = -999;
-  bj_mass_leadingJet_pTlight50 = -999;
-  bj_mass_leadingJet_etaCut = -999;
+  // AdditionalMuonIso = -999;
+  // AdditionalEleIso = -999;
+
+  // tZ_pT = -999;
+  // tZ_mass = -999;
+  // bj_mass_leadingJet = -999;
+  // bj_mass_subleadingJet = -999;
+  // bj_mass_leadingJet_pT40 = -999;
+  // bj_mass_leadingJet_pT50 = -999;
+  // bj_mass_leadingJet_pTlight40 = -999;
+  // bj_mass_leadingJet_pTlight50 = -999;
+  // bj_mass_leadingJet_etaCut = -999;
+
+  for(int ivar=0; ivar<v_variablesToCreate.size(); ivar++)
+  {
+    v_variablesToCreate_float[ivar] = -999;
+  }
+
 
   //Re-initialize vector contents
   for(int isyst=0; isyst<v_syst_float.size(); isyst++)
@@ -209,17 +222,24 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TStri
   tree_output->Branch("mTW",&mTW,"mTW/F");
   tree_output->Branch("EvtNr",&EvtNr,"EvtNr/F");
   tree_output->Branch("RunNr",&RunNr,"RunNr/F");
-  tree_output->Branch("AdditionalMuonIso",&AdditionalMuonIso,"AdditionalMuonIso/F");
-  tree_output->Branch("AdditionalEleIso",&AdditionalEleIso,"AdditionalEleIso/F");
-  tree_output->Branch("tZ_pT",&tZ_pT,"tZ_pT/F");
-  tree_output->Branch("tZ_mass",&tZ_mass,"tZ_mass/F");
-  tree_output->Branch("bj_mass_leadingJet",&bj_mass_leadingJet,"bj_mass_leadingJet/F");
-  tree_output->Branch("bj_mass_subleadingJet",&bj_mass_subleadingJet,"bj_mass_subleadingJet/F");
-  tree_output->Branch("bj_mass_leadingJet_pT40",&bj_mass_leadingJet_pT40,"bj_mass_leadingJet_pT40/F");
-  tree_output->Branch("bj_mass_leadingJet_pT50",&bj_mass_leadingJet_pT50,"bj_mass_leadingJet_pT50/F");
-  tree_output->Branch("bj_mass_leadingJet_pTlight40",&bj_mass_leadingJet_pTlight40,"bj_mass_leadingJet_pTlight40/F");
-  tree_output->Branch("bj_mass_leadingJet_pTlight50",&bj_mass_leadingJet_pTlight50,"bj_mass_leadingJet_pTlight50/F");
-  tree_output->Branch("bj_mass_leadingJet_etaCut",&bj_mass_leadingJet_etaCut,"bj_mass_leadingJet_etaCut/F");
+  // tree_output->Branch("AdditionalMuonIso",&AdditionalMuonIso,"AdditionalMuonIso/F");
+  // tree_output->Branch("AdditionalEleIso",&AdditionalEleIso,"AdditionalEleIso/F");
+
+  for(int ivar=0; ivar<v_variablesToCreate.size(); ivar++)
+  {
+    tree_output->Branch(v_variablesToCreate[ivar],&v_variablesToCreate_float[ivar],(v_variablesToCreate[ivar]+"/F").Data() );
+  }
+
+
+  // tree_output->Branch("tZ_pT",&tZ_pT,"tZ_pT/F");
+  // tree_output->Branch("tZ_mass",&tZ_mass,"tZ_mass/F");
+  // tree_output->Branch("bj_mass_leadingJet",&bj_mass_leadingJet,"bj_mass_leadingJet/F");
+  // tree_output->Branch("bj_mass_subleadingJet",&bj_mass_subleadingJet,"bj_mass_subleadingJet/F");
+  // tree_output->Branch("bj_mass_leadingJet_pT40",&bj_mass_leadingJet_pT40,"bj_mass_leadingJet_pT40/F");
+  // tree_output->Branch("bj_mass_leadingJet_pT50",&bj_mass_leadingJet_pT50,"bj_mass_leadingJet_pT50/F");
+  // tree_output->Branch("bj_mass_leadingJet_pTlight40",&bj_mass_leadingJet_pTlight40,"bj_mass_leadingJet_pTlight40/F");
+  // tree_output->Branch("bj_mass_leadingJet_pTlight50",&bj_mass_leadingJet_pTlight50,"bj_mass_leadingJet_pTlight50/F");
+  // tree_output->Branch("bj_mass_leadingJet_etaCut",&bj_mass_leadingJet_etaCut,"bj_mass_leadingJet_etaCut/F");
 
   tree_output->Branch("catJets",&catJets,"catJets/I");
 
@@ -1064,8 +1084,8 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
     t_vars_input->SetBranchAddress("NBJets", &NBJets);
     t_vars_input->SetBranchAddress("EvtNr", &EvtNr);
     t_vars_input->SetBranchAddress("RunNr", &RunNr);
-    t_vars_input->SetBranchAddress("AdditionalMuonIso", &AdditionalMuonIso);
-    t_vars_input->SetBranchAddress("AdditionalEleIso", &AdditionalEleIso);
+    // t_vars_input->SetBranchAddress("AdditionalMuonIso", &AdditionalMuonIso);
+    // t_vars_input->SetBranchAddress("AdditionalEleIso", &AdditionalEleIso);
 
     //---BDT
     for(int ivar=0; ivar<BDTvar_list.size(); ivar++)
@@ -1120,8 +1140,6 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
         // if(passTrig != 1) {continue;}
       }
-
-      //Compute tZ_pT variable
 
 
 
@@ -1255,18 +1273,68 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       }
 
   //-------------------
+  //  #    # ###### #    #    #    #   ##   #####  #   ##   #####  #      ######  ####
+  //  ##   # #      #    #    #    #  #  #  #    # #  #  #  #    # #      #      #
+  //  # #  # #####  #    #    #    # #    # #    # # #    # #####  #      #####   ####
+  //  #  # # #      # ## #    #    # ###### #####  # ###### #    # #      #           #
+  //  #   ## #      ##  ##     #  #  #    # #   #  # #    # #    # #      #      #    #
+  //  #    # ###### #    #      ##   #    # #    # # #    # #####  ###### ######  ####
+  //-------------------
 
-      //CHANGED : compute here tZ_pT for events in tZq_region
-      tZ_pT = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);
-      tZ_mass = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);
+      //Can compute here some new variables
+      Float_t LeadingJetNonB_pT=-999, SecondJetNonB_pT=-999, ContainsBadJet=0;
+      double pT1=-1, pT2=-1;
+      for(int ijet=0; ijet<vSelectedJets->size(); ijet++)
+      {
+        if(vSelectedJets->at(ijet).pt < 50 && fabs(vSelectedJets->at(ijet).eta) > 2.7 && fabs(vSelectedJets->at(ijet).eta) < 3 ) {ContainsBadJet = 1;} //Loop on all jets
 
-      bj_mass_leadingJet = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 0);
-      bj_mass_subleadingJet = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 1);
-      bj_mass_leadingJet_pT40 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 2);
-      bj_mass_leadingJet_pT50 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 3);
-      bj_mass_leadingJet_pTlight40 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 4);
-      bj_mass_leadingJet_pTlight50 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 5);
-      bj_mass_leadingJet_etaCut = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 6);
+        if(ijet == ib1 || ijet == ib2) {continue;} //don't consider bjets for these vars
+
+        if(vSelectedJets->at(ijet).pt > pT1)
+        {
+          pT2 = pT1;
+          pT1 = vSelectedJets->at(ijet).pt;
+        }
+        else if(vSelectedJets->at(ijet).pt < pT1 && vSelectedJets->at(ijet).pt > pT2)
+        {
+          pT2 = vSelectedJets->at(ijet).pt;
+        }
+      }
+      LeadingJetNonB_pT = pT1; SecondJetNonB_pT = pT2;
+
+
+
+
+
+
+
+
+  //-------------------
+      for(int ivar=0; ivar<v_variablesToCreate.size(); ivar++)
+      {
+        if(v_variablesToCreate[ivar] == "tZ_pT") {v_variablesToCreate_float[ivar] = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);}
+        else if(v_variablesToCreate[ivar] == "tZ_mass") {v_variablesToCreate_float[ivar] = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 0);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_subleadingJet") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 1);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_pT40") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 2);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_pT50") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 3);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_pTlight40") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 4);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_pTlight50") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 5);}
+        else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_etaCut") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 6);}
+        else if(v_variablesToCreate[ivar] == "LeadingJetNonB_pT") {v_variablesToCreate_float[ivar] = LeadingJetNonB_pT;}
+        else if(v_variablesToCreate[ivar] == "SecondJetNonB_pT") {v_variablesToCreate_float[ivar] = SecondJetNonB_pT;}
+        else if(v_variablesToCreate[ivar] == "ContainsBadJet") {v_variablesToCreate_float[ivar] = ContainsBadJet;}
+      }
+
+      // tZ_pT = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);
+      // tZ_mass = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);
+      // bj_mass_leadingJet = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 0);
+      // bj_mass_subleadingJet = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 1);
+      // bj_mass_leadingJet_pT40 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 2);
+      // bj_mass_leadingJet_pT50 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 3);
+      // bj_mass_leadingJet_pTlight40 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 4);
+      // bj_mass_leadingJet_pTlight50 = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 5);
+      // bj_mass_leadingJet_etaCut = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 6);
 
 
   //-------------------
@@ -1387,6 +1455,33 @@ int main()
   BDTvar_list.push_back("METpt");
   BDTvar_list.push_back("LeadingJetCSV");
   BDTvar_list.push_back("SecondJetCSV");
+  BDTvar_list.push_back("AdditionalMuonIso");
+  BDTvar_list.push_back("AdditionalEleIso");
+
+
+//---------------------------------------------------------------------------
+ //                                                 #####
+ // #    #   ##   #####   ####     #####  ####     #     # #####  ######   ##   ##### ######
+ // #    #  #  #  #    # #           #   #    #    #       #    # #       #  #    #   #
+ // #    # #    # #    #  ####       #   #    #    #       #    # #####  #    #   #   #####
+ // #    # ###### #####       #      #   #    #    #       #####  #      ######   #   #
+ //  #  #  #    # #   #  #    #      #   #    #    #     # #   #  #      #    #   #   #
+ //   ##   #    # #    #  ####       #    ####      #####  #    # ###### #    #   #   ######
+//---------------------------------------------------------------------------
+
+  vector<TString> v_variablesToCreate;
+  v_variablesToCreate.push_back("tZ_pT");
+  v_variablesToCreate.push_back("tZ_mass");
+  v_variablesToCreate.push_back("bj_mass_leadingJet");
+  v_variablesToCreate.push_back("bj_mass_subleadingJet");
+  v_variablesToCreate.push_back("bj_mass_leadingJet_pT40");
+  v_variablesToCreate.push_back("bj_mass_leadingJet_pT50");
+  v_variablesToCreate.push_back("bj_mass_leadingJet_pTlight40");
+  v_variablesToCreate.push_back("bj_mass_leadingJet_pTlight50");
+  v_variablesToCreate.push_back("bj_mass_leadingJet_etaCut");
+  v_variablesToCreate.push_back("LeadingJetNonB_pT");
+  v_variablesToCreate.push_back("SecondJetNonB_pT");
+  v_variablesToCreate.push_back("ContainsBadJet");
 
 
 //---------------------------------------------------------------------------
@@ -1444,7 +1539,7 @@ int main()
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
   bool do_MEM_regions = true;
-	bool do_WZ_region = false;
+	bool do_WZ_region = true;
 
   TString specific_dir = ""; //specify specific input/output dir. name
 
@@ -1456,7 +1551,7 @@ int main()
     region_choice = "MEM";
     for(int isample=0; isample<v_samplenames.size(); isample++)
     {
-      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, v_variablesToCreate, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
       theNtupleMaker->Init();
       theNtupleMaker->NtupleMaker(v_samplenames[isample]);
       theNtupleMaker->~MEM_NtupleMaker();
@@ -1469,7 +1564,7 @@ int main()
     region_choice = "WZ";
     for(int isample=0; isample<v_samplenames.size(); isample++)
     {
-      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, v_variablesToCreate, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
       theNtupleMaker->Init();
       theNtupleMaker->NtupleMaker(v_samplenames[isample]);
       theNtupleMaker->~MEM_NtupleMaker();

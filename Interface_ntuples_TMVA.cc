@@ -367,24 +367,24 @@ int main()
 
 	vector<TString> sample_list;
 	sample_list.push_back("Data");
-	// sample_list.push_back("tZq");
-	// sample_list.push_back("tZqQup");
-	// sample_list.push_back("tZqQdw");
-	// sample_list.push_back("tZqmcNLO");
-	// sample_list.push_back("ttZ");
-	// sample_list.push_back("ttW");
-	// sample_list.push_back("ttH");
-	// sample_list.push_back("ZZ");
-	// sample_list.push_back("tWZ");
-	// sample_list.push_back("WZL");
-	// sample_list.push_back("WZB");
-	// sample_list.push_back("WZC");
-	// sample_list.push_back("STtWll");
-	// sample_list.push_back("DY");
-	// sample_list.push_back("TT");
-	// sample_list.push_back("Fakes");
-	// sample_list.push_back("FakesNewNew");
+	sample_list.push_back("tZq");
+	sample_list.push_back("tZqQup");
+	sample_list.push_back("tZqQdw");
+	sample_list.push_back("tZqmcNLO");
+	sample_list.push_back("ttZ");
+	sample_list.push_back("ttW");
+	sample_list.push_back("ttH");
+	sample_list.push_back("ZZ");
+	sample_list.push_back("tWZ");
+	sample_list.push_back("WZL");
+	sample_list.push_back("WZB");
+	sample_list.push_back("WZC");
+	sample_list.push_back("STtWll");
+	sample_list.push_back("DY");
+	sample_list.push_back("TT");
+	sample_list.push_back("FakesNewNew");
 
+	// sample_list.push_back("Fakes");
 	// sample_list.push_back("tZqhwpp");
 
 
@@ -413,6 +413,21 @@ int main()
 	thevarlist.push_back("RunNr");
 	thevarlist.push_back("AdditionalMuonIso");
 	thevarlist.push_back("AdditionalEleIso");
+	thevarlist.push_back("LeadingJetCSV");
+	thevarlist.push_back("SecondJetCSV");
+	thevarlist.push_back("tZ_pT");
+	thevarlist.push_back("tZ_mass");
+	thevarlist.push_back("bj_mass_leadingJet");
+	thevarlist.push_back("bj_mass_subleadingJet");
+	thevarlist.push_back("bj_mass_leadingJet_pT40");
+	thevarlist.push_back("bj_mass_leadingJet_pT50");
+	thevarlist.push_back("bj_mass_leadingJet_pTlight40");
+	thevarlist.push_back("bj_mass_leadingJet_pTlight50");
+	thevarlist.push_back("bj_mass_leadingJet_etaCut");
+	thevarlist.push_back("LeadingJetNonB_pT");
+	thevarlist.push_back("SecondJetNonB_pT");
+	thevarlist.push_back("ContainsBadJet");
+
 
 	thevarlist.push_back("btagDiscri");
 	thevarlist.push_back("dRAddLepQ");
@@ -436,8 +451,9 @@ int main()
 	thevarlist.push_back("dRZTop");
 
 
+
 	//--- MEM variables (weights, ...) which we modify into new variables in the code
-	vector<TString> MEMvarlist; //FIXME add new MEM vars
+	vector<TString> MEMvarlist;
 	MEMvarlist.push_back("mc_mem_ttz_weight");
 	MEMvarlist.push_back("mc_mem_tllj_weight");
 	MEMvarlist.push_back("mc_mem_tllj_weight_kinmaxint");
@@ -510,7 +526,7 @@ int main()
  // #        #####  #     #  #####     #    ### ####### #     #     #####  #     # ####### #######  #####
 //-----------------------------------------
 
-	bool do_MEM_regions = true;
+	bool do_MEM_regions = false;
 	bool do_WZ_region = true;
 
 	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples

@@ -107,12 +107,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //-------------------
 
-// ---- Specify here the cuts that you wish to apply to all regions ---
-    if(!isWZ)
-    {
+// ---- Specify here the cuts that you wish to apply to all/specific regions ---
+
+    // set_v_cut_name.push_back("METpt");  set_v_cut_def.push_back(""); set_v_cut_IsUsedForBDT.push_back(false);
+
+
+    // if(!isWZ)
+    // {
         // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
         // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-    }
+    // }
 
 //-------------------
 
