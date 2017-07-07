@@ -2353,194 +2353,6 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 
 
-
-//---------------------------------------------------------------------------
-// ########      ######     ########    ##     ##    ########      #######     ########        ###       ########       ###
-// ##     ##    ##    ##    ##          ##     ##    ##     ##    ##     ##    ##     ##      ## ##         ##         ## ##
-// ##     ##    ##          ##          ##     ##    ##     ##    ##     ##    ##     ##     ##   ##        ##        ##   ##
-// ########      ######     ######      ##     ##    ##     ##    ##     ##    ##     ##    ##     ##       ##       ##     ##
-// ##                 ##    ##          ##     ##    ##     ##    ##     ##    ##     ##    #########       ##       #########
-// ##           ##    ##    ##          ##     ##    ##     ##    ##     ##    ##     ##    ##     ##       ##       ##     ##
-// ##            ######     ########     #######     ########      #######     ########     ##     ##       ##       ##     ##
-//---------------------------------------------------------------------------
-
-
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-/**
- * Generates pseudo data histograms in the "control histograms file".
- * @param  fakes_from_data If true, use Fakes from data sample
- */
-int theMVAtool::Generate_PseudoData_Histograms_For_Control_Plots(bool fakes_from_data)
-{
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	cout<<FYEL("--- Generate PseudoData Histos for CR Plots ---")<<endl;
-	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
-	if(!fakes_from_data) {cout<<FYEL("--- Using fakes from MC ---")<<endl;}
-	else {cout<<FYEL("--- Using fakes from data ---")<<endl;}
-
-	TRandom3 therand(0);
-
-	mkdir("outputs",0777);
-
-	TString input_name = "outputs/Control_Histograms" + this->filename_suffix + ".root";
-    TFile* file = 0;
-	file = TFile::Open( input_name.Data(), "UPDATE");
-	if(file == 0) {cout<<BOLD(FRED("--- ERROR : Control_Histograms file not found ! Exit !"))<<endl; return 0;}
-
-
-	//Want to plot ALL variables (inside the 2 different variable vectors !)
-	vector<TString> total_var_list;
-	for(int i=0; i<v_cut_name.size(); i++)
-	{
-		total_var_list.push_back(v_cut_name[i].Data());
-	}
-	for(int i=0; i<var_list.size(); i++)
-	{
-		total_var_list.push_back(var_list[i].Data());
-	}
-
-	for(int ichan=0; ichan<channel_list.size(); ichan++)
-	{
-		TH1F *h_sum = 0, *h_tmp = 0;
-
-		for(int ivar=0; ivar<total_var_list.size(); ivar++)
-		{
-			cout<<"--- "<<total_var_list[ivar]<<endl;
-
-			h_sum = 0;
-
-			for(int isample = 0; isample < sample_list.size(); isample++)
-			{
-				if(sample_list[isample]=="Data") {continue;} //Not using real data !!
-				if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
-				else if(fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) {continue;} //Fakes from data only
-
-				h_tmp = 0;
-				//CHANGED
-				// TString histo_name = "Control_" + channel_list[ichan] + "_" + total_var_list[ivar] + "_" + sample_list[isample];
-				TString histo_name = total_var_list[ivar]+"_" + channel_list[ichan] + "__" + sample_list[isample];
-				if(!file->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
-				h_tmp = (TH1F*) file->Get(histo_name.Data())->Clone();
-				if(h_sum == 0) {h_sum = (TH1F*) h_tmp->Clone();}
-				else {h_sum->Add(h_tmp);}
-			}
-
-			int nofbins = h_sum->GetNbinsX();
-
-			for(int i=1; i<nofbins+1; i++)
-			{
-				int bin_content = h_sum->GetBinContent(i); //cout<<"Initial content = "<<bin_content<<endl;
-				int new_bin_content = therand.Poisson(bin_content); //cout<<"New content = "<<new_bin_content<<endl;
-				h_sum->SetBinContent(i, new_bin_content);
-				h_sum->SetBinError(i, sqrt(new_bin_content)); //Poissonian error
-			}
-
-			file->cd();
-			TString output_histo_name;
-			if(combine_naming_convention) output_histo_name =  total_var_list[ivar]+"_" + channel_list[ichan] + "__data_obs";
-			else output_histo_name =  total_var_list[ivar]+"_" + channel_list[ichan] + "__DATA";
-
-			h_sum->Write(output_histo_name, TObject::kOverwrite);
-		} //end var loop
-	} //end channel loop
-
-	delete file;
-
-	cout<<"--- Done with generation of pseudo-data for CR"<<endl; return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-//NOTE : GENERATE PSEUDODATA ON COMBINE INPUT FILE (fakes already re-scaled)
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-/**
- * Generate pseudo-data histograms from MC, using TRandom::Poisson to simulate statistical fluctuations
- 	Used to simulate template fit to pseudo-data, to avoid using real data before pre-approval
- * @param  template_name Template name : BDT / BDTttZ / mTW
- */
-int theMVAtool::Generate_PseudoData_Templates(TString template_name)
-{
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" PseudoData Templates ---")<<endl;}
-	else {cout<<BOLD(FRED("--- ERROR : invalid template_name value ! Exit !"))<<endl; return 0;}
-	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
-
-
-	TRandom1 therand(0); //Randomization
-
-	TString pseudodata_input_name = "outputs/Combine_Input.root";
-	// TString pseudodata_input_name = "outputs/Reader_" + template_name + this->filename_suffix + ".root";
-    TFile* file = 0;
-	file = TFile::Open( pseudodata_input_name.Data(), "UPDATE");
-	if(file == 0) {cout<<BOLD(FRED("--- ERROR : Reader file not found ! Exit !"))<<endl; return 0;}
-
-	for(int ichan=0; ichan<channel_list.size(); ichan++)
-	{
-		TH1F *h_sum = 0, *h_tmp = 0;
-
-		for(int isample = 0; isample < sample_list.size(); isample++)
-		{
-			if(sample_list[isample].Contains("Data") ) {continue;}
-
-			h_tmp = 0;
-			TString histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
-
-			if(!file->GetListOfKeys()->Contains(histo_name.Data())) {cout<<endl<<BOLD(FRED("--- Empty histogram (Reader empty ?) ! Exit !"))<<endl<<endl; return 0;}
-			h_tmp = (TH1F*) file->Get(histo_name.Data())->Clone();
-			if(h_sum == 0) {h_sum = (TH1F*) h_tmp->Clone();}
-			else {h_sum->Add(h_tmp);}
-
-
-			// cout<<"chan "<<channel_list[ichan]<<", sample "<<sample_list[isample]<<" : bin[1] = "<<h_sum->GetBinContent(1)<<endl;
-		}
-
-
-
-		if(h_sum == 0) {cout<<endl<<BOLD(FRED("--- Empty histogram (Reader empty ?) ! Exit !"))<<endl<<endl; return 0;}
-		int nofbins = h_sum->GetNbinsX();
-
-		for(int i=1; i<nofbins+1; i++)
-		{
-			double bin_content = h_sum->GetBinContent(i); cout<<"bin "<<i<<endl; cout<<"initial content = "<<bin_content<<endl;
-			int new_bin_content = therand.Poisson(bin_content); cout<<"new content = "<<new_bin_content<<endl;
-			h_sum->SetBinContent(i, new_bin_content);
-			h_sum->SetBinError(i, sqrt(new_bin_content)); //Poissonian error
-		}
-
-		file->cd();
-		TString output_histo_name;
-		if(combine_naming_convention) output_histo_name = template_name + "_" + channel_list[ichan] + "__data_obs"; //Combine
-		else output_histo_name = template_name + "_" + channel_list[ichan] + "__DATA"; //THETA
-		h_sum->Write(output_histo_name, TObject::kOverwrite);
-
-	} //end channel loop
-
-	delete file;
-	cout<<"--- Done with generation of pseudo-data"<<endl<<endl; return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 //-----------------------------------------------------------------------------
 // ########  ########     ###    ##      ##        ######  ########        ########  ##        #######  ########  ######
 // ##     ## ##     ##   ## ##   ##  ##  ##       ##    ## ##     ##       ##     ## ##       ##     ##    ##    ##    ##
@@ -2696,6 +2508,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 				if((sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && (sample_list[isample-1].Contains("DY") || sample_list[isample-1].Contains("TT") || sample_list[isample-1].Contains("WW") ) ) {continue;} //Draw MC fakes only once
 
+				if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu") {continue;}
+				else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee") {continue;}
+
 
 				bool isData = false; if(sample_list[isample] == "Data") isData = true;
 
@@ -2794,7 +2609,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 				for(int isyst=0; isyst<syst_list.size(); isyst++)
 				{
-					if(isData || ( (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && !syst_list[isyst].Contains("Fakes")) ) {continue;}
+					if(isData || ( (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && !syst_list[isyst].Contains("Fakes") && !syst_list[isyst].Contains("Zpt")) ) {continue;}
 					if(syst_list[isyst] == "") {continue;} //Already done
 					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
@@ -2883,6 +2698,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		for(int i=v_MC_histo.size()-1; i>=0; i--)
 		{
 			if(MC_samples_legend[i] == "ttH") {continue;} //same entry as ttW
+			if(MC_samples_legend[i].Contains("FakesMuon")) {continue;} //same entry as FakesElectron
 			if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 			else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
@@ -3181,7 +2997,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
 		histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
 		histo_ratio_data->GetXaxis()->SetLabelSize(0.05);
-		histo_ratio_data->GetYaxis()->SetLabelSize(0.048); //CHANGED
+		histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
 		// histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
 		histo_ratio_data->GetXaxis()->SetLabelFont(42);
 		histo_ratio_data->GetYaxis()->SetLabelFont(42);
@@ -3189,18 +3005,13 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		histo_ratio_data->GetYaxis()->SetTitleFont(42);
 		// histo_ratio_data->GetYaxis()->SetNdivisions(6);
 		histo_ratio_data->GetYaxis()->SetNdivisions(503);
-		// histo_ratio_data->GetYaxis()->SetNdivisions(303); //CHANGED
+		// histo_ratio_data->GetYaxis()->SetNdivisions(303);
 		histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
 
 		histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 
 		histo_ratio_data->SetMinimum(0.0);
-		histo_ratio_data->SetMaximum(1.999); //CHANGED
-		// histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
-		// histo_ratio_data->GetXaxis()->SetLabelSize(0.04);
-		// histo_ratio_data->GetYaxis()->SetLabelSize(0.03);
-		// histo_ratio_data->GetYaxis()->SetNdivisions(6);
-		// histo_ratio_data->GetYaxis()->SetTitleSize(0.03);
+		histo_ratio_data->SetMaximum(1.999);
 		histo_ratio_data->Draw("E1X0"); //Draw ratio points
 
 		TH1F *h_line1 = new TH1F("","",this->nbin, h_data->GetXaxis()->GetXmin(), h_data->GetXaxis()->GetXmax());
@@ -3409,10 +3220,16 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		{
 			if(sample_list[isample].Contains("Data") ) {continue;}
 
+			if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu") {continue;}
+			else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee") {continue;}
+
 			h_tmp = 0;
+
 			TString histo_name = template_name + "_" + thechannellist[ichan] + "__" + sample_list[isample];
+
 			if(!file_input->GetListOfKeys()->Contains(histo_name.Data()) && !sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW") ) {cout<<histo_name<<" : not found"<<endl; continue;}
-			else if(!sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW"))
+
+			else
 			{
 				h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 
@@ -3429,27 +3246,6 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 				else {v_MC_histo[isample-1]->Add(h_tmp);}
-			}
-			else //fakes
-			{
-				if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
-				else
-				{
-					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
-
-					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
-
-					h_tmp->SetFillStyle(1001);
-					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(kBlack);
-					if( (isample+1) < sample_list.size())
-					{
-						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
-					}
-
-					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
-					else {v_MC_histo[isample-1]->Add(h_tmp);}
-				}
 			}
 		} //end sample loop
 
@@ -3523,6 +3319,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	for(int i=v_MC_histo.size()-1; i>=0; i--)
 	{
 		if(MC_samples_legend[i] == "ttH") {continue;}
+		if(MC_samples_legend[i].Contains("FakesMuon") ) {continue;}
 		if(MC_samples_legend[i] == "ttW") {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
@@ -3796,12 +3593,6 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	mkdir("plots",0777);
 	TH1::SetDefaultSumw2();
 
-	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
-	thechannellist.push_back("uuu");
-	thechannellist.push_back("uue");
-	thechannellist.push_back("eeu");
-	thechannellist.push_back("eee");
-
 	TH1F *h_tmp = 0, *h_sum_data = 0;
 	vector<TH1F*> v_MC_histo;
 
@@ -3818,9 +3609,9 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 
 	int niter_chan = 0;
-	for(int ichan=0; ichan<thechannellist.size(); ichan++)
+	for(int ichan=0; ichan<channel_list.size(); ichan++)
 	{
-		if(!allchannels && channel != thechannellist[ichan]) {continue;}
+		if(!allchannels && channel != channel_list[ichan]) {continue;}
 
 	//--- All MC samples but fakes
 		for(int isample = 0; isample < sample_list.size(); isample++)
@@ -3828,13 +3619,17 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 			bool isData = false;
 			if(sample_list[isample].Contains("Data") ) {isData = true;}
 
+			if(sample_list[isample] == "FakesElectron" && channel_list[ichan] == "uuu") {continue;}
+			else if(sample_list[isample] == "FakesMuon" && channel_list[ichan] == "eee") {continue;}
+
+
 			//--- DATA -- different file
 			if(isData)
 			{
 				h_tmp = 0;
 				TString histo_name;
-				if(combine_naming_convention) histo_name = template_name + "_" + thechannellist[ichan] + "__data_obs"; //Combine
-				else histo_name = template_name + "_" + thechannellist[ichan] + "__DATA"; //Theta
+				if(combine_naming_convention) histo_name = template_name + "_" + channel_list[ichan] + "__data_obs"; //Combine
+				else histo_name = template_name + "_" + channel_list[ichan] + "__DATA"; //Theta
 
 				if(!file_data->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
 				else
@@ -3847,46 +3642,30 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 			else //MC
 			{
-				TString dir_name = "shapes_fit_s/" + template_name + "_" + thechannellist[ichan] + "/";
+				TString dir_name = "shapes_fit_s/" + template_name + "_" + channel_list[ichan] + "/";
 
 				h_tmp = 0;
 				TString histo_name = sample_list[isample];
-				if(!sample_list[isample].Contains("Fakes"))
+
+				h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
+				if(!h_tmp) {cout<<__LINE__<<" : h_tmp is null ! "<<endl;}
+
+				if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
+				//Use color vector filled in main() (use -1 because first sample should be data)
+				h_tmp->SetFillStyle(1001);
+				h_tmp->SetFillColor(colorVector[isample-1]);
+				h_tmp->SetLineColor(kBlack);
+				if( (isample+1) < sample_list.size())
 				{
-					h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
-					if(!h_tmp) {cout<<__LINE__<<" : h_tmp is null ! "<<endl;}
-
-					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
-
-					//Use color vector filled in main() (use -1 because first sample should be data)
-					h_tmp->SetFillStyle(1001);
-					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(kBlack);
-					if( (isample+1) < sample_list.size())
-					{
-						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
-					}
-
-					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
-					else {v_MC_histo[isample-1]->Add(h_tmp);}
+					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
 				}
-				else //fakes
-				{
-					h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
 
-					if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+				cout<<"sample "<<sample_list[isample]<<" / chan "<<channel_list[ichan]<<endl;
 
-					h_tmp->SetFillStyle(1001);
-					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(kBlack);
-					if( (isample+1) < sample_list.size())
-					{
-						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttV/H' samples //CHANGED
-					}
 
-					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
-					else {v_MC_histo[isample-1]->Add(h_tmp);}
-				}
+				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
+				else {v_MC_histo[isample-1]->Add(h_tmp);}
 			}
 
 		} //end sample loop
@@ -3975,6 +3754,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	for(int i=v_MC_histo.size()-1; i>=0; i--)
 	{
 		if(MC_samples_legend[i] == "ttH") {continue;} //same entry as ttW
+		if(MC_samples_legend[i].Contains("FakesMuon") ) {continue;} //same entry as ttW
 		if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
@@ -4010,8 +3790,13 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	canvas_2->cd(0);
 
 	TH1F * histo_ratio_data = (TH1F*) h_data_new->Clone();
-	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
+	cout<<"data bins = "<<histo_ratio_data->GetNbinsX()<<endl;
+	cout<<"histo_total_MC bins = "<<histo_total_MC->GetNbinsX()<<endl;
+
+	cout<<__LINE__<<endl;
+	histo_ratio_data->Divide(histo_total_MC); //Ratio
+	cout<<__LINE__<<endl;
 
 
 	//NOTE : slightly different parameters than prefit function (need to add hand-made axis here)
@@ -5227,6 +5012,7 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 				if(!sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("tZq") )
 				{
 					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+
 					if(h_sum_background == 0) {h_sum_background = (TH1F*) h_tmp->Clone();}
 					else {h_sum_background->Add(h_tmp);}
 				}
@@ -5240,15 +5026,6 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 						if(h_fakes == 0) {h_fakes = (TH1F*) h_tmp->Clone();}
 						else {h_fakes->Add(h_tmp);}
 					}
-
-					//--- Add 2nd fake histo
-					// if(!file2->GetListOfKeys()->Contains(histo_name.Data())  ) {cout<<histo_name<<" : not found"<<endl;}
-					// else
-					// {
-					// 	h_tmp = (TH1F*) file2->Get(histo_name.Data())->Clone();
-					// 	if(h_fakes2 == 0) {h_fakes2 = (TH1F*) h_tmp->Clone();}
-					// 	else {h_fakes2->Add(h_tmp);}
-					// }
 				}
 				else if(sample_list[isample].Contains("tZq") ) //Signal
 				{
@@ -5267,7 +5044,6 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 			h_sum_background->Scale(1./h_sum_background->Integral() );
 			h_signal->Scale(1./h_signal->Integral() );
 			h_fakes->Scale(1./h_fakes->Integral() );
-			// h_fakes2->Scale(1./h_fakes2->Integral() );
 		}
 
 
@@ -5276,10 +5052,6 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 
 		h_fakes->SetLineColor(kAzure-2);
 		h_fakes->SetLineWidth(2);
-
-		// h_fakes2->SetLineColor(kAzure-2);
-		// h_fakes2->SetLineWidth(2);
-		// h_fakes2->SetLineStyle(2);
 
 		h_signal->SetLineColor(kGreen+2);
 		h_signal->SetLineWidth(2);
@@ -5673,12 +5445,7 @@ float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_te
 {
 	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
 
-	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_";
-	if(signal=="tZq" || signal=="ttZ" || signal=="tZqANDttZ" || signal=="tZqANDFakes")
-	{
-		datacard_path+= signal;
-	}
-	else {cout<<"Wrong signal name ! Abort"<<endl; return 0;}
+	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_tZq";
 
 	if(channel == "uuu" || channel == "eeu" || channel == "uue" || channel == "eee")
 	{

@@ -6,12 +6,11 @@ import string
 
 import os
 
-fileToSearch = "Template_Datacard.txt"
 
 trigsyst=""
-FakeEl_rateMu=""
+FakeEl_rateEl=""
 FakeMu_rateMu=""
-FakeEl_shapeMu=""
+FakeEl_shapeEl=""
 FakeMu_shapeMu=""
 
 total = len(sys.argv)
@@ -22,6 +21,7 @@ theVar = str(sys.argv[2])
 theFiletoRead= sys.argv[3]
 systList = str(sys.argv[4])
 
+fileToSearch = "Template_Datacard.txt"
 
 fakes_NP_value = "5.0";
 
@@ -32,32 +32,34 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
     exit()
 
 if channel=="uuu":
-    FakeEl_rateElelif="-"
-    FakeMu_rateMuelif=fakes_NP_value
-    FakeEl_shapeElelif="-"
-    FakeMu_shapeMuelif="1"
+    FakeEl_rateEl="-"
+    FakeMu_rateMu=fakes_NP_value
+    FakeEl_shapeEl="-"
+    FakeMu_shapeMu="1"
     trigsyst = "1.01"
+    fileToSearch = "Template_Datacard_uuu.txt"
 
 elif channel=="uue":
-    FakeEl_rateElelif=fakes_NP_value
-    FakeMu_rateMuelif=fakes_NP_value
-    FakeEl_shapeElelif="1"
-    FakeMu_shapeMuelif="1"
+    FakeEl_rateEl=fakes_NP_value
+    FakeMu_rateMu=fakes_NP_value
+    FakeEl_shapeEl="1"
+    FakeMu_shapeMu="1"
     trigsyst = "1.01"
 
 elif channel=="eeu":
-    FakeEl_rateElelif=fakes_NP_value
-    FakeMu_rateMuelif=fakes_NP_value
-    FakeEl_shapeElelif="1"
-    FakeMu_shapeMuelif="1"
+    FakeEl_rateEl=fakes_NP_value
+    FakeMu_rateMu=fakes_NP_value
+    FakeEl_shapeEl="1"
+    FakeMu_shapeMu="1"
     trigsyst = "1.01"
 
 elif channel=="eee":
-    FakeEl_rateElelif=fakes_NP_value
-    FakeMu_rateMuelif="-"
-    FakeEl_shapeElelif="1"
-    FakeMu_shapeMuelif="-"
+    FakeEl_rateEl=fakes_NP_value
+    FakeMu_rateMu="-"
+    FakeEl_shapeEl="1"
+    FakeMu_shapeMu="-"
     trigsyst = "1.02"
+    fileToSearch = "Template_Datacard_eee.txt"
 
 
 if(systList!="allSyst" and systList!="noSyst"):
@@ -75,13 +77,15 @@ s = s.replace("[*]", shapeSyst)
 s = s.replace("chan", channel)
 s = s.replace("var",theVar)
 
-s = s.replace("FakeEl_rateMu", FakeEl_rateMu)
+s = s.replace("FakeEl_rateEl", FakeEl_rateEl)
 s = s.replace("FakeMu_rateMu", FakeMu_rateMu)
 
-s = s.replace("FakeEl_shapeMu", FakeEl_shapeMu)
+s = s.replace("FakeEl_shapeEl", FakeEl_shapeEl)
 s = s.replace("FakeMu_shapeMu", FakeMu_shapeMu)
 
 s = s.replace("trigsyst", trigsyst)
+
+s = s.replace("filetoread", theFiletoRead)
 
 print 'datacard created'
 

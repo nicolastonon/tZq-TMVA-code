@@ -19,6 +19,8 @@ cp ../COMBINE/datacards/AddBinByBin.py ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Draw_Canvas.C ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Generate_Datacards.py ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Template_Datacard.txt ./COMBINE/datacards/.
+cp ../COMBINE/datacards/Template_Datacard_uuu.txt ./COMBINE/datacards/.
+cp ../COMBINE/datacards/Template_Datacard_eee.txt ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Makefile ./COMBINE/datacards/.
 cp ../COMBINE/datacards/Plot_Syst_Impacts.sh ./COMBINE/datacards/.
 

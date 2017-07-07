@@ -230,8 +230,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //FAKES
     if(fakes_from_data)
     {
-        // thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD) //old, fake = 3rd lepton
-        // thesamplelist.push_back("FakesNewNew");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
         thesamplelist.push_back("FakesElectron");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
         thesamplelist.push_back("FakesMuon");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
     }
@@ -448,10 +446,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !

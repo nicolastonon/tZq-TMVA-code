@@ -96,8 +96,6 @@ class theMVAtool
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool, bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
-	int Generate_PseudoData_Histograms_For_Control_Plots(bool); //Idem, for replacing data and be able to plot control plots
-	int Generate_PseudoData_Templates(TString); //Generate pseudo-data from templates -> can simulate template fit without looking at real data
 	int Draw_Control_Plots(TString, bool, bool, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 	int Plot_Prefit_Templates(TString, TString, bool, bool); //Plot prefit templates (given to Combine)
 	int Plot_Postfit_Templates(TString, TString, bool, bool); //Plot postfit templates from Combine output
