@@ -99,7 +99,6 @@ class theMVAtool
 	int Draw_Control_Plots(TString, bool, bool, bool, bool); //Draw control plots from the histograms obtained with Create_Control_Histograms()
 	int Plot_Prefit_Templates(TString, TString, bool, bool); //Plot prefit templates (given to Combine)
 	int Plot_Postfit_Templates(TString, TString, bool, bool); //Plot postfit templates from Combine output
-	void Convert_Templates_Theta(); //Takes Reader file, and modifies all histograms names to comply with Theta conventions
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
 	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString); //Shows the variation of 1 systematic on 1 template (e.g. compare JES/nominal in tZq)

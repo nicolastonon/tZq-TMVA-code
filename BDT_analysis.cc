@@ -388,11 +388,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     vector<TString> systematics_names_tmp;
 
 //--- Stored in vectors (class members) - only for data-driven Fakes
-    // if(fakes_from_data) {systematics_names_tmp.push_back("ZptReweight");}
+    // if(fakes_from_data) {systematics_names_tmp.push_back("ZptReweight");} //---OBSOLETE
 
 //--- Stored in separate Ntuples (tZq only)
-    systematics_names_tmp.push_back("PSscale"); //
-    //--- systematics_names_tmp.push_back("Hadron"); //OBSOLETE -- do not use !
+    systematics_names_tmp.push_back("PSscale");
 
 //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
@@ -407,12 +406,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     systematics_names_tmp.push_back("EleEff");
     systematics_names_tmp.push_back("LFcont");
     systematics_names_tmp.push_back("HFstats1");
-    systematics_names_tmp.push_back("HFstats2"); //
+    systematics_names_tmp.push_back("HFstats2");
     systematics_names_tmp.push_back("CFerr1");
-    systematics_names_tmp.push_back("CFerr2"); //
+    systematics_names_tmp.push_back("CFerr2");
     systematics_names_tmp.push_back("HFcont");
-    systematics_names_tmp.push_back("LFstats1"); //
-    systematics_names_tmp.push_back("LFstats2"); //
+    systematics_names_tmp.push_back("LFstats1");
+    systematics_names_tmp.push_back("LFstats2");
 //----------------
 
 //--- Actual vector of systematic names we will use
@@ -449,7 +448,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !

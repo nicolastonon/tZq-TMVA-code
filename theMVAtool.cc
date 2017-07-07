@@ -838,10 +838,41 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	//Define list of systematics here, so the function always look for the corresponding histos
 	vector<TString> syst_fakes;
 	syst_fakes.push_back(""); //Nominal
+	for(int isyst=0; isyst<syst_list.size(); isyst++)
+	{
+		if(!syst_list[isyst].Contains("Fake") && !syst_list[isyst].Contains("Zpt") ) {continue;}
+
+		if(combine_naming_convention) syst_fakes.push_back(Combine_Naming_Convention(syst_list[isyst]));
+		else syst_fakes.push_back(Theta_Naming_Convention(syst_list[isyst]));
+
+		//"Fake" shape syst. renamed
+		if(combine_naming_convention)
+		{
+			syst_fakes.push_back("FakeShapeMuUp");
+			syst_fakes.push_back("FakeShapeMuDown");
+			syst_fakes.push_back("FakeShapeElUp");
+			syst_fakes.push_back("FakeShapeElDown");
+		}
+		else  //Theta
+		{
+			syst_fakes.push_back("FakeShapeMu__plus");
+			syst_fakes.push_back("FakeShapeMu__minus");
+			syst_fakes.push_back("FakeShapeEl__plus");
+			syst_fakes.push_back("FakeShapeEl__minus");
+		}
+	}
+
+
 	if(combine_naming_convention) //Combine
 	{
 		syst_fakes.push_back("FakesUp");
 		syst_fakes.push_back("FakesDown");
+
+		syst_fakes.push_back("FakeShapeMuUp");
+		syst_fakes.push_back("FakeShapeMuDown");
+
+		syst_fakes.push_back("FakeShapeElDown");
+		syst_fakes.push_back("FakeShapeElDown");
 
 		syst_fakes.push_back("ZptReweightUp");
 		syst_fakes.push_back("ZptReweightDown");
@@ -850,6 +881,12 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	{
 		syst_fakes.push_back("ZptReweight__plus");
 		syst_fakes.push_back("ZptReweight__minus");
+
+		syst_fakes.push_back("FakeShapeMu__plus");
+		syst_fakes.push_back("FakeShapeMu__minus");
+
+		syst_fakes.push_back("FakeShapeEl__plus");
+		syst_fakes.push_back("FakeShapeEl__minus");
 
 		syst_fakes.push_back("ZptReweight__plus");
 		syst_fakes.push_back("ZptReweight__minus");
@@ -1075,6 +1112,17 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TH1F *hist_uuu = 0, *hist_uue = 0, *hist_eeu = 0, *hist_eee = 0;
 
+	//Store sum of weights of nominal template : needed to rescale Zpt & FakeShape systematics to nominal
+	double integral_FakesElectron_nominal_uuu = 0;
+	double integral_FakesElectron_nominal_uue = 0;
+	double integral_FakesElectron_nominal_eeu = 0;
+	double integral_FakesElectron_nominal_eee = 0;
+
+	double integral_FakesMuon_nominal_uuu = 0;
+	double integral_FakesMuon_nominal_uue = 0;
+	double integral_FakesMuon_nominal_eeu = 0;
+	double integral_FakesMuon_nominal_eee = 0;
+
 
 	// --- Systematics loop
 	for(int isyst=0; isyst<syst_list.size(); isyst++)
@@ -1144,12 +1192,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			tree = 0;
-
-			//Store sum of weights of nominal template : needed to rescale Zpt systematic to nominal
-			double Integral_FakeTemplate_nominal_uuu = 0;
-			double Integral_FakeTemplate_nominal_uue = 0;
-			double Integral_FakeTemplate_nominal_eeu = 0;
-			double Integral_FakeTemplate_nominal_eee = 0;
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
 			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
@@ -1356,13 +1398,26 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				int lastbin_h = hist_uuu->GetNbinsX();
 				double mva_value = -999;
 
+				if(syst_list[isyst]=="" && sample_list[isample]=="FakesElectron")
+				{
+					if(i_channel==0) {integral_FakesElectron_nominal_uuu+= weight;}
+					else if(i_channel==1) {integral_FakesElectron_nominal_uue+= weight;}
+					else if(i_channel==2) {integral_FakesElectron_nominal_eeu+= weight;}
+					else if(i_channel==3) {integral_FakesElectron_nominal_eee+= weight;}
+				}
+				else if(syst_list[isyst]=="" && sample_list[isample]=="FakesMuon")
+				{
+					if(i_channel==0) {integral_FakesMuon_nominal_uuu+= weight;}
+					else if(i_channel==1) {integral_FakesMuon_nominal_uue+= weight;}
+					else if(i_channel==2) {integral_FakesMuon_nominal_eeu+= weight;}
+					else if(i_channel==3) {integral_FakesMuon_nominal_eee+= weight;}
+				}
+
 				//CHANGED -- put overflow in last bin (error treatment ok ?)
 				if (template_name == "BDT" || template_name == "BDTttZ")
 				{
 					if(i_channel == 0)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_uuu+= weight;}
-
 						if(combine_mTW_BDT && mTW<50) {hist_uuu->Fill(mTW, weight);}
 						else if(combine_mTW_BDT && mTW>50)
 						{
@@ -1379,8 +1434,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 					else if(i_channel == 1)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_uue+= weight;} //Store info for rescaling
-
 						if(combine_mTW_BDT && mTW<50) {hist_uue->Fill(mTW, weight);}
 						else if(combine_mTW_BDT && mTW>50)
 						{
@@ -1397,8 +1450,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 					else if(i_channel == 2)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_eeu+= weight;}
-
 						if(combine_mTW_BDT && mTW<50) {hist_eeu->Fill(mTW, weight);}
 						else if(combine_mTW_BDT && mTW>50)
 						{
@@ -1415,8 +1466,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 					else if(i_channel == 3)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_eee+= weight;}
-
 						if(combine_mTW_BDT && mTW<50) {hist_eee->Fill(mTW, weight);}
 						else if(combine_mTW_BDT && mTW>50)
 						{
@@ -1438,29 +1487,21 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				{
 					if(i_channel == 0)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_uuu+= weight;}
-
 						if(mTW < xmax_h ) {hist_uuu->Fill(mTW, weight);}
 						else {Fill_Last_Bin_TH1F(hist_uuu, weight);} //Put overflow in last bin (no info lost)
 					}
 					else if(i_channel == 1)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_uue+= weight;}
-
 						if(mTW < xmax_h ) {hist_uue->Fill(mTW, weight);}
 						else {Fill_Last_Bin_TH1F(hist_uue, weight);} //Put overflow in last bin (no info lost)
 					}
 					else if(i_channel == 2)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_eeu+= weight;}
-
 						if(mTW < xmax_h ) {hist_eeu->Fill(mTW, weight);}
 						else {Fill_Last_Bin_TH1F(hist_eeu, weight);} //Put overflow in last bin (no info lost)
 					}
 					else if(i_channel == 3)
 					{
-						if(syst_list[isyst] == "") {Integral_FakeTemplate_nominal_eee+= weight;}
-
 						if(mTW < xmax_h ) {hist_eee->Fill(mTW, weight);}
 						else {Fill_Last_Bin_TH1F(hist_eee, weight);} //Put overflow in last bin (no info lost)
 					}
@@ -1480,13 +1521,18 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 
-			//ZptReweight Systematic needs to have same norm. as nominal
-			if(syst_list[isyst].Contains("Zpt") && sample_list[isample].Contains("Fakes") )
+			//ZptReweight & FakeShape systematics needs to have same norm. as nominal
+			if(syst_list[isyst].Contains("Zpt") || syst_list[isyst].Contains("Fake"))
 			{
-				hist_uuu->Scale(Integral_FakeTemplate_nominal_uuu/hist_uuu->Integral()); hist_eeu->Scale(Integral_FakeTemplate_nominal_eeu/hist_eeu->Integral()); hist_uue->Scale(Integral_FakeTemplate_nominal_uue/hist_uue->Integral()); hist_eee->Scale(Integral_FakeTemplate_nominal_eee/hist_eee->Integral());
+				if(sample_list[isample] == "FakesElectron")
+				{
+					hist_uuu->Scale(integral_FakesElectron_nominal_uuu/hist_uuu->Integral()); hist_eeu->Scale(integral_FakesElectron_nominal_eeu/hist_eeu->Integral()); hist_uue->Scale(integral_FakesElectron_nominal_uue/hist_uue->Integral()); hist_eee->Scale(integral_FakesElectron_nominal_eee/hist_eee->Integral());
+				}
+				if(sample_list[isample] == "FakesMuon")
+				{
+					hist_uuu->Scale(integral_FakesMuon_nominal_uuu/hist_uuu->Integral()); hist_eeu->Scale(integral_FakesMuon_nominal_eeu/hist_eeu->Integral()); hist_uue->Scale(integral_FakesMuon_nominal_uue/hist_uue->Integral()); hist_eee->Scale(integral_FakesMuon_nominal_eee/hist_eee->Integral());
+				}
 			}
-
-
 
 			// --- Write histograms
 			file_output->cd();
@@ -2191,6 +2237,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
 
+					if(syst_list[isyst].Contains("Zpt") || syst_list[isyst].Contains("Fake")) {continue;} //would need to rescale these systematics to nominal...
+
 					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 					if(syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW") ) {continue;}
@@ -2338,9 +2386,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	delete f_input;
 	delete f_output;
 
-
-	//CHANGED
-	Rescale_Fake_Histograms(output_file_name);
+	if(fakes_from_data) Rescale_Fake_Histograms(output_file_name);
 
 	return ;
 }
@@ -5333,95 +5379,6 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 // ##     ##    ##    ##     ## ##       ##    ##
 //  #######     ##    ##     ## ######## ##     ##
 //-----------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-//-----------------------------------------------------------------------------------------
-//  ######   #######  ##    ## ##     ## ######## ########  ########    ######## ##     ## ######## ########    ###
-// ##    ## ##     ## ###   ## ##     ## ##       ##     ##    ##          ##    ##     ## ##          ##      ## ##
-// ##       ##     ## ####  ## ##     ## ##       ##     ##    ##          ##    ##     ## ##          ##     ##   ##
-// ##       ##     ## ## ## ## ##     ## ######   ########     ##          ##    ######### ######      ##    ##     ##
-// ##       ##     ## ##  ####  ##   ##  ##       ##   ##      ##          ##    ##     ## ##          ##    #########
-// ##    ## ##     ## ##   ###   ## ##   ##       ##    ##     ##          ##    ##     ## ##          ##    ##     ##
-//  ######   #######  ##    ##    ###    ######## ##     ##    ##          ##    ##     ## ########    ##    ##     ##
-//-----------------------------------------------------------------------------------------
-
-/**
- * [Takes a Reader file from dir. 'outputs/'(containing templates with Combine namings) as input, and creates a file with the same templates but Theta namings]
- */
-void theMVAtool::Convert_Templates_Theta()
-{
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	cout<<FYEL("--- Convert Templates for THETA ---")<<endl;
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-
-	TString template_name;
-	if(!isWZ && !isttZ) {template_name = "BDT";}
-	else if(isttZ) {template_name = "BDTttZ";}
-	else if(isWZ) {template_name = "mTW";}
-	else {cout<<"Error !"<<endl; return;}
-
-
-	TFile* f_input = 0;
-	TString input_file_name = "outputs/Reader_" + template_name + this->filename_suffix + ".root"; //Input = original template (Combine namings)
-	f_input = TFile::Open( input_file_name ); if(!f_input) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
-	TFile* f_output = 0;
-	TString output_file_name = "outputs/Reader_" + template_name + this->filename_suffix + "_THETA.root"; //Output = templates with THETA namings
-	f_output = TFile::Open( output_file_name, "RECREATE" );
-
-
-	TH1F* h_tmp = 0;
-
-	for(int ichan=0; ichan<channel_list.size(); ichan++)
-	{
-		for(int isample=0; isample<sample_list.size(); isample++)
-		{
-			for(int isyst=0; isyst<syst_list.size(); isyst++)
-			{
-				h_tmp = 0;
-
-				if(sample_list[isample].Contains("Data") && syst_list[isyst] != "" ) {continue;}
-				if(sample_list[isample].Contains("Fakes") && syst_list[isyst] != "" && !syst_list[isyst].Contains("Fake") ) {continue;}
-				if(syst_list[isyst].Contains("Fakes") && sample_list[isample] != "Fakes") {continue;}
-				if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf")) ) {continue;}
-				if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
-
-				TString histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
-				if(sample_list[isample].Contains("Data") )
-				{
-					histo_name = template_name + "_" + channel_list[ichan] + "__data_obs";
-				}
-
-				if(syst_list[isyst] != "") {histo_name+= "__" + Combine_Naming_Convention(syst_list[isyst]);}
-				if(!f_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
-
-				h_tmp = (TH1F*) f_input->Get(histo_name.Data());
-
-				TString output_histo_name = template_name + "_" + channel_list[ichan] + "__" + sample_list[isample];
-				if(sample_list[isample].Contains("Data") ) {output_histo_name = template_name + "_" + channel_list[ichan] + "__DATA";}
-
-
-				if(syst_list[isyst] != "") output_histo_name+= "__" + Theta_Naming_Convention(syst_list[isyst]);
-
-				f_output->cd();
-				h_tmp->Write(output_histo_name.Data());
-			}
-		}
-	}
-
-	delete h_tmp; delete f_input; delete f_output;
-
-	return;
-}
-
-
-
-
 
 
 
