@@ -650,7 +650,7 @@ void MEM_NtupleMaker::OrderJets(vector<ciemat::Jet>* vSelectedJets, const int ib
 - 3 : require pT>50 for btag and light
 - 4 : require pT>40 for light only
 - 5 : require pT>50 for light only
-- 6 : require eta OUTSIDE [2.7;3] for light only
+- 6 : require eta OUTSIDE [2.69;3] for light only
 ==> Fill different variables
  */
 double MEM_NtupleMaker::Compute_mbj(vector<ciemat::Jet>* vSelectedJets, int bjet_index, bool is_tZq_region, int var_choice)
@@ -733,7 +733,7 @@ double MEM_NtupleMaker::Compute_mbj(vector<ciemat::Jet>* vSelectedJets, int bjet
   else if(var_choice==3 && (l.Pt()<50 || b.Pt()<50 ) ) {return -1;}
   else if(var_choice==4 && l.Pt()<40) {return -1;}
   else if(var_choice==5 && l.Pt()<50) {return -1;}
-  else if(var_choice==6 && fabs(l.Eta())>2.7 && fabs(l.Eta())<3 ) {return -1;}
+  else if(var_choice==6 && fabs(l.Eta())>2.69 && fabs(l.Eta())<3 ) {return -1;}
 
   result = (b+l).M();
 
@@ -1286,7 +1286,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       double pT1=-1, pT2=-1;
       for(int ijet=0; ijet<vSelectedJets->size(); ijet++)
       {
-        if(vSelectedJets->at(ijet).pt < 50 && fabs(vSelectedJets->at(ijet).eta) > 2.7 && fabs(vSelectedJets->at(ijet).eta) < 3 ) {ContainsBadJet = 1;} //Loop on all jets
+        if(vSelectedJets->at(ijet).pt < 50 && fabs(vSelectedJets->at(ijet).eta) > 2.69 && fabs(vSelectedJets->at(ijet).eta) < 3 ) {ContainsBadJet = 1;} //Loop on all jets
 
         if(ijet == ib1 || ijet == ib2) {continue;} //don't consider bjets for these vars
 
@@ -1397,21 +1397,23 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("Data");
-  v_samplenames.push_back("tZqmcNLO");
-  v_samplenames.push_back("tZqQup");
-  v_samplenames.push_back("tZqQdw");
-  v_samplenames.push_back("WZB");
-  v_samplenames.push_back("WZL");
-  v_samplenames.push_back("WZC");
-  v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("ZZ");
-  v_samplenames.push_back("ttH");
-  v_samplenames.push_back("ttW");
-  v_samplenames.push_back("STtWll");
-  v_samplenames.push_back("DY");
-  v_samplenames.push_back("TT");
-  v_samplenames.push_back("FakesNewNew");
+  // v_samplenames.push_back("Data");
+  // v_samplenames.push_back("tZqmcNLO");
+  // v_samplenames.push_back("tZqQup");
+  // v_samplenames.push_back("tZqQdw");
+  // v_samplenames.push_back("WZB");
+  // v_samplenames.push_back("WZL");
+  // v_samplenames.push_back("WZC");
+  // v_samplenames.push_back("ttZ");
+  // v_samplenames.push_back("ZZ");
+  // v_samplenames.push_back("ttH");
+  // v_samplenames.push_back("ttW");
+  // v_samplenames.push_back("STtWll");
+  // v_samplenames.push_back("DY");
+  // v_samplenames.push_back("TT");
+  // v_samplenames.push_back("FakesNewNew");
+  v_samplenames.push_back("FakesElectron");
+  v_samplenames.push_back("FakesMuon");
 
   // v_samplenames.push_back("Fakes");
   // v_samplenames.push_back("tZqhwpp");

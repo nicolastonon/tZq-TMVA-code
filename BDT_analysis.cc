@@ -23,24 +23,28 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  #######  ##           ##    ####  #######  ##    ##  ######
 //---------------------------------------------------------------------------
 
-
-    //If true, activates only the "optimization" part (@ end of file)
-    bool do_optimization_cuts = false;
-    bool do_optim_RemoveBDTVars1By1 = false;
-    bool do_optim_RemoveWorstBDTVars = false; //HARD CODED VARIABLES TO REMOVE !! CAREFUL !!
-
-
-    //Blinding
-    bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
-
-
     //Matrix Element Method ==> TRUE
-    bool include_MEM_variables = true;
+    bool include_MEM_variables = false; //FIXME
+
+
+    //To keep only low of high-BDT events
+    bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
+        bool keep_high_BDT_events = false; //else, keep only low BDT events (blind)
+        double cut_BDT_value = 0.4;
+        bool define_cut_auto = false; //define cut based on bkg/sig contamination
 
 
     //Luminosity
     //NOTE: this value is compared to a hard-coded value in theMVAtool.cc & a rescaling factor is computed in case they are different
     double set_luminosity = 35.862; //Moriond 2017 - 35.862fb
+
+
+    //-- NEW : set to TRUE if want to have combined templates (mTW+BDT) in SR rather than simply BDT
+    bool combine_mTW_BDT_SR = false;
+
+
+    //Fakes
+    bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
 
     //Training
     bool use_ttZaMCatNLO_training = true; //Choose ttZ mc@NLO sample for training (else Madgraph sample) ==> TRUE
@@ -49,18 +53,19 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     int nofbin_templates = 10; //Templates binning ==> 10 bins
     bool real_data_templates = true; //Else, pseudodata (obsolete)
 
-
-    //Fakes
-    bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
-    bool fakes_summed_channels = false; //CHANGED
-    //Sum uuu+eeu & eee+uue --> Double the fake stat. (artificially)! But the rescaling is done separately for each channel
-    //NOTE : if TRUE, the mTW channels will have same shape but different normalizations in uuu/eeu & eee/uue respectively; however, in BDT & BDTttZ fake templates, the shapes won't be exactly the same in the two summed channels ; for example, for an 'uuu' event, we will do : h_uuu->Fill(MVA_uuu value) and h_eeu->Fill(MVA_eeu value). So this will double the stat. (since we fill a single event in two different histograms), but the values filled into the 2 histograms will be different (different BDT training b/w channels)!
-    //OBSOLETE ! We have enough Fakes stat. now, so get rid of this approximation !
-
     //Outputs
     TString format = ".png"; //'.png' or '.pdf' only
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
+
+
+
+    //----------------------
+    //If true, activates only the "optimization" part (@ end of file)
+    bool do_optimization_cuts = false;
+    bool do_optim_RemoveBDTVars1By1 = false;
+    bool do_optim_RemoveWorstBDTVars = false; //HARD CODED VARIABLES TO REMOVE !! CAREFUL !!
+    //----------------------
 
 //-------------------
 
@@ -109,7 +114,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 // ---- Specify here the cuts that you wish to apply to all/specific regions ---
 
-    // set_v_cut_name.push_back("METpt");  set_v_cut_def.push_back(""); set_v_cut_IsUsedForBDT.push_back(false);
+    // set_v_cut_name.push_back("LeadingJetNonB_pT");  set_v_cut_def.push_back(">50"); set_v_cut_IsUsedForBDT.push_back(false);
+    set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 
     // if(!isWZ)
@@ -225,7 +231,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     if(fakes_from_data)
     {
         // thesamplelist.push_back("Fakes");           v_color.push_back(kAzure-2); //Data-driven (DD) //old, fake = 3rd lepton
-        thesamplelist.push_back("FakesNewNew");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
+        // thesamplelist.push_back("FakesNewNew");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
+        thesamplelist.push_back("FakesElectron");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
+        thesamplelist.push_back("FakesMuon");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
     }
     //WARNING : OBSOLETE -- don't use MC fakes (or update code) -- must be last samples !
     else
@@ -382,7 +390,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     vector<TString> systematics_names_tmp;
 
 //--- Stored in vectors (class members) - only for data-driven Fakes
-    if(fakes_from_data) {systematics_names_tmp.push_back("ZptReweight");}
+    // if(fakes_from_data) {systematics_names_tmp.push_back("ZptReweight");}
 
 //--- Stored in separate Ntuples (tZq only)
     systematics_names_tmp.push_back("PSscale"); //
@@ -440,10 +448,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -480,7 +488,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(isWZ)   template_name = "mTW"; //mTW distribution in WZ Control region
 
         //BDT cut
-        float cut_BDT_value = -99; //Initialization -- used to cut on BDT & stay blind
+        // float cut_BDT_value = -99; //Initialization -- used to cut on BDT & stay blind
         bool cut_on_BDT_tmp = cut_on_BDT; //Hard-coded : 1 boolean needed for production and the other for plotting
         if(isWZ || isttZ)  cut_on_BDT_tmp = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
 
@@ -504,8 +512,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         if(create_templates)
         {
-            if(cut_on_BDT_tmp) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, cut_on_BDT_tmp, cut_BDT_value);
+            if(cut_on_BDT_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+            MVAtool->Read(template_name, fakes_from_data, real_data_templates, cut_on_BDT_tmp, keep_high_BDT_events, cut_BDT_value, combine_mTW_BDT_SR);
         }
 
         //#############################################
@@ -515,14 +523,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //Create trees and then histograms, which can later be used to create plots
         if(create_control_histograms)
         {
-            if(cut_on_BDT_tmp) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-
-            bool keep_high_BDT_events = false; //else, keep only low BDT events (blind)
-            // cut_BDT_value = 0.4;
+            if(cut_on_BDT_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
 
             MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, keep_high_BDT_events);
 
-            MVAtool->Create_Control_Histograms(fakes_from_data, false, fakes_summed_channels, cut_on_BDT_tmp);
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, cut_on_BDT_tmp);
         }
 
         //#############################################
@@ -560,8 +565,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  Additional functions
         //#############################################
 
-        TString file_to_rescale = "./outputs/Control_Histograms"+MVAtool->filename_suffix+"_CutBDT.root";
-        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
+        // TString file_to_rescale = "./outputs/Control_Histograms"+MVAtool->filename_suffix+"_CutBDT.root";
+        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+"_unScaled.root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
         bool superpose_fakes_signal = false;
@@ -570,20 +575,32 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
-            if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, false);
+            if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
 
             // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(thechannellist[ichan], false);
+
+            // MVAtool->Fit_mTW_SR(thechannellist[ichan]);
         }
+
 
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
-        if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, false);
+        if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true);
 
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 
         // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
+
+        // MVAtool->Fit_mTW_SR("allchan");
+
+        // TFile* f = TFile::Open("outputs/Reader_mTW_ContainsBadJetEq0_NJetsMin0_NBJetsEq0_unScaled.root");
+        // MVAtool->Compute_Fake_SF(f, "eee");
+        // MVAtool->Compute_Fake_SF(f, "uuu");
+        // MVAtool->Compute_Fake_SF(f, "eeu");
+        // MVAtool->Compute_Fake_SF(f, "uue");
+
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
@@ -795,7 +812,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                 if(create_templates)
                 {
-                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, combine_mTW_BDT_SR);
                 }
 
                 MoveFile( ("./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root"), ("outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2])) ) ); //Move file
@@ -1075,7 +1092,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     CopyFile( ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
                 }
 
-                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, combine_mTW_BDT_SR);
 
                 MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("./outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name) ); //Move file
 
@@ -1303,7 +1320,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     CopyFile( ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
                 }
 
-                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, fakes_summed_channels, false, -99);
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, combine_mTW_BDT_SR);
 
                 MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar") ); //Move file
 

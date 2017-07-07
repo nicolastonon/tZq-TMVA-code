@@ -660,12 +660,12 @@ int main()
 //-----------------------------------------
 
   vector<TString> v_TTrees;
-  // v_TTrees.push_back("Tree");
-  // v_TTrees.push_back("JER__plus");
-  // v_TTrees.push_back("JER__minus");
-  // v_TTrees.push_back("JES__plus");
-  // v_TTrees.push_back("JES__minus");
-  // v_TTrees.push_back("Fakes__plus");
+  v_TTrees.push_back("Tree");
+  v_TTrees.push_back("JER__plus");
+  v_TTrees.push_back("JER__minus");
+  v_TTrees.push_back("JES__plus");
+  v_TTrees.push_back("JES__minus");
+  v_TTrees.push_back("Fakes__plus");
   v_TTrees.push_back("Fakes__minus");
 
 

@@ -366,23 +366,25 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	sample_list.push_back("Data");
-	sample_list.push_back("tZq");
-	sample_list.push_back("tZqQup");
-	sample_list.push_back("tZqQdw");
-	sample_list.push_back("tZqmcNLO");
-	sample_list.push_back("ttZ");
-	sample_list.push_back("ttW");
-	sample_list.push_back("ttH");
-	sample_list.push_back("ZZ");
-	sample_list.push_back("tWZ");
-	sample_list.push_back("WZL");
-	sample_list.push_back("WZB");
-	sample_list.push_back("WZC");
-	sample_list.push_back("STtWll");
-	sample_list.push_back("DY");
-	sample_list.push_back("TT");
-	sample_list.push_back("FakesNewNew");
+	// sample_list.push_back("Data");
+	// sample_list.push_back("tZq");
+	// sample_list.push_back("tZqQup");
+	// sample_list.push_back("tZqQdw");
+	// sample_list.push_back("tZqmcNLO");
+	// sample_list.push_back("ttZ");
+	// sample_list.push_back("ttW");
+	// sample_list.push_back("ttH");
+	// sample_list.push_back("ZZ");
+	// sample_list.push_back("tWZ");
+	// sample_list.push_back("WZL");
+	// sample_list.push_back("WZB");
+	// sample_list.push_back("WZC");
+	// sample_list.push_back("STtWll");
+	// sample_list.push_back("DY");
+	// sample_list.push_back("TT");
+	// sample_list.push_back("FakesNewNew");
+	sample_list.push_back("FakesElectron");
+	sample_list.push_back("FakesMuon");
 
 	// sample_list.push_back("Fakes");
 	// sample_list.push_back("tZqhwpp");
@@ -526,7 +528,7 @@ int main()
  // #        #####  #     #  #####     #    ### ####### #     #     #####  #     # ####### #######  #####
 //-----------------------------------------
 
-	bool do_MEM_regions = false;
+	bool do_MEM_regions = true;
 	bool do_WZ_region = true;
 
 	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples

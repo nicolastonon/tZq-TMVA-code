@@ -26,18 +26,14 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(char include_systematics, int signal_choice, char correlate_fakes)
+void Script_Datacards_InputVars(char include_systematics)
 {
-	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3) || (correlate_fakes!='y' && correlate_fakes != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
+	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
 	TString systList;
 	if(include_systematics == 'y') {systList = "allSyst";}
 	else if(include_systematics == 'n') {systList = "noSyst";}
-	TString signal;
-	if(signal_choice == 0) {signal = "tZq";}
-	else if(signal_choice == 1) {signal = "ttZ";}
-	else if(signal_choice == 2) {signal = "tZqANDttZ";}
-	else if(signal_choice == 3) {signal = "tZqANDFakes";}
+
 
 	TString file_histos = "";
 	TString region_choice = "";
@@ -93,7 +89,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice, cha
 	    var_list.push_back("ZEta");
 	    var_list.push_back("AddLepAsym");
 	    var_list.push_back("etaQ");
-	    var_list.push_back("ptQ"); // strong correlation with LeadJetPt
+	    var_list.push_back("ptQ");
 	    var_list.push_back("dPhiZAddLep");
 	    var_list.push_back("dRjj");
 	    var_list.push_back("mtop");
@@ -115,7 +111,7 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice, cha
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + signal + " " + correlate_fakes<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList<<endl;
 		}
 
 		file_out<<endl;
@@ -137,9 +133,9 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice, cha
 		}
 	}
 
-	file_out<<"> COMBINED_datacard_InputVars_"<<signal;
+	file_out<<"> COMBINED_datacard_InputVars_tZq";
 	if(systList == "noSyst") file_out<<"_noSyst";
-	file_out<<".txt"<<endl;
+	file_out<<".txt"<<endl<<endl;
 
 	system("chmod 755 Generate_Datacards_InputVars.sh");
 
@@ -153,21 +149,16 @@ void Script_Datacards_InputVars(char include_systematics, int signal_choice, cha
 
 
 
-void Script_Datacards_TemplateFit(char include_systematics, int signal_choice, char correlate_fakes)
+void Script_Datacards_TemplateFit(char include_systematics)
 {
-	if( (include_systematics != 'y' && include_systematics != 'n') || (signal_choice != 0 && signal_choice != 1 && signal_choice !=2 && signal_choice !=3) || (correlate_fakes!='y' && correlate_fakes != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
+	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
 	TString systList;
 	if(include_systematics == 'y') {systList = "allSyst";}
 	else if(include_systematics == 'n') {systList = "noSyst";}
-	TString signal;
-	if(signal_choice == 0) {signal = "tZq";}
-	else if(signal_choice == 1) {signal = "ttZ";}
-	else if(signal_choice == 2) {signal = "tZqANDttZ";}
-	else if(signal_choice == 3) {signal = "tZqANDFakes";}
+
 
 	TString file_histos = "../templates/Combine_Input.root";
-	if(signal == "ttZ") file_histos = "../templates/Combine_Input_ttZ.root";
 
 	cout<<"---> Will use filepath : "<<file_histos<<endl<<endl;
 
@@ -189,7 +180,7 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice, c
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + signal + " " + correlate_fakes<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList<<endl;
 		}
 
 		file_out<<endl;
@@ -201,8 +192,8 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice, c
 
 	file_out<<endl<<endl<<endl;
 
+	//Default datacard
 	file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py ";
-
 	for(int ivar=0; ivar<var_list.size(); ivar++)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
@@ -211,12 +202,65 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice, c
 		}
 	}
 
+	TString output_name = "COMBINED_datacard_TemplateFit_tZq";
+	if(systList == "noSyst") output_name+= "_noSyst";
+	output_name+= ".txt";
 
-	file_out<<"> COMBINED_datacard_TemplateFit_"<<signal;
-	if(systList == "noSyst") file_out<<"_noSyst";
-	file_out<<".txt"<<endl;
+	file_out<<"> "<<output_name<<endl<<endl;
+
+
+	//datacard for single channels
+	for(int ichan=0; ichan<chan_list.size(); ichan++)
+	{
+		file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py ";
+
+		for(int ivar=0; ivar<var_list.size(); ivar++)
+		{
+			file_out<<var_list[ivar] + "_" + chan_list[ichan] + "=datacard_"+chan_list[ichan]+"_"+var_list[ivar]+".txt ";
+		}
+
+		output_name = "COMBINED_datacard_TemplateFit_tZq_";
+		if(systList == "noSyst") output_name+= "noSyst_";
+		output_name+= chan_list[ichan]+".txt";
+
+		file_out<<"> "<<output_name<<endl<<endl;
+
+		file_out<<"mv "<<output_name<<" datacards_TemplateFit/"<<endl<<endl;
+	}
+
+
+	//datacards for 2 regions at a time
+	for(int ivar=0; ivar<var_list.size(); ivar++)
+	{
+		file_out<<"python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/scripts/combineCards.py ";
+
+		for(int jvar=0; jvar<var_list.size(); jvar++)
+		{
+			if(jvar==ivar) {continue;}
+			for(int ichan=0; ichan<chan_list.size(); ichan++)
+			{
+				file_out<<var_list[jvar] + "_" + chan_list[ichan] + "=datacard_"+chan_list[ichan]+"_"+var_list[jvar]+".txt ";
+			}
+		}
+
+		TString output_name = "COMBINED_datacard_TemplateFit_tZq";
+		if(systList == "noSyst") output_name+= "_noSyst";
+
+		if(var_list[ivar] == "BDT") output_name+= "_notZqRegion";
+		else if(var_list[ivar] == "BDTttZ") output_name+= "_nottZRegion";
+		else if(var_list[ivar] == "mTW") output_name+= "_noWZRegion";
+
+		output_name+= ".txt";
+
+		file_out<<"> "<<output_name<<endl<<endl;
+
+		file_out<<"mv "<<output_name<<" datacards_TemplateFit/"<<endl<<endl;
+	}
+
 
 	system("chmod 755 Generate_Datacards_TemplateFit.sh");
+
+
 
 	file_out<<"mv datacard_*.txt datacards_TemplateFit/";
 
@@ -233,8 +277,6 @@ void Script_Datacards_TemplateFit(char include_systematics, int signal_choice, c
 int main()
 {
 	char include_systematics = 'n';
-	int signal_choice = -1;
-	char correlate_fakes = 'y';
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
 
@@ -251,27 +293,6 @@ int main()
 		cin>>include_systematics;
 	}
 
-	cout<<endl<<FYEL("--- What processes do you want to let free in the fit ?"<<endl<<"['0' = tZq / '1' = ttZ / '2' = tZq & ttZ / '3' = tZq & Fakes]")<<endl;
-	cin>>signal_choice;
-	while(signal_choice != 0 && signal_choice != 1 && signal_choice != 2 && signal_choice != 3)
-	{
-		cin.clear();
-		cin.ignore(1000, '\n');
-
-		cout<<"Wrong answer ! Need to choose b/w 0, 1 or 2 ! Retry :"<<endl;
-		cin>>signal_choice;
-	}
-
-	cout<<endl<<FYEL("--- Do you want to use same nuisance for Fakes channels uuu/eeu & eee/uue ? (y/n)")<<endl;
-	cin>>correlate_fakes;
-	while(correlate_fakes != 'y' && correlate_fakes != 'n')
-	{
-		cin.clear();
-		cin.ignore(1000, '\n');
-
-		cout<<"Wrong answer ! Need to type 'y' or 'n' ! Retry :"<<endl;
-		cin>>correlate_fakes;
-	}
 
 	cout<<FYEL("--- Do you want to create datacard for a Template Fit ? (y/n) ")<<endl;
 	cin>>datacard_template_fit;
@@ -296,9 +317,9 @@ int main()
 	}
 
 
-	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, signal_choice, correlate_fakes);
+	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics);
 
-	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, signal_choice, correlate_fakes);
+	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics);
 
 	return 0;
 }
