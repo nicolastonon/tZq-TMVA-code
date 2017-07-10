@@ -1184,10 +1184,15 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				}
 				else if (template_name == "mTW")
 				{
-					hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           20, 0., 150 ); //new binning
-					hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           20, 0., 150 );
-					hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           20, 0., 150 );
-					hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           20, 0., 150 );
+					hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 0., 250 );
+					hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           nbin, 0., 250 );
+					hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 250 );
+					hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 250 );
+
+					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           20, 0., 150 ); //new binning
+					// hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           20, 0., 150 );
+					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           20, 0., 150 );
+					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           20, 0., 150 );
 				}
 			}
 
@@ -3266,15 +3271,15 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		{
 			if(sample_list[isample].Contains("Data") ) {continue;}
 
-			if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu") {continue;}
-			else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee") {continue;}
-
 			h_tmp = 0;
+
+			//WARNING : in uuu channel --> FakesElectron histo will be null ; idem for FakesMuon in eee channel
+			if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu") {v_MC_histo.push_back(h_tmp); MC_samples_legend.push_back(sample_list[isample]); continue;}
+			else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee") {v_MC_histo.push_back(h_tmp); MC_samples_legend.push_back(sample_list[isample]); continue;}
 
 			TString histo_name = template_name + "_" + thechannellist[ichan] + "__" + sample_list[isample];
 
 			if(!file_input->GetListOfKeys()->Contains(histo_name.Data()) && !sample_list[isample].Contains("Fakes") && !sample_list[isample].Contains("DY") && !sample_list[isample].Contains("TT") && !sample_list[isample].Contains("WW") ) {cout<<histo_name<<" : not found"<<endl; continue;}
-
 			else
 			{
 				h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
@@ -3290,7 +3295,10 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
 				}
 
+				// cout<<"isample-1 "<<isample-1<<endl;
+				// cout<<"v_MC_histo "<<v_MC_histo.size()<<endl;
 				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
+				else if(v_MC_histo[isample-1]==0) {v_MC_histo[isample-1] = (TH1F*) h_tmp->Clone();} //For FakeEle and FakeMu
 				else {v_MC_histo[isample-1]->Add(h_tmp);}
 			}
 		} //end sample loop
@@ -3314,11 +3322,17 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	if(h_sum_data == 0) {cout<<endl<<BOLD(FRED("--- Empty data histogram ! Exit !"))<<endl<<endl; return 0;}
 
+
+	// cout<<v_MC_histo[9]<<endl;
+	// cout<<v_MC_histo[10]<<endl;
+	// cout<<v_MC_histo.size()<<endl;
+
 	//Make sure there are no negative bins
 	for(int ibin = 1; ibin<h_sum_data->GetNbinsX()+1; ibin++)
 	{
 		for(int k=0; k<v_MC_histo.size(); k++)
 		{
+			if(!v_MC_histo[k]) {continue;} //Fakes templates can be null
 			if(v_MC_histo[k]->GetBinContent(ibin) < 0) {v_MC_histo[k]->SetBinContent(ibin, 0);}
 		}
 		if(h_sum_data->GetBinContent(ibin) < 0) {h_sum_data->SetBinContent(ibin, 0);}
@@ -3334,6 +3348,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//Stack all the MC nominal histograms (contained in v_MC_histo)
 	for(int i=0; i<v_MC_histo.size(); i++)
 	{
+		if(!v_MC_histo[i]) {continue;} //Fakes templates can be null
+
 		if(MC_samples_legend[i].Contains("tZq"))
 		{
 			index_tZq_sample = i;
@@ -3364,8 +3380,10 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
 	for(int i=v_MC_histo.size()-1; i>=0; i--)
 	{
+		if(!v_MC_histo[i]) {continue;} //Fakes templates can be null
+
 		if(MC_samples_legend[i] == "ttH") {continue;}
-		if(MC_samples_legend[i].Contains("FakesMuon") ) {continue;}
+		if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //depends on cases
 		if(MC_samples_legend[i] == "ttW") {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
