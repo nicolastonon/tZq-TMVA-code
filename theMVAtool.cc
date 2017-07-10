@@ -845,52 +845,24 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 		if(combine_naming_convention) syst_fakes.push_back(Combine_Naming_Convention(syst_list[isyst]));
 		else syst_fakes.push_back(Theta_Naming_Convention(syst_list[isyst]));
 
-		//"Fake" shape syst. renamed
-		if(combine_naming_convention)
-		{
-			syst_fakes.push_back("FakeShapeMuUp");
-			syst_fakes.push_back("FakeShapeMuDown");
-			syst_fakes.push_back("FakeShapeElUp");
-			syst_fakes.push_back("FakeShapeElDown");
-		}
-		else  //Theta
-		{
-			syst_fakes.push_back("FakeShapeMu__plus");
-			syst_fakes.push_back("FakeShapeMu__minus");
-			syst_fakes.push_back("FakeShapeEl__plus");
-			syst_fakes.push_back("FakeShapeEl__minus");
-		}
+		//"Fake" shape syst. renamed -- not present in this form in syst_list vector --> add it
 	}
 
-
-	if(combine_naming_convention) //Combine
+	if(combine_naming_convention)
 	{
-		syst_fakes.push_back("FakesUp");
-		syst_fakes.push_back("FakesDown");
-
 		syst_fakes.push_back("FakeShapeMuUp");
 		syst_fakes.push_back("FakeShapeMuDown");
-
+		syst_fakes.push_back("FakeShapeElUp");
 		syst_fakes.push_back("FakeShapeElDown");
-		syst_fakes.push_back("FakeShapeElDown");
-
-		syst_fakes.push_back("ZptReweightUp");
-		syst_fakes.push_back("ZptReweightDown");
 	}
 	else  //Theta
 	{
-		syst_fakes.push_back("ZptReweight__plus");
-		syst_fakes.push_back("ZptReweight__minus");
-
 		syst_fakes.push_back("FakeShapeMu__plus");
 		syst_fakes.push_back("FakeShapeMu__minus");
-
 		syst_fakes.push_back("FakeShapeEl__plus");
 		syst_fakes.push_back("FakeShapeEl__minus");
-
-		syst_fakes.push_back("ZptReweight__plus");
-		syst_fakes.push_back("ZptReweight__minus");
 	}
+
 
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
 	{
@@ -901,6 +873,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 			for(int ivar=0; ivar<total_var_list.size(); ivar++)
 			{
+
 				for(int isample=0; isample<sample_list[isample]; isample++)
 				{
 					if(!sample_list[isample].Contains("Fakes")) {continue;}
@@ -908,12 +881,14 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 					TString histo_name = total_var_list[ivar] + "_" + channel_list[ichan] + "__" + sample_list[isample] + systname;
 					if(!file_to_rescale->GetListOfKeys()->Contains(histo_name.Data()) ) {continue;}
 
+
 					TH1F* h_tmp = (TH1F*) file_to_rescale->Get(histo_name);
 
 					if(channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu);}
 					else if(channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu);}
 					else if(channel_list[ichan] == "eee") {h_tmp->Scale(SF_eee);}
 					else if(channel_list[ichan] == "uue") {h_tmp->Scale(SF_uue);}
+
 
 					file_to_rescale->cd();
 					h_tmp->Write(histo_name, TObject::kOverwrite);
@@ -1524,7 +1499,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			{
 				hist_uuu->Scale(luminosity_rescale); hist_uue->Scale(luminosity_rescale); hist_eeu->Scale(luminosity_rescale); hist_eee->Scale(luminosity_rescale);
 			}
-
 
 			//ZptReweight & FakeShape systematics needs to have same norm. as nominal
 			if(syst_list[isyst].Contains("Zpt") || syst_list[isyst].Contains("Fake"))

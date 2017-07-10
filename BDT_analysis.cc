@@ -24,7 +24,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
 
     //Matrix Element Method ==> TRUE
-    bool include_MEM_variables = false; //FIXME
+    bool include_MEM_variables = true;
 
 
     //To keep only low of high-BDT events

@@ -57,9 +57,10 @@ TString Convert_Number_To_TString(int number)
  * @param thevarlist list of vars NOT related to MEM to be in the output ntuple
  * @param MEMvarlist list of vars RELATED to MEM to be in the output ntuple
  */
-void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> MEMvarlist, vector<TString> MEMvarlist_new, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString MEM_or_WZ, TString tmp_dir)
+void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> v_add_vars, vector<TString> MEMvarlist, vector<TString> MEMvarlist_new, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString MEM_or_WZ, TString tmp_dir)
 {
 	vector<float> v_floats; //Store all other variables as floats
+	vector<float> v_floats_add; //Store all additional variables as floats (only in WZ region -- done in MEM region via "Matching" code)
 	vector<double> v_double_MEM; //Store MEM variables as doubles
 	vector<float> v_floats_MEM; //Needed to convert MEM variables from doubles to floats (needed by BDT code as floats)
 	vector<float> v_floats_modif; //Store all other variables in floats
@@ -148,6 +149,10 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		{
 			v_floats.push_back(-999);
 		}
+		for(int i=0; i<v_add_vars.size(); i++)
+		{
+			v_floats_add.push_back(-999);
+		}
 		for(int i=0; i<MEMvarlist.size(); i++)
 		{
 			v_floats_MEM.push_back(-999);
@@ -167,6 +172,13 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 		for(int ivar=0; ivar<thevarlist.size(); ivar++)
 		{
 			tree_modif->Branch(thevarlist[ivar].Data(),&v_floats[ivar],(thevarlist[ivar]+"/F").Data());
+		}
+		if(MEM_or_WZ=="WZ") //in MEM region, we add these variables manually via matching code
+		{
+			for(int ivar=0; ivar<v_add_vars.size(); ivar++)
+			{
+				tree_modif->Branch(v_add_vars[ivar].Data(),&v_floats_add[ivar],(v_add_vars[ivar]+"/F").Data());
+			}
 		}
 		for(int ivar=0; ivar<MEMvarlist.size(); ivar++)
 		{
@@ -206,6 +218,11 @@ void Modify_Ntuples(TString sample, vector<TString> thevarlist, vector<TString> 
 				continue;
 			}
 			else t_input->SetBranchAddress(thevarlist[ivar].Data(), &v_floats[ivar]);
+		}
+
+		for(int ivar=0; ivar<v_add_vars.size(); ivar++)
+		{
+			if(MEM_or_WZ == "WZ") t_input->SetBranchAddress(v_add_vars[ivar].Data(), &v_floats_add[ivar]);
 		}
 		for(int ivar=0; ivar<MEMvarlist.size(); ivar++)
 		{
@@ -366,23 +383,22 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	// sample_list.push_back("Data");
-	// sample_list.push_back("tZq");
-	// sample_list.push_back("tZqQup");
-	// sample_list.push_back("tZqQdw");
-	// sample_list.push_back("tZqmcNLO");
-	// sample_list.push_back("ttZ");
-	// sample_list.push_back("ttW");
-	// sample_list.push_back("ttH");
-	// sample_list.push_back("ZZ");
-	// sample_list.push_back("tWZ");
-	// sample_list.push_back("WZL");
-	// sample_list.push_back("WZB");
-	// sample_list.push_back("WZC");
-	// sample_list.push_back("STtWll");
-	// sample_list.push_back("DY");
-	// sample_list.push_back("TT");
-	// sample_list.push_back("FakesNewNew");
+	sample_list.push_back("Data");
+	sample_list.push_back("tZqQup");
+	sample_list.push_back("tZqQdw");
+	sample_list.push_back("tZqmcNLO");
+	sample_list.push_back("ttZ");
+	sample_list.push_back("ttW");
+	sample_list.push_back("ttH");
+	sample_list.push_back("ZZ");
+	sample_list.push_back("tWZ");
+	sample_list.push_back("WZL");
+	sample_list.push_back("WZB");
+	sample_list.push_back("WZC");
+	sample_list.push_back("STtWll");
+	sample_list.push_back("DY");
+	sample_list.push_back("TT");
+	sample_list.push_back("FakesNewNew");
 	sample_list.push_back("FakesElectron");
 	sample_list.push_back("FakesMuon");
 
@@ -411,25 +427,6 @@ int main()
 	thevarlist.push_back("NBJets");
 	thevarlist.push_back("mTW");
 	thevarlist.push_back("METpt");
-	thevarlist.push_back("EvtNr");
-	thevarlist.push_back("RunNr");
-	thevarlist.push_back("AdditionalMuonIso");
-	thevarlist.push_back("AdditionalEleIso");
-	thevarlist.push_back("LeadingJetCSV");
-	thevarlist.push_back("SecondJetCSV");
-	thevarlist.push_back("tZ_pT");
-	thevarlist.push_back("tZ_mass");
-	thevarlist.push_back("bj_mass_leadingJet");
-	thevarlist.push_back("bj_mass_subleadingJet");
-	thevarlist.push_back("bj_mass_leadingJet_pT40");
-	thevarlist.push_back("bj_mass_leadingJet_pT50");
-	thevarlist.push_back("bj_mass_leadingJet_pTlight40");
-	thevarlist.push_back("bj_mass_leadingJet_pTlight50");
-	thevarlist.push_back("bj_mass_leadingJet_etaCut");
-	thevarlist.push_back("LeadingJetNonB_pT");
-	thevarlist.push_back("SecondJetNonB_pT");
-	thevarlist.push_back("ContainsBadJet");
-
 
 	thevarlist.push_back("btagDiscri");
 	thevarlist.push_back("dRAddLepQ");
@@ -451,6 +448,27 @@ int main()
 	thevarlist.push_back("TopPT"); // low discri power
 	thevarlist.push_back("m3l");
 	thevarlist.push_back("dRZTop");
+
+	//In the MEM region, need to *NOT* add these variables ; otherwise, when running the "matching code" which takes care of adding these variables into the final ntuples, the branches will already exist --> can't overwrite them !!
+	vector<TString> v_add_vars;
+	v_add_vars.push_back("EvtNr");
+	v_add_vars.push_back("RunNr");
+	v_add_vars.push_back("AdditionalMuonIso");
+	v_add_vars.push_back("AdditionalEleIso");
+	v_add_vars.push_back("LeadingJetCSV");
+	v_add_vars.push_back("SecondJetCSV");
+	v_add_vars.push_back("tZ_pT");
+	v_add_vars.push_back("tZ_mass");
+	v_add_vars.push_back("bj_mass_leadingJet");
+	v_add_vars.push_back("bj_mass_subleadingJet");
+	v_add_vars.push_back("bj_mass_leadingJet_pT40");
+	v_add_vars.push_back("bj_mass_leadingJet_pT50");
+	v_add_vars.push_back("bj_mass_leadingJet_pTlight40");
+	v_add_vars.push_back("bj_mass_leadingJet_pTlight50");
+	v_add_vars.push_back("bj_mass_leadingJet_etaCut");
+	v_add_vars.push_back("LeadingJetNonB_pT");
+	v_add_vars.push_back("SecondJetNonB_pT");
+	v_add_vars.push_back("ContainsBadJet");
 
 
 
@@ -529,9 +547,11 @@ int main()
 //-----------------------------------------
 
 	bool do_MEM_regions = true;
-	bool do_WZ_region = true;
+	bool do_WZ_region = false;
 
 	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
+
+	cout<<FGRN("Make sure you have followed the same Ntuple naming convention as in BDT_analysis.cc !")<<endl;
 
 
 //Need to differenciate ttZ/tZq & WZ, since MEM can't run in WZ region (not enough jets) ==> Different ntuples
@@ -543,7 +563,7 @@ int main()
 		MEM_or_WZ = "MEM";
 		for(int isample=0; isample<sample_list.size(); isample++)
 		{
-			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ, tmp_dir);
+			Modify_Ntuples(sample_list[isample].Data(), thevarlist, v_add_vars, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ, tmp_dir);
 		}
 	}
 
@@ -553,7 +573,7 @@ int main()
 		MEM_or_WZ = "WZ";
 		for(int isample=0; isample<sample_list.size(); isample++)
 		{
-			Modify_Ntuples(sample_list[isample].Data(), thevarlist, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ, tmp_dir);
+			Modify_Ntuples(sample_list[isample].Data(), thevarlist, v_add_vars, MEMvarlist, MEMvarlist_new, weight_syst_list, tree_syst_list, MEM_or_WZ, tmp_dir);
 		}
 	}
 

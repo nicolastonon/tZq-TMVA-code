@@ -287,6 +287,9 @@ bool Check_File_Existence(const TString& name)
 
 void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees, vector<TString> v_variables)
 {
+  cout<<FGRN("Make sure that the new branches do not already exist in the Ntuples ! Can not overwrite branches !")<<endl; //Can't overwrite branches ; if the branches for the variables you wish to add already exist in the ntuple, you will need to re-run the "Interface.cxx" code in order to start from a new file where the new variables do not exist yet !
+
+
 	//File containing the EvtNr information (NB : use this rather than CIEMAT ntuple, because this is skimmed)
   // TString f_withInfo_path = "/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/FCNCNTuple_"+sample+".root"; //FIXME
   TString f_withInfo_path = "/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/FCNCNTuple_"+sample+".root";
@@ -379,12 +382,16 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees, vect
     // TBranch *b_LeadingJetCSV = t_withMEM->Branch("LeadingJetCSV",&LeadingJetCSV_MEM,"LeadingJetCSV/F");
     // TBranch *b_SecondJetCSV = t_withMEM->Branch("SecondJetCSV",&SecondJetCSV_MEM,"SecondJetCSV/F");
 
-    vector<TBranch*> v_branches;
+
+    vector<TBranch*> v_branches(v_variables.size() );
+
     for(int ivar=0; ivar<v_variables.size(); ivar++)
     {
-      v_branches.push_back(t_withMEM->Branch(v_variables[ivar],&v_floats_MEM[ivar], (v_variables[ivar]+"/F").Data() ) );
+      v_branches[ivar] = t_withMEM->Branch(v_variables[ivar], &v_floats_MEM[ivar], (v_variables[ivar]+"/F").Data() );
+      // v_branches.push_back(t_withMEM->Branch(v_variables[ivar], &v_floats_MEM[ivar], (v_variables[ivar]+"/F").Data() ) );
     }
 
+    Float_t test = 5;
 
 
   	int nentries = t_withInfo->GetEntries();
@@ -441,7 +448,8 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees, vect
       // v_SecondJetCSV.push_back(SecondJetCSV);
       for(int ivar=0; ivar<v_variables.size(); ivar++)
       {
-        v_vectors_floats[ivar].push_back(v_floats_CIEMAT[ivar]);
+        //
+        v_vectors_floats[ivar].push_back(v_floats_CIEMAT[ivar]); //Fill variable vector with all the values of this variable read from CIEMAT ntuples
       }
 
   	}
@@ -503,7 +511,8 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees, vect
 
               for(int ivar=0; ivar<v_variables.size(); ivar++)
               {
-                v_floats_MEM[ivar] = v_vectors_floats[ivar][i];
+                v_floats_MEM[ivar] = v_vectors_floats[ivar][i]; //Variable linked to branch is set to the value of corresponding variable, for current entry
+
                 v_branches[ivar]->Fill();
               }
 
@@ -645,6 +654,8 @@ int main()
 	sample_list.push_back("STtWll");
 	sample_list.push_back("ttW");
   sample_list.push_back("FakesNewNew");
+  sample_list.push_back("FakesElectron");
+  sample_list.push_back("FakesMuon");
 
   // sample_list.push_back("Fakes");
   // sample_list.push_back("tWZ");
