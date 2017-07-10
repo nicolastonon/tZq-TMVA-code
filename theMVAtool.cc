@@ -2523,9 +2523,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		{
 			if(!allchannels && channel != thechannellist[ichan]) {continue;} //If plot single channel
 
-			int nof_missing_samples = 0; //is needed to access the right bin of v_MC_histo
 			for(int isample = 0; isample < sample_list.size(); isample++)
 			{
+				h_tmp = 0; //Temporary storage of histogram
+
 				// cout<<total_var_list[ivar]<<" / "<<thechannellist[ichan]<<" / "<<sample_list[isample]<<" / "<<endl;
 
 				if(!fakes_from_data && sample_list[isample].Contains("Fakes") ) {continue;} //Fakes from MC only
@@ -2533,15 +2534,32 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 				if((sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && (sample_list[isample-1].Contains("DY") || sample_list[isample-1].Contains("TT") || sample_list[isample-1].Contains("WW") ) ) {continue;} //Draw MC fakes only once
 
-				if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu") {continue;}
-				else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee") {continue;}
+				if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu")
+				{
+					if(allchannels && niter_chan==0)
+					{
+						MC_samples_legend.push_back(sample_list[isample]);
+
+						v_MC_histo.push_back(h_tmp);
+					}
+					continue;
+				}
+				else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee")
+				{
+					if(allchannels && niter_chan==0)
+					{
+						MC_samples_legend.push_back(sample_list[isample]);
+
+						v_MC_histo.push_back(h_tmp);
+					}
+					continue;
+				}
 
 
 				bool isData = false; if(sample_list[isample] == "Data") isData = true;
 
 				TH1F* histo_nominal = 0; //Nominal histogram <-> syst == "" //Create it here because it's also used in the (syst != "") loop
 
-				h_tmp = 0; //Temporary storage of histogram
 
 				//CHANGED
 				// histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
@@ -2594,8 +2612,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 				else //MC
 				{
 					//Normally the data sample is included in first position of the list, so v_MC_histo has 'isample-1' contents
-					if(isample-1-nof_missing_samples < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address (need at least 2 samples)! Exit !"))<<endl; return 0;}
-					// cout<<"isample-1-nof_missing_samples = "<<isample-1-nof_missing_samples<<endl;
+					if(isample-1 < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address (need at least 2 samples)! Exit !"))<<endl; return 0;}
 
 					if(postfit && sample_list[isample].Contains("tZq")) {h_tmp->Scale(sig_strength);} //Need to rescale signal manually, not done by CombineHarvester !!
 
@@ -2611,8 +2628,11 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
 					else
 					{
-						if(isample-1-nof_missing_samples >= v_MC_histo.size()) {cout<<__LINE__<<BOLD(FRED(" : ERROR -- wrong number of samples !"))<<endl; continue;}
-						else v_MC_histo[isample-1-nof_missing_samples]->Add(h_tmp);
+						// if(isample-1 >= v_MC_histo.size()) {cout<<__LINE__<<BOLD(FRED(" : ERROR -- wrong number of samples !"))<<endl; continue;}
+						// else v_MC_histo[isample-1]->Add(h_tmp);
+
+						if(v_MC_histo[isample-1] == 0) v_MC_histo[isample-1] = (TH1F*) h_tmp->Clone();
+						else v_MC_histo[isample-1]->Add(h_tmp);
 					}
 
 					histo_nominal = (TH1F*) h_tmp->Clone();
@@ -3248,8 +3268,24 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 			h_tmp = 0;
 
 			//WARNING : in uuu channel --> FakesElectron histo will be null ; idem for FakesMuon in eee channel
-			if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu") {v_MC_histo.push_back(h_tmp); MC_samples_legend.push_back(sample_list[isample]); continue;}
-			else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee") {v_MC_histo.push_back(h_tmp); MC_samples_legend.push_back(sample_list[isample]); continue;}
+			if(sample_list[isample] == "FakesElectron" && thechannellist[ichan] == "uuu")
+			{
+				if(allchannels && niter_chan==0)
+				{
+					v_MC_histo.push_back(h_tmp);
+					MC_samples_legend.push_back(sample_list[isample]);
+				}
+				continue;
+			}
+			else if(sample_list[isample] == "FakesMuon" && thechannellist[ichan] == "eee")
+			{
+				if(allchannels && niter_chan==0)
+				{
+					v_MC_histo.push_back(h_tmp);
+					MC_samples_legend.push_back(sample_list[isample]);
+				}
+				continue;
+			}
 
 			TString histo_name = template_name + "_" + thechannellist[ichan] + "__" + sample_list[isample];
 
@@ -3357,8 +3393,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 		if(!v_MC_histo[i]) {continue;} //Fakes templates can be null
 
 		if(MC_samples_legend[i] == "ttH") {continue;}
-		if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //depends on cases
-		if(MC_samples_legend[i] == "ttW") {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
+		else if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //depends on cases
+		else if(MC_samples_legend[i] == "ttW") {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
 		else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
@@ -3383,7 +3419,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
 	c1->SetBottomMargin(0.3);
 
-	//Draw stack & data
+	//w_caw stack & data
 	stack_MC->Draw("hist");
 	h_sum_data->SetMarkerStyle(20);
 	h_sum_data->SetMinimum(0.) ;
@@ -3792,8 +3828,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	for(int i=v_MC_histo.size()-1; i>=0; i--)
 	{
 		if(MC_samples_legend[i] == "ttH") {continue;} //same entry as ttW
-		if(MC_samples_legend[i].Contains("FakesMuon") ) {continue;} //same entry as ttW
-		if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
+		else if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //same entry as FakesElectron
+		else if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
 		else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
@@ -4373,7 +4409,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 /**
  * Plot nominal templates with 1 systematics superposed
  * --> Can see visually it's amplitude/variation
- * (mostly taken from Draw_Control_Plots function)
+ * (mostly taken from Draw CR plot function)
  */
 void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TString template_name, TString sample, TString systematic)
 {
@@ -4473,7 +4509,6 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		{
 			if(channel != thechannellist[ichan]) {continue;} //If plot single channel
 
-			int nof_missing_samples = 0; //is needed to access the right bin of v_MC_histo
 			for(int isample = 0; isample < sample_list.size(); isample++)
 			{
 				if(sample_list[isample] != sample) {continue;}
@@ -5705,7 +5740,6 @@ void theMVAtool::Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TSt
 			{
 				if(!allchannels && channel != thechannellist[ichan]) {continue;} //If plot single channel
 
-				int nof_missing_samples = 0; //is needed to access the right bin of v_MC_histo
 
 				h_tmp_neg = 0;
 				h_tmp_abs = 0;
