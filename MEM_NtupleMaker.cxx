@@ -53,7 +53,9 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
   for(int ivar=0; ivar<BDT_variables.size(); ivar++)
   {
     BDTvar_list.push_back(BDT_variables[ivar]);
-    BDTvar_floats.push_back(-999);
+
+    if(BDTvar_list[ivar] == "fourthLep10" || BDTvar_list[ivar] == "fourthLep15") BDTvar_floats.push_back(0); //0 by default (~boolean)
+    else BDTvar_floats.push_back(-999);
   }
   for(int itree=0; itree<tree_syst_list.size(); itree++)
   {
@@ -181,7 +183,8 @@ void MEM_NtupleMaker::Init()
   }
   for(int ivar=0; ivar<BDTvar_floats.size(); ivar++)
   {
-    BDTvar_floats[ivar]=-999;
+    if(BDTvar_list[ivar] == "fourthLep10" || BDTvar_list[ivar] == "fourthLep15") BDTvar_floats[ivar]=0;
+    else BDTvar_floats[ivar]=-999;
   }
 }
 
@@ -1122,7 +1125,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
     int nentries = t_MEM_input->GetEntries();
 
-    if(t_vars_input->GetEntries() != nentries) {cout<<"ERROR : different nof events in trees -- Abort"<<endl; return;}
+    if(t_vars_input->GetEntries() != nentries) {cout<<FRED("WARNING  : different nof events in trees !!")<<endl; return;}
 
     for(int ientry=0; ientry<nentries; ientry++)
     {
@@ -1282,11 +1285,12 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   //-------------------
 
       //Can compute here some new variables
-      Float_t LeadingJetNonB_pT=-999, SecondJetNonB_pT=-999, ContainsBadJet=0;
+      Float_t LeadingJetNonB_pT=-999, SecondJetNonB_pT=-999;
+      // Float_t ContainsBadJet=0;
       double pT1=-1, pT2=-1;
       for(int ijet=0; ijet<vSelectedJets->size(); ijet++)
       {
-        if(vSelectedJets->at(ijet).pt < 50 && fabs(vSelectedJets->at(ijet).eta) > 2.69 && fabs(vSelectedJets->at(ijet).eta) < 3 ) {ContainsBadJet = 1;} //Loop on all jets
+        // if(vSelectedJets->at(ijet).pt < 50 && fabs(vSelectedJets->at(ijet).eta) > 2.69 && fabs(vSelectedJets->at(ijet).eta) < 3 ) {ContainsBadJet = 1;} //Loop on all jets
 
         if(ijet == ib1 || ijet == ib2) {continue;} //don't consider bjets for these vars
 
@@ -1323,7 +1327,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
         else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_etaCut") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 6);}
         else if(v_variablesToCreate[ivar] == "LeadingJetNonB_pT") {v_variablesToCreate_float[ivar] = LeadingJetNonB_pT;}
         else if(v_variablesToCreate[ivar] == "SecondJetNonB_pT") {v_variablesToCreate_float[ivar] = SecondJetNonB_pT;}
-        else if(v_variablesToCreate[ivar] == "ContainsBadJet") {v_variablesToCreate_float[ivar] = ContainsBadJet;}
+        // else if(v_variablesToCreate[ivar] == "ContainsBadJet") {v_variablesToCreate_float[ivar] = ContainsBadJet;}
       }
 
       // tZ_pT = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);
@@ -1397,24 +1401,24 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  v_samplenames.push_back("Data");
-  v_samplenames.push_back("tZqmcNLO");
-  v_samplenames.push_back("tZqQup");
-  v_samplenames.push_back("tZqQdw");
-  v_samplenames.push_back("WZB");
-  v_samplenames.push_back("WZL");
-  v_samplenames.push_back("WZC");
-  v_samplenames.push_back("ttZ");
-  v_samplenames.push_back("ZZ");
-  v_samplenames.push_back("ttH");
-  v_samplenames.push_back("ttW");
-  v_samplenames.push_back("STtWll");
-  v_samplenames.push_back("DY");
-  v_samplenames.push_back("TT");
-  v_samplenames.push_back("FakesNewNew");
+  // v_samplenames.push_back("Data");
+  // v_samplenames.push_back("tZqmcNLO");
+  // v_samplenames.push_back("tZqQup");
+  // v_samplenames.push_back("tZqQdw");
+  // v_samplenames.push_back("WZB");
+  // v_samplenames.push_back("WZL");
+  // v_samplenames.push_back("WZC");
+  // v_samplenames.push_back("ttZ");
+  // v_samplenames.push_back("ZZ");
+  // v_samplenames.push_back("ttH");
+  // v_samplenames.push_back("ttW");
+  // v_samplenames.push_back("STtWll");
   v_samplenames.push_back("FakesElectron");
   v_samplenames.push_back("FakesMuon");
 
+  // v_samplenames.push_back("DY");
+  // v_samplenames.push_back("TT");
+  // v_samplenames.push_back("FakesNewNew");
   // v_samplenames.push_back("Fakes");
   // v_samplenames.push_back("tZqhwpp");
 
@@ -1459,6 +1463,10 @@ int main()
   BDTvar_list.push_back("SecondJetCSV");
   BDTvar_list.push_back("AdditionalMuonIso");
   BDTvar_list.push_back("AdditionalEleIso");
+  BDTvar_list.push_back("ContainsBadJet");
+  BDTvar_list.push_back("fourthLep10");
+  BDTvar_list.push_back("fourthLep15");
+
 
 
 //---------------------------------------------------------------------------
@@ -1483,7 +1491,8 @@ int main()
   v_variablesToCreate.push_back("bj_mass_leadingJet_etaCut");
   v_variablesToCreate.push_back("LeadingJetNonB_pT");
   v_variablesToCreate.push_back("SecondJetNonB_pT");
-  v_variablesToCreate.push_back("ContainsBadJet");
+
+  // v_variablesToCreate.push_back("ContainsBadJet");
 
 
 //---------------------------------------------------------------------------

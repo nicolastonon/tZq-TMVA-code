@@ -1164,10 +1164,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 250 );
 					hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 250 );
 
-					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           20, 0., 150 ); //new binning
-					// hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           20, 0., 150 );
-					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           20, 0., 150 );
-					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           20, 0., 150 );
+					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 0., 150 ); //new binning //FIXME
+					// hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           nbin, 0., 150 );
+					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 150 );
+					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 150 );
 				}
 			}
 
@@ -1181,7 +1181,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			else {tree = (TTree*) file_input->Get(t_name.Data());}
 
 			if(!tree && syst_list[isyst]=="") {cout<<BOLD(FRED("ERROR : nominal tree not found ! Abort"))<<endl; return 0;}
-			else if(!tree) {cout<<BOLD(FRED("ERROR : tree "<<syst_list[isyst]<<" not found ! Skip this systematic"))<<endl; break;}
+			else if(!tree) {cout<<BOLD(FRED("ERROR : tree "<<syst_list[isyst]<<" not found in "<<inputfile<< "! Skip this systematic"))<<endl; break;}
 
 //--- Prepare the event tree -- Set Branch Addresses
 //WARNING : the last SetBranchAddress overrides the previous ones !! Be careful not to associate branches twice !
@@ -1571,7 +1571,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			delete tree; //Free memory
 			delete hist_uuu; delete hist_uue; delete hist_eeu; delete hist_eee; //Free memory
-			delete file_input; //CHANGED -- free memory
+			delete file_input;
 		} //end sample loop
 
 		if(dbgMode) cout<<"Done with syst : "<<syst_list[isyst]<<endl;
@@ -3690,17 +3690,35 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//--- All MC samples but fakes
 		for(int isample = 0; isample < sample_list.size(); isample++)
 		{
+			h_tmp = 0;
 			bool isData = false;
 			if(sample_list[isample].Contains("Data") ) {isData = true;}
 
-			if(sample_list[isample] == "FakesElectron" && channel_list[ichan] == "uuu") {continue;}
-			else if(sample_list[isample] == "FakesMuon" && channel_list[ichan] == "eee") {continue;}
+
+			//WARNING : in uuu channel --> FakesElectron histo will be null ; idem for FakesMuon in eee channel
+			if(sample_list[isample] == "FakesElectron" && channel_list[ichan] == "uuu")
+			{
+				if(allchannels && niter_chan==0)
+				{
+					v_MC_histo.push_back(h_tmp);
+					MC_samples_legend.push_back(sample_list[isample]);
+				}
+				continue;
+			}
+			else if(sample_list[isample] == "FakesMuon" && channel_list[ichan] == "eee")
+			{
+				if(allchannels && niter_chan==0)
+				{
+					v_MC_histo.push_back(h_tmp);
+					MC_samples_legend.push_back(sample_list[isample]);
+				}
+				continue;
+			}
 
 
 			//--- DATA -- different file
 			if(isData)
 			{
-				h_tmp = 0;
 				TString histo_name;
 				if(combine_naming_convention) histo_name = template_name + "_" + channel_list[ichan] + "__data_obs"; //Combine
 				else histo_name = template_name + "_" + channel_list[ichan] + "__DATA"; //Theta
@@ -3735,10 +3753,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
 				}
 
-				cout<<"sample "<<sample_list[isample]<<" / chan "<<channel_list[ichan]<<endl;
-
+				// cout<<"sample "<<sample_list[isample]<<" / chan "<<channel_list[ichan]<<endl;
 
 				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
+				else if(v_MC_histo[isample-1]==0) {v_MC_histo[isample-1] = (TH1F*) h_tmp->Clone();} //For FakeEle and FakeMu
 				else {v_MC_histo[isample-1]->Add(h_tmp);}
 			}
 
@@ -3753,8 +3771,11 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//Make sure there are no negative bins
 	for(int ibin = 1; ibin<h_sum_data->GetNbinsX()+1; ibin++)
 	{
+
 		for(int k=0; k<v_MC_histo.size(); k++)
 		{
+			if(v_MC_histo[k] == 0) {continue;}
+
 			if(v_MC_histo[k]->GetBinContent(ibin) < 0) {v_MC_histo[k]->SetBinContent(ibin, 0);}
 		}
 		if(h_sum_data->GetBinContent(ibin) < 0) {h_sum_data->SetBinContent(ibin, 0);}
@@ -3827,6 +3848,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
 	for(int i=v_MC_histo.size()-1; i>=0; i--)
 	{
+		if(!v_MC_histo[i]) {continue;} //Fakes templates can be null
+
 		if(MC_samples_legend[i] == "ttH") {continue;} //same entry as ttW
 		else if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //same entry as FakesElectron
 		else if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
@@ -3865,13 +3888,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	TH1F * histo_ratio_data = (TH1F*) h_data_new->Clone();
 
-	cout<<"data bins = "<<histo_ratio_data->GetNbinsX()<<endl;
-	cout<<"histo_total_MC bins = "<<histo_total_MC->GetNbinsX()<<endl;
-
-	cout<<__LINE__<<endl;
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
-	cout<<__LINE__<<endl;
-
 
 	//NOTE : slightly different parameters than prefit function (need to add hand-made axis here)
 	histo_ratio_data->GetXaxis()->SetLabelSize(0.0); //Make this axis invisible because we are going to draw a new one (below)

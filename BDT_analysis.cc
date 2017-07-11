@@ -115,6 +115,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all/specific regions ---
 
     set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
+    // set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 
     // if(!isWZ)
@@ -170,6 +171,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
     t_name = "Tree";
 
+    //--- Other
+    // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM"; //With MEM
+    // t_name = "Tree";
 
     //--- CIEMAT's Ntuples ---
     // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
@@ -369,7 +374,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     v_add_var_names.push_back("SecondJetCSV");
 
 
-
 //---------------------------------------------------------------------------
 //  ######  ##    ##  ######  ######## ######## ##     ##    ###    ######## ####  ######   ######
 // ##    ##  ##  ##  ##    ##    ##    ##       ###   ###   ## ##      ##     ##  ##    ## ##    ##
@@ -380,7 +384,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = true;
+    bool use_systematics = false;
 //----------------
 
 //--- General names of systematics
@@ -444,10 +448,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !

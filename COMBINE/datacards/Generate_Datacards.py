@@ -12,6 +12,7 @@ FakeEl_rateEl=""
 FakeMu_rateMu=""
 FakeEl_shapeEl=""
 FakeMu_shapeMu=""
+fakes_NP_value = "";
 
 total = len(sys.argv)
 cmdargs = str(sys.argv)
@@ -20,10 +21,11 @@ channel = str(sys.argv[1])
 theVar = str(sys.argv[2])
 theFiletoRead= sys.argv[3]
 systList = str(sys.argv[4])
+fakes_NP_value = str(sys.argv[5])
 
 fileToSearch = "Template_Datacard.txt"
 
-fakes_NP_value = "5.0";
+# fakes_NP_value = "5.0";
 
 
 if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):

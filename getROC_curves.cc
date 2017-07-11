@@ -815,8 +815,9 @@ int main()
 
 		string selection = "1";
 
-		name1 = dir + "files_nominal"; label1 = "Abs. weight ttZ region";
-		name2 = dir + "files_fabstZq"; label2 = "Abs. weight ttZ & tZq region";
+		name1 = dir + "files_noMEM_CIEMAT"; label1 = "CIEMAT";
+		name2 = dir + "files_noMEM_newFakes/training_files_renamed"; label2 = "IPHC";
+		// name2 = dir + "files_noMEM_newFakes/training_files_renamed"; label2 = "IPHC";
 		name3 = dir + ""; label3 = "";
 		name4 = dir + ""; label4 = "";
 		name5 = dir + ""; label5 = "";

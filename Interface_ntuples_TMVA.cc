@@ -383,25 +383,25 @@ int main()
 //---------------------------------------------------------------------------
 
 	vector<TString> sample_list;
-	sample_list.push_back("Data");
-	sample_list.push_back("tZqQup");
-	sample_list.push_back("tZqQdw");
-	sample_list.push_back("tZqmcNLO");
-	sample_list.push_back("ttZ");
-	sample_list.push_back("ttW");
-	sample_list.push_back("ttH");
-	sample_list.push_back("ZZ");
-	sample_list.push_back("tWZ");
-	sample_list.push_back("WZL");
-	sample_list.push_back("WZB");
-	sample_list.push_back("WZC");
-	sample_list.push_back("STtWll");
-	sample_list.push_back("DY");
-	sample_list.push_back("TT");
-	sample_list.push_back("FakesNewNew");
+	// sample_list.push_back("Data");
+	// sample_list.push_back("tZqQup");
+	// sample_list.push_back("tZqQdw");
+	// sample_list.push_back("tZqmcNLO");
+	// sample_list.push_back("ttZ");
+	// sample_list.push_back("ttW");
+	// sample_list.push_back("ttH");
+	// sample_list.push_back("ZZ");
+	// sample_list.push_back("tWZ");
+	// sample_list.push_back("WZL");
+	// sample_list.push_back("WZB");
+	// sample_list.push_back("WZC");
+	// sample_list.push_back("STtWll");
+	// sample_list.push_back("DY");
+	// sample_list.push_back("TT");
 	sample_list.push_back("FakesElectron");
 	sample_list.push_back("FakesMuon");
 
+	// sample_list.push_back("FakesNewNew");
 	// sample_list.push_back("Fakes");
 	// sample_list.push_back("tZqhwpp");
 
@@ -450,6 +450,7 @@ int main()
 	thevarlist.push_back("dRZTop");
 
 	//In the MEM region, need to *NOT* add these variables ; otherwise, when running the "matching code" which takes care of adding these variables into the final ntuples, the branches will already exist --> can't overwrite them !!
+	//PLACE HERE ALL THE VARIABLES WHICH ARE NOT PRESENT IN NTUPLES_WITHMEM --> WHICH WILL BE ADDED VIA MATCHING IN MEM REGION !
 	vector<TString> v_add_vars;
 	v_add_vars.push_back("EvtNr");
 	v_add_vars.push_back("RunNr");
@@ -469,6 +470,8 @@ int main()
 	v_add_vars.push_back("LeadingJetNonB_pT");
 	v_add_vars.push_back("SecondJetNonB_pT");
 	v_add_vars.push_back("ContainsBadJet");
+	v_add_vars.push_back("fourthLep10");
+	v_add_vars.push_back("fourthLep15");
 
 
 
@@ -547,7 +550,7 @@ int main()
 //-----------------------------------------
 
 	bool do_MEM_regions = true;
-	bool do_WZ_region = false;
+	bool do_WZ_region = true;
 
 	TString tmp_dir = ""; //Specific I/O dir. name (e.g. "medium_btag") if not nominal ntuples
 

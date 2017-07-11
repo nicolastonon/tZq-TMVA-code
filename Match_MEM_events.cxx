@@ -212,7 +212,7 @@ bool Check_File_Existence(const TString& name)
 
  			if(i==v_mTW.size()-1) //No match found
  			{
- 				cout<<BOLD(FRED("Problem : event can't be matched !"))<<endl;
+        // cout<<"-- Event can't be matched ! Are initial ntuples skimmed ?"<<endl;
 
  				// cout<<"MET_MEM = "<<mtop_MEM<<endl;
  				// cout<<"mTW_MEM = "<<mTW_MEM<<endl;
@@ -513,6 +513,8 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees, vect
               {
                 v_floats_MEM[ivar] = v_vectors_floats[ivar][i]; //Variable linked to branch is set to the value of corresponding variable, for current entry
 
+                if( (v_variables[ivar].Contains("fourthLep") || v_variables[ivar].Contains("ContainsBad") ) && sample.Contains("Fake") ) {v_floats_MEM[ivar] = 0;} //Set it to 0 (default) for Fakes
+
                 v_branches[ivar]->Fill();
               }
 
@@ -568,7 +570,7 @@ void Add_Variables_To_MEM_Ntuples(TString sample, vector<TString> v_TTrees, vect
 
   			if(i==v_mTW.size()-1) //No match found
   			{
-  				cout<<BOLD(FRED("Problem : event can't be matched !"))<<endl;
+  				// cout<<"-- Event can't be matched ! Are initial ntuples skimmed ?"<<endl;
 
   				// cout<<"MET_MEM = "<<mtop_MEM<<endl;
   				// cout<<"mTW_MEM = "<<mTW_MEM<<endl;
@@ -628,6 +630,8 @@ int main()
   v_variables.push_back("LeadingJetNonB_pT");
   v_variables.push_back("SecondJetNonB_pT");
   v_variables.push_back("ContainsBadJet");
+  v_variables.push_back("fourthLep10");
+  v_variables.push_back("fourthLep15");
 
 
 
@@ -653,10 +657,10 @@ int main()
 	sample_list.push_back("WZC");
 	sample_list.push_back("STtWll");
 	sample_list.push_back("ttW");
-  sample_list.push_back("FakesNewNew");
   sample_list.push_back("FakesElectron");
   sample_list.push_back("FakesMuon");
 
+  // sample_list.push_back("FakesNewNew");
   // sample_list.push_back("Fakes");
   // sample_list.push_back("tWZ");
 
