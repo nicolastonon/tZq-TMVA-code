@@ -42,12 +42,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //-- NEW : set to TRUE if want to have combined templates (mTW+BDT) in SR rather than simply BDT
     bool combine_mTW_BDT_SR = false;
 
-
     //Fakes
     bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
-
-    //Training
-    bool use_ttZaMCatNLO_training = true; //Choose ttZ mc@NLO sample for training (else Madgraph sample) ==> TRUE
 
     //Templates options
     int nofbin_templates = 10; //Templates binning ==> 10 bins
@@ -120,8 +116,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     // if(!isWZ)
     // {
-        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
-        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back("");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(true);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(true);
     // }
 
 //-------------------
@@ -214,7 +210,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //DATA --- THE DATA SAMPLE MUST BE UNIQUE AND IN FIRST POSITION
     thesamplelist.push_back("Data");
 
-    //Signal --- must be placed before backgrounds
+    //Signal --- must be placed before backgrounds --- NB : name hard-coded in some functions !
     thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
 
     //BKG
@@ -384,7 +380,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 //--- General names of systematics
@@ -448,10 +444,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -501,7 +497,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             if(train_BDT && !isWZ)
             {
-                MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, use_ttZaMCatNLO_training, true);
+                MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, true);
             }
         }
 
@@ -575,7 +571,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
-            if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true);
+            if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
 
@@ -587,7 +583,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
-        if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true);
+        if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true, true);
 
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 
@@ -672,9 +668,37 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     if(do_optimization_cuts) // NB : need to choose cuts range, & set boolean = true (top of code)
     {
-        if(!Check_File_Existence("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling, etc.
+        TString filename_suffix_tmp;
+        TString filename_suffix_noJet; //Without the jet suffixes
+
+        //Derive the correct suffix according to the current set of cuts applied
+        for(int ivar=0; ivar<set_v_cut_name.size(); ivar++)
         {
-            cout<<endl<<BOLD(FRED("./outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root missing BUT needed for Fakes rescaling ! Abort"))<<endl<<endl; return 0;
+            if(set_v_cut_def[ivar] != "")
+            {
+                TString tmp;
+
+                if(set_v_cut_def[ivar].Contains("||") ) {continue;} //Don't add the 'or' conditions in filename
+                else if(!set_v_cut_def[ivar].Contains("&&")) //Single condition
+                {
+                    tmp = "_" + set_v_cut_name[ivar] + Convert_Sign_To_Word(set_v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(set_v_cut_def[ivar]));
+                }
+                else //Double '&&' condition
+                {
+                    TString cut1 = Break_Cuts_In_Two(set_v_cut_def[ivar]).first, cut2 = Break_Cuts_In_Two(set_v_cut_def[ivar]).second;
+                    tmp = "_" + set_v_cut_name[ivar] + Convert_Sign_To_Word(cut1) + Convert_Number_To_TString(Find_Number_In_TString(cut1));
+                    tmp+= Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+                }
+
+                filename_suffix_tmp+= tmp;
+                if(set_v_cut_name[ivar] == "NJets" || set_v_cut_name[ivar] == "NBJets") {continue;}
+                filename_suffix_noJet+= tmp;
+            }
+        }
+
+        if(!Check_File_Existence("./outputs/Reader_mTW"+filename_suffix_noJet+"_NJetsMin0_NBJetsEq0_unScaled.root") ) //needed for fakes scaling, etc.
+        {
+            cout<<endl<<BOLD(FRED("./outputs/Reader_mTW"+filename_suffix_noJet+"_NJetsMin0_NBJetsEq0_unScaled.root missing BUT needed for Fakes rescaling ! Abort"))<<endl<<endl; return 0;
         }
 
         if(isWZ) {cout<<endl<<BOLD(FRED("No MET/mTW cuts in the WZ control region ! Abort"))<<endl<<endl; return 0;}
@@ -698,15 +722,20 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         //-- 2D scan of MET & mTW
         //--- Change here the points to scan !!
-        for(int icut=0; icut<=20; icut+=5)
+        for(int icut=0; icut<=30; icut+=30)
         {
             TString cut_def = ">" + Convert_Number_To_TString(icut);
 
-            // v_cut1_values.push_back(cut_def);
-            // v_cut2_values.push_back(cut_def);
+            v_cut1_values.push_back(cut_def);
+        }
+        for(int icut=0; icut<=0; icut+=60)
+        {
+            TString cut_def = ">" + Convert_Number_To_TString(icut);
+
+            v_cut2_values.push_back(cut_def);
         }
 
-
+/*
 
         //#############################################
         //  LOOP ON THE 2 CUT VECTORS YOU WANT TO SCAN
@@ -789,7 +818,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                     if(train_BDT && !isWZ)
                     {
-                        MVAtool->Train_Test_Evaluate(thechannellist[ichan], template_name, use_ttZaMCatNLO_training, false);
+                        MVAtool->Train_Test_Evaluate(thechannellist[ichan], template_name, false);
                     }
 
 
@@ -828,7 +857,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 
-
+*/
 
 
         //-------------------------
@@ -891,15 +920,15 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     }
                 }
 
-                TString file_BDT_path = "outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2]))+"/Reader_BDT_NJetsMin1Max4_NBJetsEq1"+filename_suffix_tmp+".root";
-                TString file_BDTttZ_path = "outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2]))+"/Reader_BDTttZ_NJetsMin1_NBJetsMin1"+filename_suffix_tmp+".root";
+                TString file_BDT_path = "outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2]))+"/Reader_BDT"+filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1"+filename_suffix_tmp+".root";
+                TString file_BDTttZ_path = "outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2]))+"/Reader_BDTttZ"+filename_suffix_noJet+"_NJetsMin1_NBJetsMin1"+filename_suffix_tmp+".root";
 
                 if(!Check_File_Existence(file_BDT_path) ) {cout<<file_BDT_path<<" not found ! "<<BOLD(FRED("CONTINUE!"))<<endl;}
                 if(!Check_File_Existence(file_BDTttZ_path) ) {cout<<file_BDTttZ_path<<" not found ! "<<BOLD(FRED("CONTINUE!"))<<endl;}
 
                 TString combine_file_path = "outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2]))+"/Combine_Input.root";
 
-                system( ("hadd -f "+combine_file_path+" ./outputs/Reader_mTW_NJetsMin0_NBJetsEq0.root "+file_BDT_path + " " + file_BDTttZ_path).Data() );
+                system( ("hadd -f "+combine_file_path+" ./outputs/Reader_mTW"+filename_suffix_noJet+"_NJetsMin0_NBJetsEq0.root "+file_BDT_path + " " + file_BDTttZ_path).Data() );
 
 
                 TString output_text = cut1_name+v_cut1_values[icut1]+"&&"+cut2_name+v_cut2_values[icut2];
@@ -950,6 +979,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         TString filename_suffix_tmp;
         TString filename_suffix_noJet; //Without the jet suffixes
 
+        //Derive the correct suffix according to the current set of cuts applied
         for(int ivar=0; ivar<set_v_cut_name.size(); ivar++)
         {
             if( (set_v_cut_name[ivar]=="METpt" || set_v_cut_name[ivar]=="mTW") && set_v_cut_def[ivar] == ">0") {continue;} //Useless cuts
@@ -1061,7 +1091,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 // TRAINING
                 //#############################################
 
-                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, use_ttZaMCatNLO_training, false);
+                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, false);
 
                 MoveFile( ("./outputs/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".root"), ("./outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name) ); //Move file
 
@@ -1289,7 +1319,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 // TRAINING
                 //#############################################
 
-                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, use_ttZaMCatNLO_training, false);
+                MVAtool->Train_Test_Evaluate(thechannellist[ichan], bdt_type, false);
 
                 MoveFile( ("./outputs/"+bdt_type+"_"+thechannellist[ichan]+MVAtool->filename_suffix+".root"), ("outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar") ); //Move file -- useless file?
 

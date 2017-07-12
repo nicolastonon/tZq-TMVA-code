@@ -84,11 +84,12 @@ class theMVAtool
 
 //Methods
 	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString);
-	~theMVAtool() {delete reader;}; //Free memory
+	// ~theMVAtool() {delete reader;}; //Free memory
+	~theMVAtool() {};
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
 	void Fill_Zpt_Vectors(); //Initialize the vectors with SFs for Zpt reweighting
 
-	void Train_Test_Evaluate(TString, TString, bool, bool); //Train, Test, Evaluate BDT with MC samples
+	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
 	double Compute_Fake_SF(TFile*, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
 	void Rescale_Fake_Histograms(TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
 	double Get_Zpt_Reweighting_SF(int, int, double); //Returns SF for Fakes event (Zpt reweighting)
@@ -102,7 +103,7 @@ class theMVAtool
 	float Compute_Combine_Significance_From_TemplateFile(TString, TString, TString, bool, bool); //Moves file to proper directory, runs Likelihood Fit, reads & returns result
 	void Superpose_With_Without_MEM_Templates(TString, TString, bool); //Superpose prefit template distributions with or without MEM
 	void Draw_Template_With_Systematic_Variation(TString, TString, TString, TString); //Shows the variation of 1 systematic on 1 template (e.g. compare JES/nominal in tZq)
-	void Superpose_Shapes_Fakes_Signal(TString, TString, bool, bool); //Superpose prefit templates for : signal, fakes, other
+	void Superpose_Shapes_Fakes_Signal(TString, TString, bool, bool, bool); //Superpose prefit templates for : signal, fakes, other
 	void Rebin_Template_File(TString, int); //Rebin all the templates in input file
 	void Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString, bool);
 
@@ -132,6 +133,7 @@ class theMVAtool
 	bool isWZ;
 	TString filename_suffix; //add sufix to filename for clarity
 	TString filename_suffix_noJet; //suffix without NJet variables
+	TString filename_suffix_noJet_noMET_nomTW; //suffix without NJet / MET / mTW variables (for scan 2D)
 	TString dir_ntuples; //path to input ntuples
 	TString t_name; //name of tree to be used in input ntuples
 

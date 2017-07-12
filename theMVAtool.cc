@@ -179,6 +179,31 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 		}
 	}
 
+	//suffix needed only in case of 2D scan (during rescaling)
+	this->filename_suffix_noJet_noMET_nomTW = "";
+	tmp = "";
+	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
+	{
+		if(v_cut_name[ivar]=="NJets" || v_cut_name[ivar]=="NBJets" || v_cut_name[ivar]=="METpt" || v_cut_name[ivar]=="mTW") {continue;}
+
+		if(v_cut_def[ivar] != "")
+		{
+			if(v_cut_def[ivar].Contains("||") ) {continue;} //Don't add the 'or' conditions in filename
+			else if(!v_cut_def[ivar].Contains("&&")) //Single condition
+			{
+				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(v_cut_def[ivar]) + Convert_Number_To_TString(Find_Number_In_TString(v_cut_def[ivar]));
+			}
+			else //Double '&&' condition
+			{
+				TString cut1 = Break_Cuts_In_Two(v_cut_def[ivar]).first, cut2 = Break_Cuts_In_Two(v_cut_def[ivar]).second;
+				tmp = "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut1) + Convert_Number_To_TString(Find_Number_In_TString(cut1));
+				//tmp+= "_" + v_cut_name[ivar] + Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+				tmp+= Convert_Sign_To_Word(cut2) + Convert_Number_To_TString(Find_Number_In_TString(cut2));
+			}
+			this->filename_suffix_noJet_noMET_nomTW+= tmp;
+		}
+	}
+
 	if(dbgMode) cout<<"suffix = "<<this->filename_suffix<<endl;
 
 	isttZ = in_isttZ;
@@ -373,10 +398,9 @@ void theMVAtool::Fill_Zpt_Vectors()
  * Train, test and evaluate the BDT with signal and bkg MC
  * @param channel
  * @param bdt_type           [BDT or BDT_ttZ (SR or CR)]
- * @param use_ttZaMCatNLO    [Use ttZmc@NLO sample for training (even if contains negative weights)]
  * @param write_ranking_info [Save variable ranking info in file or not (must set to false if optimizing BDT variable list)]
  */
-void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use_ttZaMCatNLO, bool write_ranking_info)
+void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool write_ranking_info)
 {
 	if(isWZ) {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the WZ Control Region ! Abort"))<<endl; return;}
 
@@ -385,9 +409,6 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
 	cout<<endl<<BOLD(FGRN("-- USE ONLY ttZ / WZ / ZZ / tZq FOR TRAINING!"))<<endl;
-
-	if(!use_ttZaMCatNLO) cout<<BOLD(FGRN("-- USE TTZ MADGRAPH SAMPLE !"))<<endl<<endl;
-	else cout<<BOLD(FGRN("-- USE TTZ aMC@NLO SAMPLE !"))<<endl<<endl;
 
 
 	//---------------------------------------------------------------
@@ -421,6 +442,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 	{
 		if (dbgMode) cout<<"Is "<<v_cut_name[i]<<" used ? "<<(v_cut_IsUsedForBDT[i] && !v_cut_def[i].Contains("=="))<<endl;
 
+		//if we ask "var == x", all the selected events will have the value x, so can't use it as discriminant variable !
 		if(v_cut_IsUsedForBDT[i] && !v_cut_def[i].Contains("==")) {factory->AddVariable(v_cut_name[i].Data(), 'F');}
 		else {factory->AddSpectator(v_cut_name[i].Data(), v_cut_name[i].Data(), 'F');}
 	}
@@ -436,11 +458,11 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
     {
 		if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
 
+
         // Read training and test data
         // --- Register the training and test trees
 		TString inputfile;
 		inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
-		if(!use_ttZaMCatNLO && sample_list[isample] == "ttZ") {inputfile = dir_ntuples + "/FCNCNTuple_ttZMad.root";}
 
 	    TFile* file_input = 0;
 		file_input = TFile::Open(inputfile.Data() );
@@ -477,10 +499,13 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 		else if(!isWZ && !isttZ)
 		{
 			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );} //CHANGED
+			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+			cout<<FYEL("-- Using *ABSOLUTE* weights (BDT-tZq) --")<<endl;
+
+
 			// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
 			// else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
-			cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
+			// cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
 		}
 		else {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the wrong region ! Abort"))<<endl; return;}
     }
@@ -506,7 +531,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 
 	for(int ivar=0; ivar<v_cut_name.size(); ivar++)
 	{
-		if(v_cut_def[ivar] != "") //NB : no need to break conditions in 2 ?
+		if(v_cut_def[ivar] != "")
 		{
 			if(!v_cut_def[ivar].Contains("&&") && !v_cut_def[ivar].Contains("||")) {tmp+= v_cut_name[ivar] + v_cut_def[ivar];} //If cut contains only 1 condition
 			else if(v_cut_def[ivar].Contains("&&") && v_cut_def[ivar].Contains("||")) {cout<<BOLD(FRED("ERROR ! Wrong cut definition !"))<<endl;}
@@ -542,6 +567,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool use
 
 
 //--------------------------------
+	if(mycuts != mycutb) {cout<<__LINE__<<FRED("PROBLEM : cuts are different for signal and background ! If this is normal, fix code -- Abort")<<endl; return;}
 
     // Tell the factory how to use the training and testing events    //
     // If no numbers of events are given, half of the events in the tree are used for training, and the other half for testing:
@@ -698,16 +724,21 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 
 	if(!hdata || !hsum || !hfake) {cout<<"Warning : null histogram --> CAN NOT RESCALE FAKE HISTOGRAMS !"<<endl; return 0;}
 
+
 	TObjArray *mc = new TObjArray(2); //Create array of MC samples -- differentiate fakes from rest
 	mc->Add(hfake); //Param 0
 	mc->Add(hsum); //Param 1
 
 	TFractionFitter* fit = new TFractionFitter(hdata, mc, "Q"); //'Q' for quiet
 
+
+
 	//Constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
 	double fracmc = hsum->Integral()/hdata->Integral() ;
+	cout<<"fracmc = "<<fracmc<<endl;
 	fit->Constrain(0, 0, 1); //Constrain param 0 (fakes integral) between 0 & 1
-	fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+	fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it! //FIXME
+	// fit->Constrain(1, fracmc*0.95, fracmc*1.05); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
 
 	// TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
 	// double fakes_frac = r->Parameter(0);
@@ -720,8 +751,9 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 	fit->GetResult(0, fraction_fake, error_fake);
 	fit->GetResult(1, fraction_other, error_other);
 
-	cout<<"Fraction_fakes = "<<fraction_fake<<" , error = "<<error_fake<<endl;
-	cout<<"Fraction other = "<<fraction_other<<", error = "<<error_other<<endl;
+	cout<<endl<<FGRN("Fraction_fakes = "<<fraction_fake<<" , error = "<<error_fake<<" ")<<endl;
+	cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+	cout<<FGRN("---> Fakes Error/result = "<<error_fake/fraction_fake*100<<" %")<<endl<<endl;
 
 	TCanvas* c1 = new TCanvas("c1");
 
@@ -761,12 +793,12 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 	TString file_mTW_templates_unscaled_PATH;
 	Long_t *id,*size,*flags,*modtime;
-	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW" + this->filename_suffix_noJet + "_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs
+	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW" + this->filename_suffix_noJet_noMET_nomTW + "_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs //Need to use this suffix in case we're doing a 2D scan on MET/mTW, don't want them in the mTW filename
 
 	if(!Check_File_Existence(file_mTW_templates_unscaled_PATH))
 	{
 		cout<<file_mTW_templates_unscaled_PATH<<" doesn't exist !"<<endl;
-		file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root";
+		file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //default
 		cout<<"Try using "<<file_mTW_templates_unscaled_PATH<<endl;
 		if(!Check_File_Existence(file_mTW_templates_unscaled_PATH))
 		{
@@ -1043,11 +1075,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	TH1::SetDefaultSumw2();
 
-	delete reader; //Free any previous allocated memory, and re-initialize reader
 	reader = new TMVA::Reader( "!Color:!Silent" ); //CHANGED
 
 	// Name & adress of local variables which carry the updated input values during the event loop
-	// - the variable names MUST corresponds in name and type to those given in the weight file(s) used
+	// - the variable names MUST corresponds in name and type to those given in the weight file(s) used -- same order
 	for(int i=0; i<var_list.size(); i++)
 	{
 		reader->AddVariable(var_list[i].Data(), &var_list_floats[i]); //cout<<"Added variable "<<var_list[i]<<endl;
@@ -1164,7 +1195,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 250 );
 					hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 250 );
 
-					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 0., 150 ); //new binning //FIXME
+					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 0., 150 ); //new binning
 					// hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           nbin, 0., 150 );
 					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 150 );
 					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 150 );
@@ -1550,8 +1581,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 
-			if(!fakes_from_data && isample != sample_list.size()-1 && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) //MC Fakes : Don't reinitialize histos -> sum !
-			// if(!fakes_from_data && (isample == (sample_list.size() - 3) || isample == (sample_list.size() - 2)) ) //If sample is MC fake, don't reinitialize histos -> sum 3 MC fake samples
+			if(!fakes_from_data && isample != sample_list.size()-1 && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) //MC Fakes : Don't reinitialize histos -> sum ! //OBSOLETE !!!
 			{
 				continue;
 			}
@@ -1580,6 +1610,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	std::cout << "--- Created root file: "<<file_output->GetName()<<" containing the output histograms" << std::endl;
 	delete file_output;
+	delete reader; //Free memory
 	std::cout << "==> Reader() is done!" << std::endl << std::endl;
 
 	if(fakes_from_data) Rescale_Fake_Histograms(output_file_name);
@@ -1789,7 +1820,6 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	if(cut_on_BDT) {cout<<FYEL("--- Creating control tree WITH cut on BDT value // Cut value = "<<cut<<" ----")<<endl;}
 	else if(!cut_on_BDT) {cout<<FYEL("--- Creating control tree WITHOUT cut on BDT value ---")<<endl;}
 
-	delete reader; //Free any previous allocated memory, and re-initialize reader
 	reader = new TMVA::Reader( "!Color:!Silent" );
 
 	mkdir("outputs",0777);
@@ -2082,6 +2112,7 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	} //end syst loop
 
 	delete output_file;
+	delete reader; //Free memory
 
 	std::cout << "--- Created root file containing the output trees" << std::endl;
 	std::cout << "==> Create_Control_Trees() is done!" << std::endl << std::endl;
@@ -2285,6 +2316,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "LeadingJetNonB_pT")		{h_tmp = new TH1F( "","", binning, 0, 200 );}
 					else if(total_var_list[ivar] == "SecondJetNonB_pT")		{h_tmp = new TH1F( "","", binning, 0, 200 );}
 					else if(total_var_list[ivar] == "ContainsBadJet")		{h_tmp = new TH1F( "","", binning, 0, 1 );}
+					else if(total_var_list[ivar] == "fourthLep10")		{h_tmp = new TH1F( "","", binning, 0, 3 );}
+					else if(total_var_list[ivar] == "fourthLep15")		{h_tmp = new TH1F( "","", binning, 0, 3 );}
 
 					// else if(total_var_list[ivar] == "")							{h_tmp = new TH1F( "","", control_binning, 0, 150 );}
 
@@ -5024,7 +5057,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 /**
  * Superpose prefit templates or input variables for : signal / fakes / other backgrounds
  */
-void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString channel, bool normalized, bool draw_templates)
+void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString channel, bool normalized, bool draw_templates, bool separate_fakes)
 {
 	if(channel != "allchan" && channel != "uuu" && channel != "uue" && channel != "eeu" && channel != "eee" )
 	{
@@ -5108,11 +5141,25 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 				}
 				else if(sample_list[isample].Contains("Fakes") ) //fakes
 				{
-					if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
+					if(!file_input->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl; continue;}
+					h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
+
+					if(separate_fakes)
+					{
+						if(sample_list[isample].Contains("Muon"))
+						{
+							if(h_fakes == 0) {h_fakes = (TH1F*) h_tmp->Clone();}
+							else {h_fakes->Add(h_tmp);}
+						}
+						else if(sample_list[isample].Contains("Electron"))
+						{
+							if(h_fakes2 == 0) {h_fakes2 = (TH1F*) h_tmp->Clone();}
+							else {h_fakes2->Add(h_tmp);}
+						}
+
+					}
 					else
 					{
-						h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
-
 						if(h_fakes == 0) {h_fakes = (TH1F*) h_tmp->Clone();}
 						else {h_fakes->Add(h_tmp);}
 					}
@@ -5134,6 +5181,7 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 			h_sum_background->Scale(1./h_sum_background->Integral() );
 			h_signal->Scale(1./h_signal->Integral() );
 			h_fakes->Scale(1./h_fakes->Integral() );
+			if(separate_fakes) h_fakes2->Scale(1./h_fakes2->Integral() );
 		}
 
 
@@ -5142,6 +5190,12 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 
 		h_fakes->SetLineColor(kAzure-2);
 		h_fakes->SetLineWidth(2);
+
+		if(separate_fakes)
+		{
+			h_fakes2->SetLineColor(kAzure-4);
+			h_fakes2->SetLineWidth(2);
+		}
 
 		h_signal->SetLineColor(kGreen+2);
 		h_signal->SetLineWidth(2);
@@ -5230,7 +5284,8 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		}
 		else if(h_fakes->GetMaximum() > h_signal->GetMaximum() && h_fakes->GetMaximum() > h_sum_background->GetMaximum())
 		{
-			h_signal->SetMaximum(h_fakes->GetMaximum()*1.2);
+			if(separate_fakes && h_fakes2->GetMaximum() > h_fakes->GetMaximum()) h_signal->SetMaximum(h_fakes2->GetMaximum()*1.2);
+			else h_signal->SetMaximum(h_fakes->GetMaximum()*1.2);
 		}
 
 		if(draw_templates)
@@ -5238,19 +5293,24 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 			h_signal->Draw("hist E");
 			h_sum_background->Draw("same hist E");
 			h_fakes->Draw("same hist E");
-			// h_fakes2->Draw("same hist E");
+			if(separate_fakes) h_fakes2->Draw("same hist E");
 		}
 		else
 		{
 			h_signal->Draw("hist");
 			h_sum_background->Draw("same hist");
 			h_fakes->Draw("same hist");
-			// h_fakes2->Draw("same hist");
+			if(separate_fakes) h_fakes2->Draw("same hist");
 		}
 
 		qw->AddEntry(h_signal, "tZq" , "L");
-		qw->AddEntry(h_fakes, "Non-prompt" , "L");
-		// qw->AddEntry(h_fakes2, "Non-prompt (new)" , "L");
+		if(separate_fakes)
+		{
+			qw->AddEntry(h_fakes, "Non-prompt Muons" , "L");
+
+			qw->AddEntry(h_fakes2, "Non-prompt Electrons" , "L");
+		}
+		else qw->AddEntry(h_fakes, "Non-prompt" , "L");
 		qw->AddEntry(h_sum_background, "Other backgrounds" , "L");
 
 		//-------------------
@@ -5354,7 +5414,6 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		if(draw_templates)
 		{
 			mkdir("plots/Superpose/templates",0777); //Create directory if inexistant
-			mkdir("plots/Superpose/templates/allchans",0777); //Create directory if inexistant
 		}
 		else
 		{
@@ -5366,7 +5425,7 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		TString output_plot_name = "plots/Superpose/";
 		if(draw_templates) {output_plot_name+= "templates/";}
 		else {output_plot_name+= "input_vars/";}
-		if(channel.Contains("all")) output_plot_name+= "allchans/";
+		if(channel.Contains("all") && !draw_templates) output_plot_name+= "allchans/";
 
 		if(normalized) output_plot_name+= "SuperposeFakes_" + varname_tmp +"_" + channel + this->filename_suffix + "_norm" + this->format;
 		else output_plot_name+= "SuperposeFakes_" + varname_tmp +"_" + channel + this->filename_suffix + this->format;
@@ -5376,6 +5435,7 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		delete h_fakes; delete h_signal; delete h_sum_background; delete h_tmp;
 		delete qw;
 		delete c1;
+		if(separate_fakes) delete h_fakes2;
 
 		if(draw_templates) {break;} //don't look on variable if only want to plot template
 	}
