@@ -114,11 +114,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 
-    // if(!isWZ)
-    // {
+    if(!isWZ)
+    {
         // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(true);
         // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(true);
-    // }
+    }
 
 //-------------------
 
@@ -380,7 +380,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = true;
+    bool use_systematics = false;
 //----------------
 
 //--- General names of systematics
@@ -447,7 +447,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -654,8 +654,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
  //  ####   ####    #    ####
 //---------------------------------------------------------------------------
 
-
-
+ // !! Before running the scan remotely (with "screen"), verify that :
+ //the cut list, the path of the ntuples, the syst. are ON, the 2 mTW template file are already in the 'outputs' dir. (same files used for all points), the datacard is already generated, etc.
 
     //---------------------------------------------
     //---------------------------------------------
@@ -722,20 +722,20 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         //-- 2D scan of MET & mTW
         //--- Change here the points to scan !!
-        for(int icut=0; icut<=30; icut+=30)
+        for(int icut=0; icut<=30; icut+=10)
         {
             TString cut_def = ">" + Convert_Number_To_TString(icut);
 
             v_cut1_values.push_back(cut_def);
         }
-        for(int icut=0; icut<=0; icut+=60)
+        for(int icut=0; icut<=60; icut+=15)
         {
             TString cut_def = ">" + Convert_Number_To_TString(icut);
 
             v_cut2_values.push_back(cut_def);
         }
 
-/*
+
 
         //#############################################
         //  LOOP ON THE 2 CUT VECTORS YOU WANT TO SCAN
@@ -857,7 +857,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
 
-*/
+
 
 
         //-------------------------

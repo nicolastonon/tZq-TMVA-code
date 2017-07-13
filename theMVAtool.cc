@@ -672,16 +672,19 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool wri
  * @param  f               [File containing mTW templates]
  * @param  fakeLep_flavour [Fake lepton flavour for which we compute the SF	]
  */
-double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
+double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_together, TString FakeName)
 {
 	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return 0;}
+	if(FakeName!="FakeMu" && FakeName!="FakeEl" && FakeName!="") {cout<<"Wrong arg FakeName !"<<endl; return 0;}
+	if(!fit_ElandMu_together && channel=="uuu" && FakeName=="FakeEl") {return 0;}
+	if(!fit_ElandMu_together && channel=="eee" && FakeName=="FakeMu") {return 0;}
 
 	std::vector<TString> v_otherBackgrounds;
 	for(int isample=0; isample<sample_list.size(); isample++)
 	{
 		if(sample_list[isample] == "Data" || sample_list[isample].Contains("Fake") ) {continue;} //Treated separately
 
-		TString name_tmp = "mTW_uuu__"+sample_list[isample];
+		TString name_tmp = "mTW_"+channel+"__"+sample_list[isample];
 		if(!f ->GetListOfKeys()->Contains( name_tmp.Data() ) ) {cout<<name_tmp.Data()<<" not found !"<<endl;  continue;}
 
 		v_otherBackgrounds.push_back(sample_list[isample]);
@@ -689,7 +692,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 	cout<<endl<<endl;
 
 	f->cd();
-	TH1F * hdata=0, *hsum=0, * hfake=0, *h_tmp=0;
+	TH1F * hdata=0, *hsum=0, *hfake=0, *h_tmp=0, *h_fakeEl=0, *h_fakeMu=0;
 
 	//Treat Data / Fakes / Other samples separately
 	TString histo_name;
@@ -701,16 +704,20 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 	if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) ) {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 	h_tmp = (TH1F*)f->Get( histo_name);
 	hdata = (TH1F*) h_tmp->Clone();
+	if(hdata->Integral() == 0) {cout<<"hdata empty !"<<endl; return 0;} //if only single channel activated in main(), for example
 
 	//FAKES -- sum contributions from muon & electron fakes
 	histo_name = "mTW_" + channel + "__FakesElectron";
 	if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) )  {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 	h_tmp = (TH1F*)f->Get( histo_name);
-	hfake = (TH1F*) h_tmp->Clone();
+	if(fit_ElandMu_together) {hfake = (TH1F*) h_tmp->Clone();}
+	else {h_fakeEl = (TH1F*) h_tmp->Clone();}
+
 	histo_name = "mTW_" + channel + "__FakesMuon";
 	if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) )  {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 	h_tmp = (TH1F*)f->Get( histo_name);
-	hfake->Add(h_tmp);
+	if(fit_ElandMu_together) {hfake->Add(h_tmp);}
+	else {h_fakeMu = (TH1F*) h_tmp->Clone();}
 
 	//MC
 	for (int i = 0; i<v_otherBackgrounds.size(); i++)
@@ -722,23 +729,48 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 		else {hsum->Add(h_tmp);}
 	}
 
-	if(!hdata || !hsum || !hfake) {cout<<"Warning : null histogram --> CAN NOT RESCALE FAKE HISTOGRAMS !"<<endl; return 0;}
+	if(!hdata || !hsum || (fit_ElandMu_together && !hfake) || (!fit_ElandMu_together && (!h_fakeMu || !h_fakeEl)) ) {cout<<"Warning : null histogram --> CAN NOT RESCALE FAKE HISTOGRAMS !"<<endl; return 0;}
 
 
-	TObjArray *mc = new TObjArray(2); //Create array of MC samples -- differentiate fakes from rest
-	mc->Add(hfake); //Param 0
-	mc->Add(hsum); //Param 1
+	TObjArray *mc = 0;
+	if(fit_ElandMu_together || channel=="uuu" || channel=="eee") mc = (TObjArray*) new TObjArray(2); //Create array of MC samples -- differentiate fakes from rest
+	else mc = (TObjArray*) new TObjArray(3);
+
+	if(fit_ElandMu_together)
+	{
+		mc->Add(hfake); //Param 0
+		mc->Add(hsum); //Param 1
+	}
+	else
+	{
+		if(channel != "eee") mc->Add(h_fakeMu); //Param 0
+		if(channel != "uuu") mc->Add(h_fakeEl); //Param 0 or 1
+
+		mc->Add(hsum); //Param 1 or 2
+	}
 
 	TFractionFitter* fit = new TFractionFitter(hdata, mc, "Q"); //'Q' for quiet
 
-
-
 	//Constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
 	double fracmc = hsum->Integral()/hdata->Integral() ;
-	cout<<"fracmc = "<<fracmc<<endl;
+
 	fit->Constrain(0, 0, 1); //Constrain param 0 (fakes integral) between 0 & 1
-	fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it! //FIXME
-	// fit->Constrain(1, fracmc*0.95, fracmc*1.05); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+	if(fit_ElandMu_together)
+	{
+		fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+	}
+	else
+	{
+		if(channel == "uuu" || channel == "eee")
+		{
+			fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+		}
+		else
+		{
+			fit->Constrain(1, 0, 1);
+			fit->Constrain(2, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+		}
+	}
 
 	// TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
 	// double fakes_frac = r->Parameter(0);
@@ -747,13 +779,55 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 	if(status != 0) {cout<<"ERROR ! Problem during fit !"<<endl; return 0;} //check status
 
 	double fraction_fake=0, error_fake=0;
+	double fraction_fakeMu=0, error_fakeMu=0;
+	double fraction_fakeEl=0, error_fakeEl=0;
 	double fraction_other=0, error_other=0;
-	fit->GetResult(0, fraction_fake, error_fake);
-	fit->GetResult(1, fraction_other, error_other);
 
-	cout<<endl<<FGRN("Fraction_fakes = "<<fraction_fake<<" , error = "<<error_fake<<" ")<<endl;
-	cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
-	cout<<FGRN("---> Fakes Error/result = "<<error_fake/fraction_fake*100<<" %")<<endl<<endl;
+	cout<<"--- CHANNEL "<<channel<<" ---"<<endl;
+	cout<<endl<<"(Frac. other bkgs before fit = "<<fracmc<<")"<<endl;
+
+	if(fit_ElandMu_together)
+	{
+		fit->GetResult(0, fraction_fake, error_fake);
+		fit->GetResult(1, fraction_other, error_other);
+		cout<<endl<<FGRN("Fraction_fakes = "<<fraction_fake<<" , error = "<<error_fake<<" ")<<endl;
+		cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+		cout<<FGRN("---> Fakes Error/result = "<<error_fake/fraction_fake*100<<" %")<<endl<<endl;
+	}
+	else
+	{
+		fit->GetResult(0, fraction_fakeMu, error_fakeMu);
+		if(channel != "uuu" && channel != "eee")
+		{
+			fit->GetResult(0, fraction_fakeMu, error_fakeMu);
+			fit->GetResult(1, fraction_fakeEl, error_fakeEl);
+			fit->GetResult(2, fraction_other, error_other);
+			cout<<endl<<FGRN("Fraction_fakesMu = "<<fraction_fakeMu<<" , error = "<<error_fakeMu<<" ")<<endl;
+			cout<<FGRN("---> FakesMu Error/result = "<<error_fakeMu/fraction_fakeMu*100<<" %")<<endl;
+			cout<<endl<<FGRN("Fraction_fakesEl = "<<fraction_fakeEl<<" , error = "<<error_fakeEl<<" ")<<endl;
+			cout<<FGRN("---> FakesEl Error/result = "<<error_fakeEl/fraction_fakeEl*100<<" %")<<endl<<endl;
+			cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+		}
+		else
+		{
+			fit->GetResult(1, fraction_other, error_other);
+			if(channel=="uuu")
+			{
+				fit->GetResult(0, fraction_fakeMu, error_fakeMu);
+				cout<<endl<<FGRN("Fraction_fakesMu = "<<fraction_fakeMu<<" , error = "<<error_fakeMu<<" ")<<endl;
+				cout<<FGRN("---> FakesMu Error/result = "<<error_fakeMu/fraction_fakeMu*100<<" %")<<endl;
+				cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+			}
+			else if(channel=="eee")
+			{
+				fit->GetResult(0, fraction_fakeEl, error_fakeEl);
+				cout<<endl<<FGRN("Fraction_fakesEl = "<<fraction_fakeEl<<" , error = "<<error_fakeEl<<" ")<<endl;
+				cout<<FGRN("---> FakesEl Error/result = "<<error_fakeEl/fraction_fakeEl*100<<" %")<<endl<<endl;
+				cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+			}
+		}
+	}
+
 
 	TCanvas* c1 = new TCanvas("c1");
 
@@ -767,9 +841,29 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 
 	// cout<<endl<<"Fake lepton flavour "<<fakeLep_flavour<<" : Fraction of Fakes fitted from data = "<<fakes_postfit*100<<" %"<<endl;
 
-	delete mc; delete fit; delete c1;
 
-	return fraction_fake * (hdata->Integral() / hfake->Integral() ); //Return 'postfit fakes fraction' over 'prefit fakes fraction' ==> SF
+
+	double SF = 0; //Need to store result in distinct variable, because when deleting histograms, we remove the references obtained via 'GetResult' !
+
+	if(fit_ElandMu_together) {SF = fraction_fake * (hdata->Integral() / hfake->Integral() );} //Return 'postfit fakes fraction' over 'prefit fakes fraction' ==> SF
+	else
+	{
+		if(FakeName == "FakeMu") {SF =  fraction_fakeMu * (hdata->Integral() / h_fakeMu->Integral() );}
+		else if(FakeName == "FakeEl") {SF =  fraction_fakeEl * (hdata->Integral() / h_fakeEl->Integral() );}
+		else {cout<<"Wrong arg FakeName !"<<endl;}
+	}
+
+
+	delete mc; delete fit; delete c1;
+	delete hdata; delete hsum; delete h_tmp;
+	if(fit_ElandMu_together) delete hfake;
+	else
+	{
+		if(channel != "uuu") delete h_fakeEl;
+		if(channel != "eee") delete h_fakeMu;
+	}
+
+	return SF;
 }
 
 
@@ -788,6 +882,8 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel)
 void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 {
 	if(!Check_File_Existence(file_to_rescale_name) ) {cout<<file_to_rescale_name<<" doesn't exist ! Can't rescale Fakes ! "<<endl; return;}
+
+	bool fit_ElandMu_together = true; //fit FakeMu and FakeEl templates altogether, for each channel
 
 	TFile * file_mTW_templates_unscaled = 0;
 
@@ -809,16 +905,59 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	file_mTW_templates_unscaled = TFile::Open(file_mTW_templates_unscaled_PATH, "READ"); //File containing the templates, from which can compute fake ratio
 	if(!file_mTW_templates_unscaled) {cout<<FRED(<<file_mTW_templates_unscaled_PATH.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
 
-	double SF_uuu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu");
-	double SF_eee = Compute_Fake_SF(file_mTW_templates_unscaled, "eee");
-	double SF_uue = Compute_Fake_SF(file_mTW_templates_unscaled, "uue");
-	double SF_eeu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu");
+	double SF_uuu = 0;
+	double SF_uue = 0;
+	double SF_eeu = 0;
+	double SF_eee = 0;
+	double SF_uuu_FakeMu = 0;
+	double SF_uue_FakeMu = 0;
+	double SF_eeu_FakeMu = 0;
+	double SF_eee_FakeMu = 0;
+	double SF_uuu_FakeEl = 0;
+	double SF_uue_FakeEl = 0;
+	double SF_eeu_FakeEl = 0;
+	double SF_eee_FakeEl = 0;
+
+	if(fit_ElandMu_together)
+	{
+		SF_uuu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "");
+		SF_uue = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "");
+		SF_eeu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "");
+		SF_eee = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "");
+	}
+	else
+	{
+		SF_uuu_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "FakeMu");
+		SF_uue_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "FakeMu");
+		SF_eeu_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "FakeMu");
+		SF_eee_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeMu");
+		SF_uuu_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "FakeEl");
+		SF_uue_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "FakeEl");
+		SF_eeu_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "FakeEl");
+		SF_eee_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeEl");
+	}
+
 
 	cout<<endl<<BOLD(FYEL("--- Re-scaling the Fake histograms ---"))<<endl;
-	cout<<FYEL("uuu channel SF = "<<SF_uuu<<"")<<endl;
-	cout<<FYEL("eeu channel SF = "<<SF_eeu<<"")<<endl;
-	cout<<FYEL("eee channel SF = "<<SF_eee<<"")<<endl;
-	cout<<FYEL("uue channel SF = "<<SF_uue<<"")<<endl;
+	if(fit_ElandMu_together)
+	{
+		cout<<FYEL("uuu channel SF = "<<SF_uuu<<"")<<endl;
+		cout<<FYEL("eeu channel SF = "<<SF_eeu<<"")<<endl;
+		cout<<FYEL("uue channel SF = "<<SF_uue<<"")<<endl;
+		cout<<FYEL("eee channel SF = "<<SF_eee<<"")<<endl;
+	}
+	else
+	{
+		cout<<FYEL("uuu channel SF FakeMu = "<<SF_uuu_FakeMu<<"")<<endl;
+		cout<<FYEL("eeu channel SF FakeMu = "<<SF_eeu_FakeMu<<"")<<endl;
+		cout<<FYEL("uue channel SF FakeMu = "<<SF_uue_FakeMu<<"")<<endl;
+		cout<<FYEL("eee channel SF FakeMu = "<<SF_eee_FakeMu<<"")<<endl;
+		cout<<FYEL("uuu channel SF FakeEl = "<<SF_uuu_FakeEl<<"")<<endl;
+		cout<<FYEL("eeu channel SF FakeEl = "<<SF_eeu_FakeEl<<"")<<endl;
+		cout<<FYEL("uue channel SF FakeEl = "<<SF_uue_FakeEl<<"")<<endl;
+		cout<<FYEL("eee channel SF FakeEl = "<<SF_eee_FakeEl<<"")<<endl;
+	}
+
 
 	delete file_mTW_templates_unscaled;
 
@@ -916,10 +1055,24 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 					TH1F* h_tmp = (TH1F*) file_to_rescale->Get(histo_name);
 
-					if(channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu);}
-					else if(channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu);}
-					else if(channel_list[ichan] == "eee") {h_tmp->Scale(SF_eee);}
-					else if(channel_list[ichan] == "uue") {h_tmp->Scale(SF_uue);}
+					if(fit_ElandMu_together)
+					{
+						if(channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu);}
+						else if(channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu);}
+						else if(channel_list[ichan] == "eee") {h_tmp->Scale(SF_eee);}
+						else if(channel_list[ichan] == "uue") {h_tmp->Scale(SF_uue);}
+					}
+					else
+					{
+						if(		sample_list[isample]=="FakesMuon" && channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu_FakeMu);}
+						else if(sample_list[isample]=="FakesMuon" && channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu_FakeMu);}
+						else if(sample_list[isample]=="FakesMuon" && channel_list[ichan] == "uue") {h_tmp->Scale(SF_uue_FakeMu);}
+						else if(sample_list[isample]=="FakesMuon" && channel_list[ichan] == "eee") {h_tmp->Scale(SF_eee_FakeMu);}
+						if(		sample_list[isample]=="FakesElectron" && channel_list[ichan] == "uuu") {h_tmp->Scale(SF_uuu_FakeEl);}
+						else if(sample_list[isample]=="FakesElectron" && channel_list[ichan] == "eeu") {h_tmp->Scale(SF_eeu_FakeEl);}
+						else if(sample_list[isample]=="FakesElectron" && channel_list[ichan] == "uue") {h_tmp->Scale(SF_uue_FakeEl);}
+						else if(sample_list[isample]=="FakesElectron" && channel_list[ichan] == "eee") {h_tmp->Scale(SF_eee_FakeEl);}
+					}
 
 
 					file_to_rescale->cd();

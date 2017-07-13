@@ -13,6 +13,10 @@ FakeMu_rateMu=""
 FakeEl_shapeEl=""
 FakeMu_shapeMu=""
 fakes_NP_value = "";
+use_hardCoded_fakeRates = "";
+
+FakeRateMu_ch="";
+FakeRateEl_ch="";
 
 total = len(sys.argv)
 cmdargs = str(sys.argv)
@@ -21,7 +25,8 @@ channel = str(sys.argv[1])
 theVar = str(sys.argv[2])
 theFiletoRead= sys.argv[3]
 systList = str(sys.argv[4])
-fakes_NP_value = str(sys.argv[5])
+use_hardCoded_fakeRates = str(sys.argv[5])
+fakes_NP_value = str(sys.argv[6])
 
 fileToSearch = "Template_Datacard.txt"
 
@@ -35,29 +40,55 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
 
 if channel=="uuu":
     FakeEl_rateEl="-"
-    FakeMu_rateMu=fakes_NP_value
+    FakeRateMu_ch="FakeRateMu_uuu"
+    if use_hardCoded_fakeRates=="y":
+        FakeMu_rateMu="2.0"
+    else:
+        FakeMu_rateMu=fakes_NP_value
+
     FakeEl_shapeEl="-"
     FakeMu_shapeMu="1"
     trigsyst = "1.01"
     fileToSearch = "Template_Datacard_uuu.txt"
 
 elif channel=="uue":
-    FakeEl_rateEl=fakes_NP_value
-    FakeMu_rateMu=fakes_NP_value
+    FakeRateMu_ch="FakeRateMu_uue"
+    FakeRateEl_ch="FakeRateEl_uue"
+
+    if use_hardCoded_fakeRates=="y":
+        FakeMu_rateMu="1.3"
+        FakeEl_rateEl="1.3"
+    else:
+        FakeMu_rateMu=fakes_NP_value
+        FakeEl_rateEl=fakes_NP_value
+
     FakeEl_shapeEl="1"
     FakeMu_shapeMu="1"
     trigsyst = "1.01"
 
 elif channel=="eeu":
-    FakeEl_rateEl=fakes_NP_value
-    FakeMu_rateMu=fakes_NP_value
+    FakeRateMu_ch="FakeRateMu_eeu"
+    FakeRateEl_ch="FakeRateEl_eeu"
+
+    if use_hardCoded_fakeRates=="y":
+        FakeMu_rateMu="2.0"
+        FakeEl_rateEl="2.0"
+    else:
+        FakeMu_rateMu=fakes_NP_value
+        FakeEl_rateEl=fakes_NP_value
+
     FakeEl_shapeEl="1"
     FakeMu_shapeMu="1"
     trigsyst = "1.01"
 
 elif channel=="eee":
-    FakeEl_rateEl=fakes_NP_value
     FakeMu_rateMu="-"
+    FakeRateEl_ch="FakeRateEl_eee"
+    if use_hardCoded_fakeRates=="y":
+        FakeEl_rateEl="1.3"
+    else:
+        FakeEl_rateEl=fakes_NP_value
+
     FakeEl_shapeEl="1"
     FakeMu_shapeMu="-"
     trigsyst = "1.02"
@@ -84,6 +115,9 @@ s = s.replace("FakeMu_rateMu", FakeMu_rateMu)
 
 s = s.replace("FakeEl_shapeEl", FakeEl_shapeEl)
 s = s.replace("FakeMu_shapeMu", FakeMu_shapeMu)
+
+s = s.replace("FakeRateMu_ch", FakeRateMu_ch)
+s = s.replace("FakeRateEl_ch", FakeRateEl_ch)
 
 s = s.replace("trigsyst", trigsyst)
 

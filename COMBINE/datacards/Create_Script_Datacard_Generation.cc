@@ -26,7 +26,7 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(char include_systematics, double fake_rate)
+void Script_Datacards_InputVars(char include_systematics, char use_hardCoded_fakeRates, double fake_rate)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -111,7 +111,7 @@ void Script_Datacards_InputVars(char include_systematics, double fake_rate)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " "<<fake_rate<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + use_hardCoded_fakeRates + " "<<fake_rate<<endl;
 		}
 
 		file_out<<endl;
@@ -149,7 +149,7 @@ void Script_Datacards_InputVars(char include_systematics, double fake_rate)
 
 
 
-void Script_Datacards_TemplateFit(char include_systematics, double fake_rate)
+void Script_Datacards_TemplateFit(char include_systematics, char use_hardCoded_fakeRates, double fake_rate)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -180,7 +180,7 @@ void Script_Datacards_TemplateFit(char include_systematics, double fake_rate)
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " "<<fake_rate<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + use_hardCoded_fakeRates + " "<<fake_rate<<endl;
 		}
 
 		file_out<<endl;
@@ -279,6 +279,7 @@ int main()
 	char include_systematics = 'n';
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
+	char use_hardCoded_fakeRates = 'n';
 	double fake_rate = 400;
 
 	cout<<BOLD(FBLU("### Will create script for generation of combined Datacard ###"))<<endl<<endl;
@@ -294,19 +295,32 @@ int main()
 		cin>>include_systematics;
 	}
 
-	cout<<FYEL("--- Choose FakeRate prefit uncertainty in % :")<<" (default 400%)"<<endl;
-	cin>>fake_rate;
-	while(cin.fail() || fake_rate<0)
+	cout<<FYEL("--- Do you want to use hard-coded FakeRate uncertainties ? (y/n) :")<<" (else can choose yourself)"<<endl;
+	cin>>use_hardCoded_fakeRates;
+	while(cin.fail() || (use_hardCoded_fakeRates != 'y' && use_hardCoded_fakeRates != 'n') )
 	{
 		cin.clear();
 		cin.ignore(1000, '\n');
 
-		cout<<" Wrong answer ! Need to choose fake rate > 0 :"<<endl;
-		cin>>fake_rate;
+		cout<<" Wrong answer ! Need to type 'y' or 'n' :"<<endl;
+		cin>>use_hardCoded_fakeRates;
 	}
 
-	fake_rate = 1 + (fake_rate / 100.0);
+	if(use_hardCoded_fakeRates == 'n')
+	{
+		cout<<FYEL("--- Choose FakeRate prefit uncertainty in % :")<<" (default 400%)"<<endl;
+		cin>>fake_rate;
+		while(cin.fail() || fake_rate<0)
+		{
+			cin.clear();
+			cin.ignore(1000, '\n');
 
+			cout<<" Wrong answer ! Need to choose fake rate > 0 :"<<endl;
+			cin>>fake_rate;
+		}
+
+		fake_rate = 1 + (fake_rate / 100.0);
+	}
 
 	cout<<FYEL("--- Do you want to create datacard for a Template Fit ? (y/n) ")<<endl;
 	cin>>datacard_template_fit;
@@ -331,9 +345,9 @@ int main()
 	}
 
 
-	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, fake_rate);
+	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, use_hardCoded_fakeRates, fake_rate);
 
-	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, fake_rate);
+	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, use_hardCoded_fakeRates, fake_rate);
 
 	return 0;
 }

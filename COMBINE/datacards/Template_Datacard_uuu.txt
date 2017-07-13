@@ -24,7 +24,7 @@ WZl_rate       lnN     -                 -           -           -	    		-      
 WZb_rate       lnN     -                 -           -           -	    		-             -				-				-	   1.3			-
 WZc_rate       lnN     -                 -           -           -	    		-             -				-				-		-			1.3
 
-FakeRateMu     lnN     -                 -           -           -	    		-             -			FakeMu_rateMu		-		-			-
+FakeRateMu_ch  lnN     -                 -           -           -	    		-             -			FakeMu_rateMu		-		-			-
 
 [*]FakeShapeMu	shape    - 		 	     - 		  	  - 			-			- 			  -			FakeMu_shapeMu		-			   -		-
 
