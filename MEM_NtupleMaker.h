@@ -44,7 +44,7 @@ class MEM_NtupleMaker
 		double Compute_mbj(vector<ciemat::Jet>*, int, bool, int);
 		void NtupleMaker(TString);
 
-		TString MEM_or_WZ;
+		TString region;
 		double CSV_threshold; double eta_threshold;
 
 		TString output_dir;
@@ -64,6 +64,7 @@ class MEM_NtupleMaker
 		Char_t is_3l_TTZ_CR;
 		Char_t is_3l_WZ_CR;
 		Char_t is_3l_TZQ_SR;
+		Char_t is_3l_1BTAG_SR;
 
 		Int_t mc_ttZhypAllowed;
 

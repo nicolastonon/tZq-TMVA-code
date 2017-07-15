@@ -402,7 +402,7 @@ void theMVAtool::Fill_Zpt_Vectors()
  */
 void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool write_ranking_info)
 {
-	if(isWZ) {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the WZ Control Region ! Abort"))<<endl; return;}
+	// if(isWZ) {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the WZ Control Region ! Abort"))<<endl; return;}
 
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("---TRAINING ---")<<endl;
@@ -456,7 +456,15 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool wri
 
 	for(int isample=0; isample<sample_list.size(); isample++)
     {
-		if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
+		if(bdt_type != "BDTfake")
+		{
+			if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") ) {continue;} //Use only ttZ, WZ, ZZ, tZq Ntuples for training BDTs
+		}
+		else
+		{
+			if(!sample_list[isample].Contains("WZ") && !sample_list[isample].Contains("ttZ") && !sample_list[isample].Contains("ZZ") && !sample_list[isample].Contains("tZq") && !sample_list[isample].Contains("Fakes") ) {continue;} //Also use fakes in WZ region
+
+		}
 
 
         // Read training and test data
@@ -490,24 +498,29 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool wri
 
 
 		//Use relative weights in signal region & absolute weights in ttZ CR (needed to avoid overtraining !)
-		if(isttZ && !isWZ)
-		{
-			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
-			cout<<FYEL("-- Using *ABSOLUTE* weights (BDTttZ) --")<<endl;
-		}
-		else if(!isWZ && !isttZ)
-		{
-			if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
-			else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
-			cout<<FYEL("-- Using *ABSOLUTE* weights (BDT-tZq) --")<<endl;
+		if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+		else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+		cout<<FYEL("-- Using *ABSOLUTE* weights --")<<endl;
 
 
-			// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
-			// else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
-			// cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
-		}
-		else {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the wrong region ! Abort"))<<endl; return;}
+		// if(isttZ && !isWZ)
+		// {
+		// 	if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+		// 	else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+		// 	cout<<FYEL("-- Using *ABSOLUTE* weights (BDTttZ) --")<<endl;
+		// }
+		// else if(!isWZ && !isttZ)
+		// {
+		// 	if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "fabs(Weight)" );}
+		// 	else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "fabs(Weight)" );}
+		// 	cout<<FYEL("-- Using *ABSOLUTE* weights (BDT-tZq) --")<<endl;
+		//
+		//
+		// 	// if(sample_list[isample].Contains("tZq")) {factory->AddSignalTree ( tree, signalWeight ); factory->SetSignalWeightExpression( "Weight" );}
+		// 	// else {factory->AddBackgroundTree( tree, backgroundWeight ); factory->SetBackgroundWeightExpression( "Weight" );}
+		// 	// cout<<FYEL("-- Using *RELATIVE* weights (BDT tZq) --")<<endl;
+		// }
+		// else {cout<<BOLD(FRED("Error ! You are trying to train a BDT in the wrong region ! Abort"))<<endl; return;}
     }
 
 
@@ -602,10 +615,12 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool wri
 	mkdir("outputs/Rankings", 0777); //Dir. containing variable ranking infos
 	if(!isWZ && !isttZ) mkdir("outputs/Rankings/BDT", 0777);
 	else if(!isWZ && isttZ) mkdir("outputs/Rankings/BDTttZ", 0777);
+	else if(isWZ) mkdir("outputs/Rankings/BDTfake", 0777);
 
-	TString ranking_file_path;
+	TString ranking_file_path = ".";
 	if(!isWZ && !isttZ) ranking_file_path = "outputs/Rankings/BDT/RANKING_" + bdt_type + "_" + channel + ".txt";
 	else if(!isWZ && isttZ) ranking_file_path = "outputs/Rankings/BDTttZ/RANKING_" + bdt_type + "_" + channel + ".txt";
+	else if(isWZ) ranking_file_path = "outputs/Rankings/BDTfake/RANKING_" + bdt_type + "_" + channel + ".txt";
 	if(write_ranking_info) cout<<endl<<endl<<endl<<FBLU("NB : Temporarily redirecting standard output to file '"<<ranking_file_path<<"' in order to save Ranking Info !!")<<endl<<endl<<endl;
 
 	std::ofstream out("ranking_info_tmp.txt"); //Temporary name
@@ -887,6 +902,8 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 	TFile * file_mTW_templates_unscaled = 0;
 
+	bool rescaled_atLeast_1hist = false;
+
 	TString file_mTW_templates_unscaled_PATH;
 	Long_t *id,*size,*flags,*modtime;
 	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW" + this->filename_suffix_noJet_noMET_nomTW + "_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs //Need to use this suffix in case we're doing a 2D scan on MET/mTW, don't want them in the mTW filename
@@ -965,6 +982,8 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	//Templates
 	total_var_list.push_back("mTW");
 	total_var_list.push_back("BDT");
+	total_var_list.push_back("BDT0l"); //CHANGED
+	total_var_list.push_back("BDTfake"); //CHANGED
 	total_var_list.push_back("BDTttZ");
 
 	//Other vars
@@ -1078,11 +1097,15 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 					file_to_rescale->cd();
 					h_tmp->Write(histo_name, TObject::kOverwrite);
 
+					rescaled_atLeast_1hist = true;
+
 					delete h_tmp;
 				}
 			}
 		}
 	}
+
+	if(!rescaled_atLeast_1hist) {cout<<FRED("WARNING : no histogram was rescaled ! Are you sure you are looking for the right histo names ?")<<endl;}
 
 	delete file_to_rescale;
 
@@ -1199,10 +1222,11 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
  * @param  real_data             If true, use real data ; else, looks for pseudodata
  * @param  cut_on_BDT            Cut value on BDT (-> cran create templates in CR)
  */
-int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data, bool cut_on_BDT, bool keep_high_BDT_events, double BDT_cut_value, bool combine_mTW_BDT_SR)
+int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data, bool cut_on_BDT, bool keep_high_BDT_events, double BDT_cut_value)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Templates ---")<<endl;}
+	// if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW" || template_name == "BDT0l") {cout<<FYEL("--- Producing "<<template_name<<" Templates ---")<<endl;}
+	if(template_name.Contains("BDT") || template_name.Contains("mTW")) {cout<<FYEL("--- Producing "<<template_name<<" Templates ---")<<endl;}
 	else {cout<<BOLD(FRED("--- ERROR : invalid template_name value ! Exit !"))<<endl; cout<<"Valid names are : BDT/BDTttZ/mTW !"<<endl; return 0;}
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 	if(!fakes_from_data) {cout<<FYEL("--- Using fakes from MC ---")<<endl;}
@@ -1211,10 +1235,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	else {cout<<FYEL("--- Using REAL data ---")<<endl<<endl;}
 	if(cut_on_BDT) {cout<<FYEL("--- Creating templates WITH cut on BDT value // Cut value = "<<BDT_cut_value<<" ----")<<endl; if(BDT_cut_value==-99) {return 1;} }
 
-	if(combine_mTW_BDT_SR) {cout<<endl<<endl<<endl<<BOLD(FYEL(" !!CREATING COMBINED TEMPLATES IN SR : USE BOTH MTW AND BDT DISTRIBUTIONS !!"))<<endl<<endl<<endl<<endl<<endl;}
+	if(template_name == "mTWandBDT") {cout<<endl<<endl<<endl<<BOLD(FYEL(" !!CREATING COMBINED TEMPLATES IN SR : USE BOTH MTW AND BDT DISTRIBUTIONS !!"))<<endl<<endl<<endl<<endl<<endl;}
 
-	bool combine_mTW_BDT = false;
-	if(combine_mTW_BDT_SR && template_name == "BDT") combine_mTW_BDT = true;
 
 	mkdir("outputs",0777);
 
@@ -1248,7 +1270,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 	// --- Book the MVA methods
 	TString dir    = "weights/";
-	if(template_name == "BDT" || template_name == "BDTttZ" || cut_on_BDT) //Need to book method if want BDT template or if cut on BDT
+	// if(template_name == "BDT" || template_name == "BDTttZ" || cut_on_BDT) //Need to book method if want BDT template or if cut on BDT
+	if(template_name.Contains("BDT") || cut_on_BDT) //Need to book method if want BDT template or if cut on BDT
 	{
 		TString MVA_method_name = "";
 		TString weightfile = "";
@@ -1322,7 +1345,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if(fakes_from_data || (!fakes_from_data && !sample_list[isample-1].Contains("DY") && !sample_list[isample-1].Contains("TT") && !sample_list[isample-1].Contains("WW")) ) //MC Fakes : Don't reinitialize histos -> sum !
 			{
 				// Book output histograms
-				if(combine_mTW_BDT)
+				if(template_name=="mTWandBDT")
 				{
 					hist_uuu     = new TH1F( (template_name+"_uuu").Data(),           (template_name+"_uuu").Data(),           15, 0, 150);
 					hist_uue     = new TH1F( (template_name+"_uue").Data(),           (template_name+"_uue").Data(),           15, 0, 150);
@@ -1334,7 +1357,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					// hist_eeu     = new TH1F( (template_name+"_eeu").Data(),           (template_name+"_eeu").Data(),           10, 0, 200);
 					// hist_eee     = new TH1F( (template_name+"_eee").Data(),           (template_name+"_eee").Data(),           10, 0, 200);
 				}
-				else if (template_name == "BDT" || template_name == "BDTttZ") //create histogram for each channel (-1 = bkg, +1 = signal)
+				else if (template_name.Contains("BDT")) //create histogram for each channel (-1 = bkg, +1 = signal)
 				{
 					hist_uuu     = new TH1F( (template_name+"_uuu").Data(),           (template_name+"_uuu").Data(),           nbin, -1, 1 );
 					hist_uue     = new TH1F( (template_name+"_uue").Data(),           (template_name+"_uue").Data(),           nbin, -1, 1 );
@@ -1353,6 +1376,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 150 );
 					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 150 );
 				}
+				else {cout<<FRED("ERROR : wrong template name !")<<endl; return 0;}
 			}
 
 			tree = 0;
@@ -1578,12 +1602,13 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				}
 
 				//CHANGED -- put overflow in last bin (error treatment ok ?)
-				if (template_name == "BDT" || template_name == "BDTttZ")
+				// if (template_name == "BDT" || template_name == "BDTttZ")
+				if(template_name.Contains("BDT") )
 				{
 					if(i_channel == 0)
 					{
-						if(combine_mTW_BDT && mTW<50) {hist_uuu->Fill(mTW, weight);}
-						else if(combine_mTW_BDT && mTW>50)
+						if(template_name=="mTWandBDT" && mTW<50) {hist_uuu->Fill(mTW, weight);}
+						else if(template_name=="mTWandBDT" && mTW>50)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_uuu"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
@@ -1598,8 +1623,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 					else if(i_channel == 1)
 					{
-						if(combine_mTW_BDT && mTW<50) {hist_uue->Fill(mTW, weight);}
-						else if(combine_mTW_BDT && mTW>50)
+						if(template_name=="mTWandBDT" && mTW<50) {hist_uue->Fill(mTW, weight);}
+						else if(template_name=="mTWandBDT" && mTW>50)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_uue"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
@@ -1614,8 +1639,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 					else if(i_channel == 2)
 					{
-						if(combine_mTW_BDT && mTW<50) {hist_eeu->Fill(mTW, weight);}
-						else if(combine_mTW_BDT && mTW>50)
+						if(template_name=="mTWandBDT" && mTW<50) {hist_eeu->Fill(mTW, weight);}
+						else if(template_name=="mTWandBDT" && mTW>50)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_eeu"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
@@ -1630,8 +1655,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					}
 					else if(i_channel == 3)
 					{
-						if(combine_mTW_BDT && mTW<50) {hist_eee->Fill(mTW, weight);}
-						else if(combine_mTW_BDT && mTW>50)
+						if(template_name=="mTWandBDT" && mTW<50) {hist_eee->Fill(mTW, weight);}
+						else if(template_name=="mTWandBDT" && mTW>50)
 						{
 							mva_value = reader->EvaluateMVA( template_name+"_eee"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;

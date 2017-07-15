@@ -23,6 +23,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  #######  ##           ##    ####  #######  ##    ##  ######
 //---------------------------------------------------------------------------
 
+//----------------------
+    //--- NEW : set to TRUE (and run code with arg. "tZq") to run in region "=1bjet, =0light". Then merge with other templates and use dedicated datacard
+    bool SR_new_0light = false;
+
+    //-- NEW : set to TRUE if want to have combined templates (mTW+BDT) in SR rather than simply BDT
+    bool use_mTWandBDT_SR = false;
+
+    //-- NEW : set to TRUE if want to use dedicated BDT (including Fakes) in WZ region insteand of mTW
+    bool use_BDT_WZregion = true;
+//----------------------
+
+
     //Matrix Element Method ==> TRUE
     bool include_MEM_variables = true;
 
@@ -37,10 +49,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Luminosity
     //NOTE: this value is compared to a hard-coded value in theMVAtool.cc & a rescaling factor is computed in case they are different
     double set_luminosity = 35.862; //Moriond 2017 - 35.862fb
-
-
-    //-- NEW : set to TRUE if want to have combined templates (mTW+BDT) in SR rather than simply BDT
-    bool combine_mTW_BDT_SR = false;
 
     //Fakes
     bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
@@ -111,7 +119,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all/specific regions ---
 
     set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
-    // set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
+    set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 
     if(!isWZ)
@@ -127,8 +135,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //But you can add some cuts which are region-dependant !
     if(!isWZ && !isttZ) //Default selection is Signal Region : 1<NJets<4 && NBJets == 1
     {
-        set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
-        set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false);
+        if(!SR_new_0light)
+        {
+            set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
+            set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false);
+        }
+        else
+        {
+            set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back("==1");     set_v_cut_IsUsedForBDT.push_back(false);
+            set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false);
+        }
     }
     if(isWZ) //WZ CR Region : NJets > 0 && NBJets == 0
     {
@@ -169,7 +185,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //--- Other
     // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM"; //With MEM
+    // else if(isttZ) 		dir_ntuples="/home/nico/root/tmva/test/input_ntuples/ntuples_MEM"; //With MEM
+    // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_1btag"; //With MEM
     // t_name = "Tree";
 
     //--- CIEMAT's Ntuples ---
@@ -260,15 +277,15 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //------------------------ for tZq
     thevarlist.push_back("etaQ");
     thevarlist.push_back("LeadJetEta");
-    thevarlist.push_back("dRjj");
-    thevarlist.push_back("btagDiscri");
+    if(!SR_new_0light) thevarlist.push_back("dRjj"); //CHANGED
+    if(!use_BDT_WZregion || !isWZ) thevarlist.push_back("btagDiscri");
     thevarlist.push_back("ZEta");
     thevarlist.push_back("mtop");
     thevarlist.push_back("AddLepAsym");
     thevarlist.push_back("AddLepETA");
     thevarlist.push_back("ptQ");
     thevarlist.push_back("dPhiZAddLep");
-    thevarlist.push_back("dPhiAddLepB");
+    if(!use_BDT_WZregion || !isWZ) thevarlist.push_back("dPhiAddLepB");
     thevarlist.push_back("dRAddLepClosestJet");
 
     // thevarlist.push_back("mTW");
@@ -280,7 +297,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // thevarlist.push_back("Zpt");
     // thevarlist.push_back("tZq_pT");
 
-    if(include_MEM_variables)
+    if(include_MEM_variables && !isWZ)
     {
         thevarlist.push_back("MEMvar_0"); //Likelihood ratio of MEM weigt (S/S+B ?), with x-sec scaling factor
         thevarlist.push_back("MEMvar_1"); //Kinematic Fit Score
@@ -357,17 +374,22 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     v_add_var_names.push_back("Zpt");
     v_add_var_names.push_back("AdditionalMuonIso");
     v_add_var_names.push_back("AdditionalEleIso");
-    v_add_var_names.push_back("tZ_pT");
-    v_add_var_names.push_back("tZ_mass");
-    v_add_var_names.push_back("bj_mass_leadingJet");
-    v_add_var_names.push_back("bj_mass_subleadingJet");
-    v_add_var_names.push_back("bj_mass_leadingJet_pT40");
-    v_add_var_names.push_back("bj_mass_leadingJet_pT50");
-    v_add_var_names.push_back("bj_mass_leadingJet_pTlight40");
-    v_add_var_names.push_back("bj_mass_leadingJet_pTlight50");
-    v_add_var_names.push_back("bj_mass_leadingJet_etaCut");
-    v_add_var_names.push_back("LeadingJetCSV");
-    v_add_var_names.push_back("SecondJetCSV");
+
+    //--- NOT PRESENT IN CIEMAT NTUPLES
+    if(t_name == "Tree")
+    {
+        v_add_var_names.push_back("tZ_pT");
+        v_add_var_names.push_back("tZ_mass");
+        v_add_var_names.push_back("bj_mass_leadingJet");
+        v_add_var_names.push_back("bj_mass_subleadingJet");
+        v_add_var_names.push_back("bj_mass_leadingJet_pT40");
+        v_add_var_names.push_back("bj_mass_leadingJet_pT50");
+        v_add_var_names.push_back("bj_mass_leadingJet_pTlight40");
+        v_add_var_names.push_back("bj_mass_leadingJet_pTlight50");
+        v_add_var_names.push_back("bj_mass_leadingJet_etaCut");
+        v_add_var_names.push_back("LeadingJetCSV");
+        v_add_var_names.push_back("SecondJetCSV");
+    }
 
 
 //---------------------------------------------------------------------------
@@ -380,7 +402,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 //--- General names of systematics
@@ -480,8 +502,14 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         //Template
         TString template_name = "BDT"; //BDT output in Signal Region
+        if(!isttZ && !isWZ && SR_new_0light) template_name = "BDT0l";
         if(isttZ)  template_name = "BDTttZ"; //BDTttZ output in ttZ Control region
-        if(isWZ)   template_name = "mTW"; //mTW distribution in WZ Control region
+        if(isWZ)
+        {
+            template_name = "mTW"; //mTW distribution in WZ Control region
+            if(use_mTWandBDT_SR) template_name = "mTWandBDT";
+            else if(use_BDT_WZregion) template_name = "BDTfake";
+        }
 
         //BDT cut
         // float cut_BDT_value = -99; //Initialization -- used to cut on BDT & stay blind
@@ -495,7 +523,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //Train BDTs in all 4 channels
         for(int i=0; i<thechannellist.size(); i++)
         {
-            if(train_BDT && !isWZ)
+            if(train_BDT && template_name.Contains("BDT"))
             {
                 MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, true);
             }
@@ -509,7 +537,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(create_templates)
         {
             if(cut_on_BDT_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Read(template_name, fakes_from_data, real_data_templates, cut_on_BDT_tmp, keep_high_BDT_events, cut_BDT_value, combine_mTW_BDT_SR);
+            MVAtool->Read(template_name, fakes_from_data, real_data_templates, cut_on_BDT_tmp, keep_high_BDT_events, cut_BDT_value);
         }
 
         //#############################################
@@ -562,7 +590,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //#############################################
 
         // TString file_to_rescale = "./outputs/Control_Histograms"+MVAtool->filename_suffix+"_CutBDT.root";
-        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+"_unScaled.root";
+        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
+        // TString file_to_rescale = "./outputs/Reader_BDTfake_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin0_NBJetsEq0.root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
         bool superpose_fakes_signal = false;
@@ -841,7 +870,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                 if(create_templates)
                 {
-                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, combine_mTW_BDT_SR);
+                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99);
                 }
 
                 MoveFile( ("./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root"), ("outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2])) ) ); //Move file
@@ -1122,7 +1151,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     CopyFile( ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
                 }
 
-                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, combine_mTW_BDT_SR);
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99);
 
                 MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("./outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name) ); //Move file
 
@@ -1350,7 +1379,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     CopyFile( ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
                 }
 
-                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, combine_mTW_BDT_SR);
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99);
 
                 MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar") ); //Move file
 

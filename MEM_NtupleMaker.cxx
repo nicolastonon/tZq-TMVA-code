@@ -24,8 +24,8 @@ using namespace std;
 //Overloaded constructor (default)
 MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variables, vector<TString> v_variablesToCreate, vector<TString> weight_syst_list, vector<TString> tree_syst_list, TString region_choice, double set_CSV_threshold, double set_eta_threshold, TString set_tmp_dir)
 {
-  if(region_choice != "MEM" && region_choice != "WZ") {cout<<endl<<BOLD( FRED("ERROR : choose WZ or (tZq+ttZ) region !") )<<endl;}
-  MEM_or_WZ = region_choice;
+  if(region_choice != "MEM" && region_choice != "WZ" && region_choice != "1btag") {cout<<endl<<BOLD( FRED("ERROR : choose WZ or (tZq+ttZ) region !") )<<endl;}
+  region = region_choice;
 
   tmp_dir = set_tmp_dir;
   if(tmp_dir != "") cout<<endl<<"Input taken from dir. "<<tmp_dir<<endl;
@@ -33,11 +33,13 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
 
   CSV_threshold = set_CSV_threshold; eta_threshold = set_eta_threshold;
 
+  mkdir(("output_ntuples/ntuples_1btag/"+tmp_dir).Data(),0755);
   mkdir(("output_ntuples/ntuples_readyForMEM/"+tmp_dir).Data(),0755);
   mkdir(("output_ntuples/ntuples_WZ/"+tmp_dir).Data(),0755);
 
-  if(MEM_or_WZ == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/";
-  else if(MEM_or_WZ == "WZ")  output_dir = "output_ntuples/ntuples_WZ/";
+  if(region == "MEM")      output_dir = "output_ntuples/ntuples_readyForMEM/";
+  else if(region == "WZ")  output_dir = "output_ntuples/ntuples_WZ/";
+  else if(region == "1btag")  output_dir = "output_ntuples/ntuples_1btag/";
   else {return;}
 
   if(tmp_dir != "") output_dir+= tmp_dir + "/";
@@ -112,6 +114,7 @@ void MEM_NtupleMaker::Init()
   is_3l_TTZ_CR = false;
   is_3l_WZ_CR  = false;
   is_3l_TZQ_SR = false;
+  is_3l_1BTAG_SR = false;
   mc_ttZhypAllowed = 0;
 
   //Leptons
@@ -249,6 +252,7 @@ void MEM_NtupleMaker::Prepare_Tree(TString samplename, TTree* tree_output, TStri
   tree_output->Branch("is_3l_TTZ_CR",&is_3l_TTZ_CR,"is_3l_TTZ_CR/B");
   tree_output->Branch("is_3l_WZ_CR",&is_3l_WZ_CR,"is_3l_WZ_CR/B");
   tree_output->Branch("is_3l_TZQ_SR",&is_3l_TZQ_SR,"is_3l_TZQ_SR/B");
+  tree_output->Branch("is_3l_1BTAG_SR",&is_3l_1BTAG_SR,"is_3l_1BTAG_SR/B");
 
   //leptons
   tree_output->Branch("multilepton_Lepton1_Id",&multilepton_Lepton1_Id,"multilepton_Lepton1_Id/I");
@@ -1183,11 +1187,14 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   //---------------------------
       //Check Jets numbers
       if( NBJets == 1 && NJets > 1 && NJets < 4 ) {is_3l_TZQ_SR = true;}
-      else if( NBJets > 1 && NJets > 1 ) {is_3l_TTZ_CR = true;}
-      else if( NBJets == 0 && NJets > 0 ) {is_3l_WZ_CR = true;}
+      if( NBJets > 1 && NJets > 1 ) {is_3l_TTZ_CR = true;}
+      if( NBJets == 0 && NJets > 0 ) {is_3l_WZ_CR = true;}
+      if( NBJets == 1 && NJets > 0 && NJets < 4 ) {is_3l_1BTAG_SR = true;} //SR + 0light jet events
+      // if( NBJets == 1 && NJets == 1 ) {is_3l_1BTAG_SR = true;} //only 0light jet events
 
-      if(MEM_or_WZ=="MEM" && !is_3l_TZQ_SR && !is_3l_TTZ_CR) {continue;}
-      else if(MEM_or_WZ=="WZ" && !is_3l_WZ_CR) {continue;}
+      if(region=="MEM" && !is_3l_TZQ_SR && !is_3l_TTZ_CR) {continue;}
+      else if(region=="WZ" && !is_3l_WZ_CR) {continue;}
+      else if(region=="1btag" && !is_3l_1BTAG_SR) {continue;}
 
 
   //---------------------------
@@ -1549,8 +1556,9 @@ int main()
 
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
-  bool do_MEM_regions = true;
-	bool do_WZ_region = true;
+  bool do_MEM_regions = false;
+  bool do_WZ_region = false;
+  bool do_1btag_region = false;
 
   TString specific_dir = ""; //specify specific input/output dir. name
 
@@ -1582,15 +1590,19 @@ int main()
     }
   }
 
+//--- Produce ntuples for WZ CR study (mTW template fit)
+  if(do_1btag_region)
+  {
+    region_choice = "1btag";
+    for(int isample=0; isample<v_samplenames.size(); isample++)
+    {
+      MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(v_samplenames[isample], BDTvar_list, v_variablesToCreate, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
+      theNtupleMaker->Init();
+      theNtupleMaker->NtupleMaker(v_samplenames[isample]);
+      theNtupleMaker->~MEM_NtupleMaker();
+    }
+  }
 
-
-//--- Single Ntuple
-  // region_choice = "MEM";
-  // TString samplename = "WZjets";
-  // MEM_NtupleMaker* theNtupleMaker = new MEM_NtupleMaker(samplename, BDTvar_list, weight_syst_list, tree_syst_list, region_choice, CSV_threshold, eta_threshold, specific_dir);
-  // theNtupleMaker->Init();
-  // theNtupleMaker->NtupleMaker(samplename);
-  // theNtupleMaker->~MEM_NtupleMaker();
 
 	return 0;
 }
