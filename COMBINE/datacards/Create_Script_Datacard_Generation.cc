@@ -26,7 +26,7 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(char include_systematics, char use_hardCoded_fakeRates, double fake_rate)
+void Script_Datacards_InputVars(char include_systematics, double fake_rate, int WZ_template, int SR_template, char add_region, char double_uncert)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -111,7 +111,7 @@ void Script_Datacards_InputVars(char include_systematics, char use_hardCoded_fak
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + use_hardCoded_fakeRates + " "<<fake_rate<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " "<<fake_rate<<endl;
 		}
 
 		file_out<<endl;
@@ -149,7 +149,7 @@ void Script_Datacards_InputVars(char include_systematics, char use_hardCoded_fak
 
 
 
-void Script_Datacards_TemplateFit(char include_systematics, char use_hardCoded_fakeRates, double fake_rate)
+void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, int WZ_template, int SR_template, char add_region, char double_uncert)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -166,9 +166,12 @@ void Script_Datacards_TemplateFit(char include_systematics, char use_hardCoded_f
 
 	vector<TString> var_list;
 
-	var_list.push_back("BDT");
+	if(SR_template==0) var_list.push_back("BDT");
+	else if(SR_template==1) var_list.push_back("mTWandBDT");
+	if(add_region=='y') var_list.push_back("BDT0l");
 	var_list.push_back("BDTttZ");
-	var_list.push_back("mTW");
+	if(WZ_template==0) var_list.push_back("mTW");
+	else if(WZ_template==1) var_list.push_back("BDTfake");
 
 	vector<TString> chan_list;
 	chan_list.push_back("uuu");
@@ -180,7 +183,7 @@ void Script_Datacards_TemplateFit(char include_systematics, char use_hardCoded_f
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " " + use_hardCoded_fakeRates + " "<<fake_rate<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " "<<fake_rate<<" "<<double_uncert<<endl;
 		}
 
 		file_out<<endl;
@@ -245,10 +248,8 @@ void Script_Datacards_TemplateFit(char include_systematics, char use_hardCoded_f
 
 		TString output_name = "COMBINED_datacard_TemplateFit_tZq";
 		if(systList == "noSyst") output_name+= "_noSyst";
+		output_name+= "_no_" + var_list[ivar];
 
-		if(var_list[ivar] == "BDT") output_name+= "_notZqRegion";
-		else if(var_list[ivar] == "BDTttZ") output_name+= "_nottZRegion";
-		else if(var_list[ivar] == "mTW") output_name+= "_noWZRegion";
 
 		output_name+= ".txt";
 
@@ -279,10 +280,47 @@ int main()
 	char include_systematics = 'n';
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
-	char use_hardCoded_fakeRates = 'n';
 	double fake_rate = 400;
+	// double fake_bkg = 30;
+	int WZ_template = 0;
+	int SR_template = 0;
+	char add_region = 'n';
+	char double_uncert = 'n';
 
 	cout<<BOLD(FBLU("### Will create script for generation of combined Datacard ###"))<<endl<<endl;
+
+	cout<<FYEL("--- What templates do you want to use in SR region ? (0 : BDT / 1 : mTWandBDT)")<<endl;
+	cin>>SR_template;
+	while(SR_template != 0 && SR_template != 1)
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		cout<<" Wrong answer ! Need to type 0 or 1 ! Retry :"<<endl;
+		cin>>SR_template;
+	}
+
+	cout<<FYEL("--- What templates do you want to use in WZ region ? (0 : mTW / 1 : BDTfake)")<<endl;
+	cin>>WZ_template;
+	while(WZ_template != 0 && WZ_template != 1)
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		cout<<" Wrong answer ! Need to type 0 or 1 ! Retry :"<<endl;
+		cin>>WZ_template;
+	}
+
+	cout<<FYEL("--- Do you want to add region [1 bjet, 0 light] ? (y/n)")<<endl;
+	cin>>add_region;
+	while(add_region != 'y' && add_region != 'n')
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		cout<<" Wrong answer ! Need to type 'y' or 'n' ! Retry :"<<endl;
+		cin>>add_region;
+	}
 
 	cout<<FYEL("--- Do you want to include all the systematic nuisances in the datacards ? (y/n)")<<endl;
 	cin>>include_systematics;
@@ -295,32 +333,45 @@ int main()
 		cin>>include_systematics;
 	}
 
-	cout<<FYEL("--- Do you want to use hard-coded FakeRate uncertainties ? (y/n) :")<<" (else can choose yourself)"<<endl;
-	cin>>use_hardCoded_fakeRates;
-	while(cin.fail() || (use_hardCoded_fakeRates != 'y' && use_hardCoded_fakeRates != 'n') )
+	// cout<<FYEL("--- Choose FakeBackgrounds uncertainties (correlated b/w channels) in % : (ex : 30%)")<<endl;
+	// cin>>fake_bkg;
+	// while(cin.fail() || fake_bkg<0 )
+	// {
+	// 	cin.clear();
+	// 	cin.ignore(1000, '\n');
+	//
+	// 	cout<<" Wrong answer ! :"<<endl;
+	// 	cin>>fake_bkg;
+	// }
+	// if(fake_bkg != 0) fake_bkg = 1 + (fake_bkg / 100.0);
+
+	cout<<FYEL("--- Choose FakeRates uncertainties (uncorrelated) in % : ('0' <-> use hard-coded values)")<<endl;
+	cin>>fake_rate;
+	while(cin.fail() || fake_rate<0)
 	{
 		cin.clear();
 		cin.ignore(1000, '\n');
 
-		cout<<" Wrong answer ! Need to type 'y' or 'n' :"<<endl;
-		cin>>use_hardCoded_fakeRates;
+		cout<<" Wrong answer ! Need to choose fake rate > 0 :"<<endl;
+		cin>>fake_rate;
 	}
 
-	if(use_hardCoded_fakeRates == 'n')
+	if(fake_rate != 0) fake_rate = 1 + (fake_rate / 100.0);
+
+	if(fake_rate==0)
 	{
-		cout<<FYEL("--- Choose FakeRate prefit uncertainty in % :")<<" (default 400%)"<<endl;
-		cin>>fake_rate;
-		while(cin.fail() || fake_rate<0)
+		cout<<FYEL("--- Double fakeRate uncertainties (wrt to default)? y/n")<<endl;
+		cin>>double_uncert;
+		while(cin.fail() || (double_uncert!= 'y' && double_uncert!= 'n'))
 		{
 			cin.clear();
 			cin.ignore(1000, '\n');
 
-			cout<<" Wrong answer ! Need to choose fake rate > 0 :"<<endl;
-			cin>>fake_rate;
+			cout<<" Wrong answer ! Need to choose y or n :"<<endl;
+			cin>>double_uncert;
 		}
-
-		fake_rate = 1 + (fake_rate / 100.0);
 	}
+
 
 	cout<<FYEL("--- Do you want to create datacard for a Template Fit ? (y/n) ")<<endl;
 	cin>>datacard_template_fit;
@@ -345,9 +396,9 @@ int main()
 	}
 
 
-	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, use_hardCoded_fakeRates, fake_rate);
+	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, fake_rate, WZ_template, SR_template, add_region, double_uncert);
 
-	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, use_hardCoded_fakeRates, fake_rate);
+	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, fake_rate, WZ_template, SR_template, add_region, double_uncert);
 
 	return 0;
 }

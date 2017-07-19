@@ -31,7 +31,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool use_mTWandBDT_SR = false;
 
     //-- NEW : set to TRUE if want to use dedicated BDT (including Fakes) in WZ region insteand of mTW
-    bool use_BDT_WZregion = true;
+    bool use_BDT_WZregion = false;
 //----------------------
 
 
@@ -137,6 +137,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     {
         if(!SR_new_0light)
         {
+            // set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back("==3");     set_v_cut_IsUsedForBDT.push_back(false);
             set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
             set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false);
         }
@@ -287,8 +288,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thevarlist.push_back("dPhiZAddLep");
     if(!use_BDT_WZregion || !isWZ) thevarlist.push_back("dPhiAddLepB");
     thevarlist.push_back("dRAddLepClosestJet");
-
-    // thevarlist.push_back("mTW");
 
 
 //-- After optimization, removed 4 vars :
@@ -502,13 +501,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         //Template
         TString template_name = "BDT"; //BDT output in Signal Region
-        if(!isttZ && !isWZ && SR_new_0light) template_name = "BDT0l";
+        if(!isttZ && !isWZ)
+        {
+            if(SR_new_0light) template_name = "BDT0l";
+            else if(use_mTWandBDT_SR) template_name = "mTWandBDT";
+        }
         if(isttZ)  template_name = "BDTttZ"; //BDTttZ output in ttZ Control region
         if(isWZ)
         {
             template_name = "mTW"; //mTW distribution in WZ Control region
-            if(use_mTWandBDT_SR) template_name = "mTWandBDT";
-            else if(use_BDT_WZregion) template_name = "BDTfake";
+            if(use_BDT_WZregion) template_name = "BDTfake";
         }
 
         //BDT cut
@@ -590,9 +592,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //#############################################
 
         // TString file_to_rescale = "./outputs/Control_Histograms"+MVAtool->filename_suffix+"_CutBDT.root";
-        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root";
-        // TString file_to_rescale = "./outputs/Reader_BDTfake_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin0_NBJetsEq0.root";
-        // MVAtool->Rescale_Fake_Histograms(file_to_rescale); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
+        // TString file_to_rescale = "outputs/Combine_Input.root";
+        // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+"_unScaled.root";
+        // MVAtool->Rescale_Fake_Histograms(file_to_rescale, "mTW"); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
         bool superpose_fakes_signal = false;
 
@@ -617,14 +619,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 
         // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
-
-        // MVAtool->Fit_mTW_SR("allchan");
-
-        // TFile* f = TFile::Open("outputs/Reader_mTW_ContainsBadJetEq0_NJetsMin0_NBJetsEq0_unScaled.root");
-        // MVAtool->Compute_Fake_SF(f, "eee");
-        // MVAtool->Compute_Fake_SF(f, "uuu");
-        // MVAtool->Compute_Fake_SF(f, "eeu");
-        // MVAtool->Compute_Fake_SF(f, "uue");
 
 
         //-----------------

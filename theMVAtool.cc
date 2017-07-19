@@ -687,8 +687,10 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString bdt_type, bool wri
  * @param  f               [File containing mTW templates]
  * @param  fakeLep_flavour [Fake lepton flavour for which we compute the SF	]
  */
-double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_together, TString FakeName)
+double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_together, TString FakeName, TString template_name)
 {
+	bool fit_WZ_separately = true;
+
 	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return 0;}
 	if(FakeName!="FakeMu" && FakeName!="FakeEl" && FakeName!="") {cout<<"Wrong arg FakeName !"<<endl; return 0;}
 	if(!fit_ElandMu_together && channel=="uuu" && FakeName=="FakeEl") {return 0;}
@@ -698,8 +700,10 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	for(int isample=0; isample<sample_list.size(); isample++)
 	{
 		if(sample_list[isample] == "Data" || sample_list[isample].Contains("Fake") ) {continue;} //Treated separately
+		if(fit_WZ_separately && sample_list[isample].Contains("WZ")) {continue;}
 
-		TString name_tmp = "mTW_"+channel+"__"+sample_list[isample];
+		// TString name_tmp = "mTW_"+channel+"__"+sample_list[isample];
+		TString name_tmp = template_name + "_"+channel+"__"+sample_list[isample];
 		if(!f ->GetListOfKeys()->Contains( name_tmp.Data() ) ) {cout<<name_tmp.Data()<<" not found !"<<endl;  continue;}
 
 		v_otherBackgrounds.push_back(sample_list[isample]);
@@ -707,14 +711,16 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	cout<<endl<<endl;
 
 	f->cd();
-	TH1F * hdata=0, *hsum=0, *hfake=0, *h_tmp=0, *h_fakeEl=0, *h_fakeMu=0;
+	TH1F * hdata=0, *hsum=0, *hfake=0, *h_tmp=0, *h_fakeEl=0, *h_fakeMu=0, *h_WZ=0;
 
 	//Treat Data / Fakes / Other samples separately
 	TString histo_name;
 
 	//DATA
-	if(combine_naming_convention) histo_name = "mTW_" + channel + "__data_obs";
-	else histo_name = "mTW_" + channel + "__DATA";
+	// if(combine_naming_convention) histo_name = "mTW_" + channel + "__data_obs";
+	if(combine_naming_convention) histo_name = template_name + "_" + channel + "__data_obs";
+	// else histo_name = "mTW_" + channel + "__DATA";
+	else histo_name = template_name + "_" + channel + "__DATA";
 
 	if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) ) {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 	h_tmp = (TH1F*)f->Get( histo_name);
@@ -722,13 +728,15 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	if(hdata->Integral() == 0) {cout<<"hdata empty !"<<endl; return 0;} //if only single channel activated in main(), for example
 
 	//FAKES -- sum contributions from muon & electron fakes
-	histo_name = "mTW_" + channel + "__FakesElectron";
+	histo_name = template_name + "_" + channel + "__FakesElectron";
+	// histo_name = "mTW_" + channel + "__FakesElectron";
 	if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) )  {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 	h_tmp = (TH1F*)f->Get( histo_name);
 	if(fit_ElandMu_together) {hfake = (TH1F*) h_tmp->Clone();}
 	else {h_fakeEl = (TH1F*) h_tmp->Clone();}
 
-	histo_name = "mTW_" + channel + "__FakesMuon";
+	histo_name = template_name + "_" + channel + "__FakesMuon";
+	// histo_name = "mTW_" + channel + "__FakesMuon";
 	if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) )  {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 	h_tmp = (TH1F*)f->Get( histo_name);
 	if(fit_ElandMu_together) {hfake->Add(h_tmp);}
@@ -737,11 +745,29 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	//MC
 	for (int i = 0; i<v_otherBackgrounds.size(); i++)
 	{
-		histo_name = "mTW_" + channel + "__" + v_otherBackgrounds[i];
+		histo_name = template_name + "_" + channel + "__" + v_otherBackgrounds[i];
+		// histo_name = "mTW_" + channel + "__" + v_otherBackgrounds[i];
 		if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) ) {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
 		h_tmp = (TH1F*)f->Get( histo_name);
 		if(i==0) {hsum = (TH1F*) h_tmp->Clone();}
 		else {hsum->Add(h_tmp);}
+	}
+
+	if(fit_WZ_separately)
+	{
+		h_WZ = 0;
+
+		for (int isample = 0; isample<sample_list.size(); isample++)
+		{
+			if(!sample_list[isample].Contains("WZ")) continue;
+
+			histo_name = template_name + "_" + channel + "__" + sample_list[isample];
+			// histo_name = "mTW_" + channel + "__" + v_otherBackgrounds[i];
+			if ( !f->GetListOfKeys()->Contains( histo_name.Data() ) ) {cout<<histo_name.Data()<<" not found !"<<endl; return 0;}
+			h_tmp = (TH1F*)f->Get( histo_name);
+			if(h_WZ==0) {h_WZ = (TH1F*) h_tmp->Clone();}
+			else {h_WZ->Add(h_tmp);}
+		}
 	}
 
 	if(!hdata || !hsum || (fit_ElandMu_together && !hfake) || (!fit_ElandMu_together && (!h_fakeMu || !h_fakeEl)) ) {cout<<"Warning : null histogram --> CAN NOT RESCALE FAKE HISTOGRAMS !"<<endl; return 0;}
@@ -755,6 +781,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	{
 		mc->Add(hfake); //Param 0
 		mc->Add(hsum); //Param 1
+		if(fit_WZ_separately) mc->Add(h_WZ); //Param 2
 	}
 	else
 	{
@@ -762,28 +789,35 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 		if(channel != "uuu") mc->Add(h_fakeEl); //Param 0 or 1
 
 		mc->Add(hsum); //Param 1 or 2
+
+		if(fit_WZ_separately) mc->Add(h_WZ); //Param 2 or 3
 	}
 
 	TFractionFitter* fit = new TFractionFitter(hdata, mc, "Q"); //'Q' for quiet
 
 	//Constrain backgrounds which are not fake (NB : because we're only interested in fitting the fakes to the data here!)
 	double fracmc = hsum->Integral()/hdata->Integral() ;
+	double fracwz = 0;
+	if(fit_WZ_separately) fracwz = h_WZ->Integral()/hdata->Integral() ;
 
 	fit->Constrain(0, 0, 1); //Constrain param 0 (fakes integral) between 0 & 1
 	if(fit_ElandMu_together)
 	{
 		fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1);  //FIXME
 	}
 	else
 	{
 		if(channel == "uuu" || channel == "eee")
 		{
 			fit->Constrain(1, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1);
 		}
 		else
 		{
 			fit->Constrain(1, 0, 1);
 			fit->Constrain(2, fracmc*0.99, fracmc*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
+			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.9, fracwz*1.1);
 		}
 	}
 
@@ -797,6 +831,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	double fraction_fakeMu=0, error_fakeMu=0;
 	double fraction_fakeEl=0, error_fakeEl=0;
 	double fraction_other=0, error_other=0;
+	double fraction_WZ=0, error_WZ=0;
 
 	cout<<"--- CHANNEL "<<channel<<" ---"<<endl;
 	cout<<endl<<"(Frac. other bkgs before fit = "<<fracmc<<")"<<endl;
@@ -805,8 +840,10 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	{
 		fit->GetResult(0, fraction_fake, error_fake);
 		fit->GetResult(1, fraction_other, error_other);
-		cout<<endl<<FGRN("Fraction_fakes = "<<fraction_fake<<" , error = "<<error_fake<<" ")<<endl;
+		if(fit_WZ_separately) fit->GetResult(2, fraction_WZ, error_WZ);
 		cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+		if(fit_WZ_separately) cout<<FGRN("Fraction WZ = "<<fraction_WZ<<", error = "<<error_WZ<<" ")<<endl;
+		cout<<endl<<FGRN("Fraction_fakes = "<<fraction_fake<<" , error = "<<error_fake<<" ")<<endl;
 		cout<<FGRN("---> Fakes Error/result = "<<error_fake/fraction_fake*100<<" %")<<endl<<endl;
 	}
 	else
@@ -817,21 +854,25 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 			fit->GetResult(0, fraction_fakeMu, error_fakeMu);
 			fit->GetResult(1, fraction_fakeEl, error_fakeEl);
 			fit->GetResult(2, fraction_other, error_other);
+			if(fit_WZ_separately) fit->GetResult(3, fraction_WZ, error_WZ);
 			cout<<endl<<FGRN("Fraction_fakesMu = "<<fraction_fakeMu<<" , error = "<<error_fakeMu<<" ")<<endl;
 			cout<<FGRN("---> FakesMu Error/result = "<<error_fakeMu/fraction_fakeMu*100<<" %")<<endl;
 			cout<<endl<<FGRN("Fraction_fakesEl = "<<fraction_fakeEl<<" , error = "<<error_fakeEl<<" ")<<endl;
 			cout<<FGRN("---> FakesEl Error/result = "<<error_fakeEl/fraction_fakeEl*100<<" %")<<endl<<endl;
 			cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+			if(fit_WZ_separately) cout<<FGRN("Fraction WZ = "<<fraction_WZ<<", error = "<<error_WZ<<" ")<<endl;
 		}
 		else
 		{
 			fit->GetResult(1, fraction_other, error_other);
+			if(fit_WZ_separately) fit->GetResult(2, fraction_WZ, error_WZ);
 			if(channel=="uuu")
 			{
 				fit->GetResult(0, fraction_fakeMu, error_fakeMu);
 				cout<<endl<<FGRN("Fraction_fakesMu = "<<fraction_fakeMu<<" , error = "<<error_fakeMu<<" ")<<endl;
 				cout<<FGRN("---> FakesMu Error/result = "<<error_fakeMu/fraction_fakeMu*100<<" %")<<endl;
 				cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+				if(fit_WZ_separately) cout<<FGRN("Fraction WZ = "<<fraction_WZ<<", error = "<<error_WZ<<" ")<<endl;
 			}
 			else if(channel=="eee")
 			{
@@ -839,9 +880,13 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 				cout<<endl<<FGRN("Fraction_fakesEl = "<<fraction_fakeEl<<" , error = "<<error_fakeEl<<" ")<<endl;
 				cout<<FGRN("---> FakesEl Error/result = "<<error_fakeEl/fraction_fakeEl*100<<" %")<<endl<<endl;
 				cout<<FGRN("Fraction other = "<<fraction_other<<", error = "<<error_other<<" ")<<endl;
+				if(fit_WZ_separately) cout<<FGRN("Fraction WZ = "<<fraction_WZ<<", error = "<<error_WZ<<" ")<<endl;
 			}
 		}
 	}
+
+	cout<<"CHI2/ndf = "<<fit->GetChisquare() / fit->GetNDF()<<" ---- ";
+	cout<<"Fit proba. = "<<fit->GetProb()<<endl;
 
 
 	TCanvas* c1 = new TCanvas("c1");
@@ -894,9 +939,13 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
  * Rescale Fake histograms with SFs computed with TFractionFitter
  * @param file_to_rescale_name [Name of file containing fake histograms to be rescaled]
  */
-void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
+void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name, TString template_name)
 {
+	template_name = "mTW"; //FIXME -- is use BDTfake to rescale, find SF=0 for muons
+
 	if(!Check_File_Existence(file_to_rescale_name) ) {cout<<file_to_rescale_name<<" doesn't exist ! Can't rescale Fakes ! "<<endl; return;}
+
+	if(template_name != "mTW" && template_name != "BDTfake") {cout<<"Wrong template name !"<<endl; return;}
 
 	bool fit_ElandMu_together = true; //fit FakeMu and FakeEl templates altogether, for each channel
 
@@ -905,19 +954,26 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	bool rescaled_atLeast_1hist = false;
 
 	TString file_mTW_templates_unscaled_PATH;
-	Long_t *id,*size,*flags,*modtime;
-	file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW" + this->filename_suffix_noJet_noMET_nomTW + "_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs //Need to use this suffix in case we're doing a 2D scan on MET/mTW, don't want them in the mTW filename
+	// file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW" + this->filename_suffix_noJet_noMET_nomTW + "_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs //Need to use this suffix in case we're doing a 2D scan on MET/mTW, don't want them in the mTW filename
+
+	file_mTW_templates_unscaled_PATH = "outputs/Reader_" + template_name + this->filename_suffix_noJet_noMET_nomTW + "_NJetsMin0_NBJetsEq0_unScaled.root"; //mTW unrescaled Template file  => Used to compute the Fakes SFs //Need to use this suffix in case we're doing a 2D scan on MET/mTW, don't want them in the mTW filename
+	if(template_name == "BDTfake")
 
 	if(!Check_File_Existence(file_mTW_templates_unscaled_PATH))
 	{
 		cout<<file_mTW_templates_unscaled_PATH<<" doesn't exist !"<<endl;
-		file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //default
+		// file_mTW_templates_unscaled_PATH = "outputs/Reader_mTW_NJetsMin0_NBJetsEq0_unScaled.root"; //default
+		file_mTW_templates_unscaled_PATH = "outputs/Reader_" + template_name + "_NJetsMin0_NBJetsEq0_unScaled.root"; //default
 		cout<<"Try using "<<file_mTW_templates_unscaled_PATH<<endl;
 		if(!Check_File_Existence(file_mTW_templates_unscaled_PATH))
 		{
 			cout<<file_mTW_templates_unscaled_PATH<<" doesn't exist ! Can't rescale Fakes !"<<endl; return;
 		}
 	}
+
+	//--- To use other template file than mTW distribution to do the rescaling (m3l, METpt, ...)
+	// file_mTW_templates_unscaled_PATH = "outputs/Reader_METpt" + this->filename_suffix_noJet_noMET_nomTW + "_NJetsMin0_NBJetsEq0_unScaled.root";
+	// if(!Check_File_Existence(file_mTW_templates_unscaled_PATH)) return;
 
 	file_mTW_templates_unscaled = TFile::Open(file_mTW_templates_unscaled_PATH, "READ"); //File containing the templates, from which can compute fake ratio
 	if(!file_mTW_templates_unscaled) {cout<<FRED(<<file_mTW_templates_unscaled_PATH.Data()<<" not found! Can't compute Fake Ratio -- Abort")<<endl; return;}
@@ -937,21 +993,21 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 
 	if(fit_ElandMu_together)
 	{
-		SF_uuu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "");
-		SF_uue = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "");
-		SF_eeu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "");
-		SF_eee = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "");
+		SF_uuu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "", template_name);
+		SF_uue = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "", template_name);
+		SF_eeu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "", template_name);
+		SF_eee = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "", template_name);
 	}
 	else
 	{
-		SF_uuu_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "FakeMu");
-		SF_uue_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "FakeMu");
-		SF_eeu_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "FakeMu");
-		SF_eee_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeMu");
-		SF_uuu_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "FakeEl");
-		SF_uue_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "FakeEl");
-		SF_eeu_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "FakeEl");
-		SF_eee_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeEl");
+		SF_uuu_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "FakeMu", template_name);
+		SF_uue_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "FakeMu", template_name);
+		SF_eeu_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "FakeMu", template_name);
+		SF_eee_FakeMu = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeMu", template_name);
+		SF_uuu_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "uuu", fit_ElandMu_together, "FakeEl", template_name);
+		SF_uue_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "uue", fit_ElandMu_together, "FakeEl", template_name);
+		SF_eeu_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eeu", fit_ElandMu_together, "FakeEl", template_name);
+		SF_eee_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeEl", template_name);
 	}
 
 
@@ -984,6 +1040,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name)
 	total_var_list.push_back("BDT");
 	total_var_list.push_back("BDT0l"); //CHANGED
 	total_var_list.push_back("BDTfake"); //CHANGED
+	total_var_list.push_back("mTWandBDT"); //CHANGED
 	total_var_list.push_back("BDTttZ");
 
 	//Other vars
@@ -1243,7 +1300,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	TString output_file_name = "outputs/Reader_" + template_name + this->filename_suffix;
 	if(cut_on_BDT) output_file_name+= "_CutBDT";
 	//Cf. Fakes rescaling function : need to have an 'unscaled' version of the mTW template to compute the Fakes SFs
-	if(template_name == "mTW") output_file_name+= "_unScaled.root"; //Add suffix to distinguish it : this file will be used to compute SFs
+	if(template_name == "mTW" || template_name == "BDTfake") output_file_name+= "_unScaled.root"; //Add suffix to distinguish it : this file will be used to compute SFs
 	else output_file_name+= ".root";
 
 	TFile* file_output = TFile::Open( output_file_name, "RECREATE" );
@@ -1281,6 +1338,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			TString template_name_MVA = template_name; //BDT or BDTttZ
 
 			if(cut_on_BDT && !template_name.Contains("BDT")) {template_name_MVA = "BDT";} //Even if template is mTW, need to book BDT method if want to apply cut on BDT!
+			else if(template_name == "mTWandBDT") {template_name_MVA = "BDT";} //Even if template is mTW, need to book BDT method if want to apply cut on BDT!
 
 			MVA_method_name = template_name_MVA + "_" + channel_list[ichan] + this->filename_suffix + TString(" method");
 			weightfile = dir + template_name_MVA + "_" + channel_list[ichan] + this->filename_suffix + TString(".weights.xml");
@@ -1371,10 +1429,15 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 250 );
 					hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 250 );
 
-					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 0., 150 ); //new binning
+					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 0., 150 ); //new binning //FIXME
 					// hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           nbin, 0., 150 );
 					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 0., 150 );
 					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 0., 150 );
+
+					// hist_uuu     = new TH1F( "mTW_uuu",           "mTW_uuu",           nbin, 50, 500); //new binning //FIXME
+					// hist_uue     = new TH1F( "mTW_uue",           "mTW_uue",           nbin, 50, 500);
+					// hist_eeu     = new TH1F( "mTW_eeu",           "mTW_eeu",           nbin, 50, 500);
+					// hist_eee     = new TH1F( "mTW_eee",           "mTW_eee",           nbin, 50, 500);
 				}
 				else {cout<<FRED("ERROR : wrong template name !")<<endl; return 0;}
 			}
@@ -1419,7 +1482,12 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 
 			//Dedicated variables, easier to access in event loop
-			float mTW = -666; tree->SetBranchAddress("mTW", &mTW);
+
+			float mTW = -666;
+			tree->SetBranchAddress("mTW", &mTW);
+			// tree->SetBranchAddress("METpt", &mTW); //-- hard-coded trick to replace mTW by METpt //FIXME
+			// tree->SetBranchAddress("m3l", &mTW); //-- hard-coded trick to replace mTW by m3l //FIXME
+
 			float i_channel = 9; tree->SetBranchAddress("Channel", &i_channel);
 
 
@@ -1610,7 +1678,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						if(template_name=="mTWandBDT" && mTW<50) {hist_uuu->Fill(mTW, weight);}
 						else if(template_name=="mTWandBDT" && mTW>50)
 						{
-							mva_value = reader->EvaluateMVA( template_name+"_uuu"+this->filename_suffix+ " method");
+							mva_value = reader->EvaluateMVA( "BDT_uuu"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
 							hist_uuu->Fill(mva_value, weight);
 						}
@@ -1626,7 +1694,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						if(template_name=="mTWandBDT" && mTW<50) {hist_uue->Fill(mTW, weight);}
 						else if(template_name=="mTWandBDT" && mTW>50)
 						{
-							mva_value = reader->EvaluateMVA( template_name+"_uue"+this->filename_suffix+ " method");
+							mva_value = reader->EvaluateMVA( "BDT_uue"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
 							hist_uue->Fill(mva_value, weight);
 						}
@@ -1642,7 +1710,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						if(template_name=="mTWandBDT" && mTW<50) {hist_eeu->Fill(mTW, weight);}
 						else if(template_name=="mTWandBDT" && mTW>50)
 						{
-							mva_value = reader->EvaluateMVA( template_name+"_eeu"+this->filename_suffix+ " method");
+							mva_value = reader->EvaluateMVA( "BDT_eeu"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
 							hist_eeu->Fill(mva_value, weight);
 						}
@@ -1658,7 +1726,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 						if(template_name=="mTWandBDT" && mTW<50) {hist_eee->Fill(mTW, weight);}
 						else if(template_name=="mTWandBDT" && mTW>50)
 						{
-							mva_value = reader->EvaluateMVA( template_name+"_eee"+this->filename_suffix+ " method");
+							mva_value = reader->EvaluateMVA( "BDT_eee"+this->filename_suffix+ " method");
 							mva_value = mva_value*50 + 50 + 50;
 							hist_eee->Fill(mva_value, weight);
 						}
@@ -1765,13 +1833,16 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			}
 			else
 			{
-				output_histo_name = template_name+"_uuu__" + sample_name + syst_name;
+				TString template_name_output = template_name;
+				// template_name_output = "BDT2l"; 
+
+				output_histo_name = template_name_output+"_uuu__" + sample_name + syst_name;
 				hist_uuu->Write(output_histo_name.Data());
-				output_histo_name = template_name+"_uue__" + sample_name + syst_name;
+				output_histo_name = template_name_output+"_uue__" + sample_name + syst_name;
 				hist_uue->Write(output_histo_name.Data());
-				output_histo_name = template_name+"_eeu__" + sample_name + syst_name;
+				output_histo_name = template_name_output+"_eeu__" + sample_name + syst_name;
 				hist_eeu->Write(output_histo_name.Data());
-				output_histo_name = template_name+"_eee__" + sample_name + syst_name;
+				output_histo_name = template_name_output+"_eee__" + sample_name + syst_name;
 				hist_eee->Write(output_histo_name.Data());
 			}
 
@@ -1791,7 +1862,11 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	delete reader; //Free memory
 	std::cout << "==> Reader() is done!" << std::endl << std::endl;
 
-	if(fakes_from_data) Rescale_Fake_Histograms(output_file_name);
+	if(fakes_from_data)
+	{
+		if(template_name=="BDTfake") Rescale_Fake_Histograms(output_file_name, template_name);
+		else Rescale_Fake_Histograms(output_file_name, "mTW");
+	}
 
 
 	return 0;
@@ -2576,7 +2651,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	delete f_input;
 	delete f_output;
 
-	if(fakes_from_data) Rescale_Fake_Histograms(output_file_name);
+	if(fakes_from_data) Rescale_Fake_Histograms(output_file_name, "mTW");
+	// if(fakes_from_data) Rescale_Fake_Histograms(output_file_name, "BDTfake"); //FIXME
 
 	return ;
 }
@@ -2833,7 +2909,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 					h_tmp->SetLineColor(kBlack);
 					if( (isample+1) < sample_list.size())
 					{
-						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
+						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
+						else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
 					}
 
 					if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
@@ -3430,7 +3507,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bool allchannels, bool cut_on_BDT)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots ---")<<endl;}
+	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW" || template_name == "mTWandBDT" || template_name == "BDTfake" || template_name == "BDT0l") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots ---")<<endl;}
 	else {cout<<FRED("--- ERROR : invalid template_name value !")<<endl;}
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
@@ -3513,7 +3590,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 				h_tmp->SetLineColor(kBlack);
 				if( (isample+1) < sample_list.size())
 				{
-					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
+					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples
+					else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
 				}
 
 				// cout<<"isample-1 "<<isample-1<<endl;
@@ -3858,7 +3936,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, bool allchannels, bool cut_on_BDT)
 {
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots from Combine Output ---")<<endl;}
+	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW" || template_name == "mTWandBDT" || template_name == "BDTfake" || template_name == "BDT0l") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots from Combine Output ---")<<endl;}
 	else {cout<<FRED("--- ERROR : invalid template_name value !")<<endl;}
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
@@ -3961,7 +4039,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 				h_tmp->SetLineColor(kBlack);
 				if( (isample+1) < sample_list.size())
 				{
-					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples //CHANGED
+					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples
+					else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
 				}
 
 				// cout<<"sample "<<sample_list[isample]<<" / chan "<<channel_list[ichan]<<endl;

@@ -90,8 +90,8 @@ class theMVAtool
 	void Fill_Zpt_Vectors(); //Initialize the vectors with SFs for Zpt reweighting
 
 	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
-	double Compute_Fake_SF(TFile*, TString, bool, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
-	void Rescale_Fake_Histograms(TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
+	double Compute_Fake_SF(TFile*, TString, bool, TString, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
+	void Rescale_Fake_Histograms(TString, TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
 	double Get_Zpt_Reweighting_SF(int, int, double); //Returns SF for Fakes event (Zpt reweighting)
 	int Read(TString, bool, bool, bool, bool, double); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg

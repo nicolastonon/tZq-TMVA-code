@@ -13,7 +13,8 @@ FakeMu_rateMu=""
 FakeEl_shapeEl=""
 FakeMu_shapeMu=""
 fakes_NP_value = "";
-use_hardCoded_fakeRates = "";
+fake_bkg = "";
+double_uncert = "";
 
 FakeRateMu_ch="";
 FakeRateEl_ch="";
@@ -25,13 +26,14 @@ channel = str(sys.argv[1])
 theVar = str(sys.argv[2])
 theFiletoRead= sys.argv[3]
 systList = str(sys.argv[4])
-use_hardCoded_fakeRates = str(sys.argv[5])
-fakes_NP_value = str(sys.argv[6])
+fakes_NP_value = str(sys.argv[5])
+double_uncert = str(sys.argv[6])
+# fake_bkg = str(sys.argv[6])
 
 fileToSearch = "Template_Datacard.txt"
 
 # fakes_NP_value = "5.0";
-
+# fake_bkg = "3.0";
 
 if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
     print "wrong channel"
@@ -41,8 +43,11 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
 if channel=="uuu":
     FakeEl_rateEl="-"
     FakeRateMu_ch="FakeRateMu_uuu"
-    if use_hardCoded_fakeRates=="y":
-        FakeMu_rateMu="2.0"
+    if fakes_NP_value=="0":
+        if double_uncert=="y":
+            FakeMu_rateMu="2.2"
+        else:
+            FakeMu_rateMu="1.6"
     else:
         FakeMu_rateMu=fakes_NP_value
 
@@ -55,9 +60,14 @@ elif channel=="uue":
     FakeRateMu_ch="FakeRateMu_uue"
     FakeRateEl_ch="FakeRateEl_uue"
 
-    if use_hardCoded_fakeRates=="y":
-        FakeMu_rateMu="1.3"
-        FakeEl_rateEl="1.3"
+    if fakes_NP_value=="0":
+        if double_uncert=="y":
+            FakeMu_rateMu="1.5"
+            FakeEl_rateEl="1.5"
+        else:
+            FakeMu_rateMu="1.25"
+            FakeEl_rateEl="1.25"
+
     else:
         FakeMu_rateMu=fakes_NP_value
         FakeEl_rateEl=fakes_NP_value
@@ -70,9 +80,14 @@ elif channel=="eeu":
     FakeRateMu_ch="FakeRateMu_eeu"
     FakeRateEl_ch="FakeRateEl_eeu"
 
-    if use_hardCoded_fakeRates=="y":
-        FakeMu_rateMu="2.0"
-        FakeEl_rateEl="2.0"
+    if fakes_NP_value=="0":
+        if double_uncert=="y":
+            FakeMu_rateMu="2.5"
+            FakeEl_rateEl="2.5"
+        else:
+            FakeMu_rateMu="1.75"
+            FakeEl_rateEl="1.75"
+
     else:
         FakeMu_rateMu=fakes_NP_value
         FakeEl_rateEl=fakes_NP_value
@@ -84,8 +99,13 @@ elif channel=="eeu":
 elif channel=="eee":
     FakeMu_rateMu="-"
     FakeRateEl_ch="FakeRateEl_eee"
-    if use_hardCoded_fakeRates=="y":
-        FakeEl_rateEl="1.3"
+
+    if fakes_NP_value=="0":
+        if double_uncert=="y":
+            FakeEl_rateEl="1.5"
+        else:
+            FakeEl_rateEl="1.25"
+
     else:
         FakeEl_rateEl=fakes_NP_value
 
@@ -118,6 +138,8 @@ s = s.replace("FakeMu_shapeMu", FakeMu_shapeMu)
 
 s = s.replace("FakeRateMu_ch", FakeRateMu_ch)
 s = s.replace("FakeRateEl_ch", FakeRateEl_ch)
+
+s = s.replace("Fake_bkg", fake_bkg)
 
 s = s.replace("trigsyst", trigsyst)
 
