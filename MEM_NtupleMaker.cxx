@@ -33,6 +33,9 @@ MEM_NtupleMaker::MEM_NtupleMaker(TString samplename, vector<TString> BDT_variabl
 
   CSV_threshold = set_CSV_threshold; eta_threshold = set_eta_threshold;
 
+  mkdir("output_ntuples/ntuples_readyForMEM/",0755);
+  mkdir("output_ntuples/ntuples_WZ/",0755);
+
   mkdir(("output_ntuples/ntuples_1btag/"+tmp_dir).Data(),0755);
   mkdir(("output_ntuples/ntuples_readyForMEM/"+tmp_dir).Data(),0755);
   mkdir(("output_ntuples/ntuples_WZ/"+tmp_dir).Data(),0755);
@@ -416,7 +419,7 @@ void MEM_NtupleMaker::SelectBjets(std::vector<ciemat::Jet>* vSelectedJets, std::
     Float_t btag_max=-9999, btag_max2=-9999;
     for (int ib=0; ib<vSelectedJets->size(); ib++)
     {
-      // if (doSelectOnlyBjets && vSelectedJets->at(ib).btagCSV<0.5426 ) continue; //Mara doesn't ask for eta <2.4!
+      // if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV < 0.8484 || fabs(vSelectedJets->at(ib).eta) > eta_threshold) ) {continue;} //medium btag WP
       if (doSelectOnlyBjets && (vSelectedJets->at(ib).btagCSV < CSV_threshold || fabs(vSelectedJets->at(ib).eta) > eta_threshold) ) {continue;} //FIXME -- make sure bjet def is correct
 
       if (vSelectedJets->at(ib).btagCSV>btag_max)
@@ -1010,6 +1013,8 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   cout<<FYEL("--- Creating "<<samplename<<" Ntuple ---")<<endl;
   cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
+  int nevents_1mediumBjet = 0; int n_looseBjet_total = 0; int n_mediumBjet_total = 0;
+
   TString filepath = "./input_ntuples/";
   if(tmp_dir != "") filepath+= tmp_dir + "/";
   filepath+= "FCNCNTuple_" +samplename+ ".root"; //FOR LOCAL EXECUTION
@@ -1160,14 +1165,23 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       else {cout<<endl<<BOLD( FRED("Wrong channel value !") )<<endl; continue;}
 
   //---------------------------
+
+      int n_mediumBjet = 0;
+
+
       //NOTE : Compare njets values -- make sure I use the same def. as Mara
       int NJets_tmp=vSelectedJets->size();
       int NBJets_tmp = 0; //NB : NJets contains both btag and non-btag
       for(int i=0; i<vSelectedJets->size(); i++)
       {
+        // if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= 0.8484) {NBJets_tmp++;} //Medium btag WP
         if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= CSV_threshold) {NBJets_tmp++;}
-        // if( vSelectedJets->at(i).btagCSV >= 0.5426) {NBJets_tmp++;} //No cut on eta
+
+        if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= 0.5426) {n_looseBjet_total++;}
+        if( fabs(vSelectedJets->at(i).eta) <= eta_threshold && vSelectedJets->at(i).btagCSV >= 0.8484) {n_mediumBjet++; n_mediumBjet_total++;}
       }
+
+      if(n_mediumBjet==1 && NJets_tmp > 1 && NJets_tmp < 4) nevents_1mediumBjet++;
 
       if(NJets_tmp != NJets || NBJets_tmp != NBJets)
       {
@@ -1186,11 +1200,17 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
   //---------------------------
       //Check Jets numbers
+
+      //--- if want to change btag WP ---
+      // if( NBJets_tmp == 1 && NJets > 1 && NJets < 4 ) {is_3l_TZQ_SR = true;}
+      // if( NBJets_tmp > 1 && NJets > 1 ) {is_3l_TTZ_CR = true;}
+      // if( NBJets_tmp == 0 && NJets > 0 ) {is_3l_WZ_CR = true;}
+      // if( NBJets_tmp == 1 && NJets > 0 && NJets < 4 ) {is_3l_1BTAG_SR = true;} //SR + 0light jet events
+
       if( NBJets == 1 && NJets > 1 && NJets < 4 ) {is_3l_TZQ_SR = true;}
       if( NBJets > 1 && NJets > 1 ) {is_3l_TTZ_CR = true;}
       if( NBJets == 0 && NJets > 0 ) {is_3l_WZ_CR = true;}
       if( NBJets == 1 && NJets > 0 && NJets < 4 ) {is_3l_1BTAG_SR = true;} //SR + 0light jet events
-      // if( NBJets == 1 && NJets == 1 ) {is_3l_1BTAG_SR = true;} //only 0light jet events
 
       if(region=="MEM" && !is_3l_TZQ_SR && !is_3l_TTZ_CR) {continue;}
       else if(region=="WZ" && !is_3l_WZ_CR) {continue;}
@@ -1200,6 +1220,24 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
   //---------------------------
       //Order leptons by highest Pt & Fill TLorentzVectors
       OrderLeptons(thechannel, vSelectedMuons, vSelectedElectrons);
+
+      Float_t lept252525=-999, lept202020=-999, lept202015=-999, lept201515=-999, lept252015=-999, leadingLeptonPT=-999, secondLeptonPT=-999, thirdLeptonPT=-999;
+      if(multilepton_Lepton1_P4.Pt() > 25 && multilepton_Lepton2_P4.Pt() > 25 && multilepton_Lepton3_P4.Pt() > 25) {lept252525 = 1;}
+      else {lept252525 = 0;}
+
+      if(multilepton_Lepton1_P4.Pt() > 20 && multilepton_Lepton2_P4.Pt() > 20 && multilepton_Lepton3_P4.Pt() > 20) {lept202020 = 1;}
+      else {lept202020 = 0;}
+
+      if(multilepton_Lepton1_P4.Pt() > 20 && multilepton_Lepton2_P4.Pt() > 20 && multilepton_Lepton3_P4.Pt() > 15) {lept202015 = 1;}
+      else {lept202015 = 0;}
+
+      if(multilepton_Lepton1_P4.Pt() > 20 && multilepton_Lepton2_P4.Pt() > 15 && multilepton_Lepton3_P4.Pt() > 15) {lept201515 = 1;}
+      else {lept201515 = 0;}
+
+      if(multilepton_Lepton1_P4.Pt() > 25 && multilepton_Lepton2_P4.Pt() > 20 && multilepton_Lepton3_P4.Pt() > 15) {lept252015 = 1;}
+      else {lept252015 = 0;}
+
+      leadingLeptonPT = multilepton_Lepton1_P4.Pt(); secondLeptonPT = multilepton_Lepton2_P4.Pt(); thirdLeptonPT = multilepton_Lepton3_P4.Pt();
 
   //---------------------------
 
@@ -1321,7 +1359,7 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
 
   //-------------------
-      for(int ivar=0; ivar<v_variablesToCreate.size(); ivar++)
+      for(int ivar=0; ivar<v_variablesToCreate.size(); ivar++) //FIXME -- define here new variables
       {
         if(v_variablesToCreate[ivar] == "tZ_pT") {v_variablesToCreate_float[ivar] = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);}
         else if(v_variablesToCreate[ivar] == "tZ_mass") {v_variablesToCreate_float[ivar] = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);}
@@ -1334,8 +1372,16 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
         else if(v_variablesToCreate[ivar] == "bj_mass_leadingJet_etaCut") {v_variablesToCreate_float[ivar] = Compute_mbj(vSelectedJets, ib1, is_3l_TZQ_SR, 6);}
         else if(v_variablesToCreate[ivar] == "LeadingJetNonB_pT") {v_variablesToCreate_float[ivar] = LeadingJetNonB_pT;}
         else if(v_variablesToCreate[ivar] == "SecondJetNonB_pT") {v_variablesToCreate_float[ivar] = SecondJetNonB_pT;}
-        // else if(v_variablesToCreate[ivar] == "ContainsBadJet") {v_variablesToCreate_float[ivar] = ContainsBadJet;}
+        else if(v_variablesToCreate[ivar] == "lept252525") {v_variablesToCreate_float[ivar] = lept252525;}
+        else if(v_variablesToCreate[ivar] == "lept202020") {v_variablesToCreate_float[ivar] = lept202020;}
+        else if(v_variablesToCreate[ivar] == "lept202015") {v_variablesToCreate_float[ivar] = lept202015;}
+        else if(v_variablesToCreate[ivar] == "lept201515") {v_variablesToCreate_float[ivar] = lept201515;}
+        else if(v_variablesToCreate[ivar] == "lept252015") {v_variablesToCreate_float[ivar] = lept252015;}
+        else if(v_variablesToCreate[ivar] == "leadingLeptonPT") {v_variablesToCreate_float[ivar] = leadingLeptonPT;}
+        else if(v_variablesToCreate[ivar] == "secondLeptonPT") {v_variablesToCreate_float[ivar] = secondLeptonPT;}
+        else if(v_variablesToCreate[ivar] == "thirdLeptonPT") {v_variablesToCreate_float[ivar] = thirdLeptonPT;}
       }
+
 
       // tZ_pT = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, true);
       // tZ_mass = Compute_tZ_pT(vSelectedElectrons, vSelectedMuons, vSelectedJets, METCollection, ib1, is_3l_TZQ_SR, false);
@@ -1352,6 +1398,12 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
 
       tree_output->Fill();
     }
+
+    cout<<"----------"<<endl;
+    cout<<"Number of SR events with medium WP : "<<nevents_1mediumBjet<<endl;
+    cout<<"Number of bjets with loose WP : "<<n_looseBjet_total<<endl;
+    cout<<"Number of bjets with medium WP : "<<n_mediumBjet_total<<endl;
+    cout<<"----------"<<endl;
 
 
     f_output->cd();
@@ -1409,7 +1461,7 @@ int main()
 
   vector<TString> v_samplenames;
   // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("tZqmcNLO");
+  v_samplenames.push_back("tZqmcNLO");
   // v_samplenames.push_back("tZqQup");
   // v_samplenames.push_back("tZqQdw");
   // v_samplenames.push_back("WZB");
@@ -1420,8 +1472,8 @@ int main()
   // v_samplenames.push_back("ttH");
   // v_samplenames.push_back("ttW");
   // v_samplenames.push_back("STtWll");
-  v_samplenames.push_back("FakesElectron");
-  v_samplenames.push_back("FakesMuon");
+  // v_samplenames.push_back("FakesElectron");
+  // v_samplenames.push_back("FakesMuon");
 
   // v_samplenames.push_back("DY");
   // v_samplenames.push_back("TT");
@@ -1473,6 +1525,8 @@ int main()
   BDTvar_list.push_back("ContainsBadJet");
   BDTvar_list.push_back("fourthLep10");
   BDTvar_list.push_back("fourthLep15");
+  BDTvar_list.push_back("badMuon");
+  BDTvar_list.push_back("LeadJetPT");
 
 
 
@@ -1498,6 +1552,15 @@ int main()
   v_variablesToCreate.push_back("bj_mass_leadingJet_etaCut");
   v_variablesToCreate.push_back("LeadingJetNonB_pT");
   v_variablesToCreate.push_back("SecondJetNonB_pT");
+
+  v_variablesToCreate.push_back("lept252525");
+  v_variablesToCreate.push_back("lept202020");
+  v_variablesToCreate.push_back("lept202015");
+  v_variablesToCreate.push_back("lept201515");
+  v_variablesToCreate.push_back("lept252015");
+  v_variablesToCreate.push_back("leadingLeptonPT");
+  v_variablesToCreate.push_back("secondLeptonPT");
+  v_variablesToCreate.push_back("thirdLeptonPT");
 
   // v_variablesToCreate.push_back("ContainsBadJet");
 
@@ -1556,10 +1619,11 @@ int main()
 
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
-  bool do_MEM_regions = false;
+  bool do_MEM_regions = true;
   bool do_WZ_region = false;
   bool do_1btag_region = false;
 
+  // TString specific_dir = "ntuples_lowpT"; //specify specific input/output dir. name
   TString specific_dir = ""; //specify specific input/output dir. name
 
 

@@ -32,17 +32,21 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //-- NEW : set to TRUE if want to use dedicated BDT (including Fakes) in WZ region insteand of mTW
     bool use_BDT_WZregion = false;
+
+    //-- NEW : set to TRUE if want to create a BDT trained to separate fakes from the rest in SR
+    bool use_BDTfake_SR = false;
 //----------------------
 
 
     //Matrix Element Method ==> TRUE
-    bool include_MEM_variables = true;
+    bool include_MEM_variables = false;
 
 
     //To keep only low of high-BDT events
-    bool cut_on_BDT = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
-        bool keep_high_BDT_events = false; //else, keep only low BDT events (blind)
-        double cut_BDT_value = 0.4;
+    bool cut_on_BDTtZq = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
+    bool cut_on_BDTfakeSR = false; //To cut on dedicated BDTfake in SR
+        bool keep_high_BDT_events = true; //if false : keep only low BDT events (blind)
+        double cut_BDT_value = 0;
         bool define_cut_auto = false; //define cut based on bkg/sig contamination
 
 
@@ -118,15 +122,24 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 // ---- Specify here the cuts that you wish to apply to all/specific regions ---
 
-    set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
-    set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 
     if(!isWZ)
     {
-        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(true);
-        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(true);
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">15");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">30");            set_v_cut_IsUsedForBDT.push_back(false);
     }
+
+    //HARD-CODED FROM NOW -- don't appear in filename suffix
+    // set_v_cut_name.push_back("lept252015");  set_v_cut_def.push_back("==1"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+    // set_v_cut_name.push_back("leadingLeptonPT");  set_v_cut_def.push_back(">25"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+    // set_v_cut_name.push_back("secondLeptonPT");  set_v_cut_def.push_back(">20"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+    // set_v_cut_name.push_back("thirdLeptonPT");  set_v_cut_def.push_back(">15"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+
+    set_v_cut_name.push_back("badMuon");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+
+    set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
+    set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 //-------------------
 
@@ -138,7 +151,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         if(!SR_new_0light)
         {
             // set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back("==3");     set_v_cut_IsUsedForBDT.push_back(false);
-            set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");     set_v_cut_IsUsedForBDT.push_back(true);
+            set_v_cut_name.push_back("NJets");     set_v_cut_def.push_back(">1 && <4");
+            if(use_BDTfake_SR) set_v_cut_IsUsedForBDT.push_back(false);
+            else set_v_cut_IsUsedForBDT.push_back(true);
             set_v_cut_name.push_back("NBJets");    set_v_cut_def.push_back("==1");          set_v_cut_IsUsedForBDT.push_back(false);
         }
         else
@@ -180,18 +195,20 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    t_name = "Tree";
+    // if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    // else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    // t_name = "Tree";
 
     //--- Other
-    // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    // else if(isttZ) 		dir_ntuples="/home/nico/root/tmva/test/input_ntuples/ntuples_MEM"; //With MEM
-    // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_1btag"; //With MEM
-    // t_name = "Tree";
+    // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_mediumBTAG"; //Without MEM (empty vars)
+    // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/ntuples_lowpT_mediumBTAG"; //With MEM
+    if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_lowBTAG"; //Without MEM (empty vars)
+    else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/ntuples_lowpT_lowBTAG"; //With MEM
+    t_name = "Tree";
 
     //--- CIEMAT's Ntuples ---
     // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/ntuples_lowpT";
     // t_name = "Default";
 
 
@@ -208,8 +225,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     std::vector<TString > thechannellist;
 
     thechannellist.push_back("uuu");
-    thechannellist.push_back("eeu");
     thechannellist.push_back("uue");
+    thechannellist.push_back("eeu");
     thechannellist.push_back("eee");
 
 //---------------------------------------------------------------------------
@@ -274,6 +291,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //---------------------------------------------------------------------------
     std::vector<TString > thevarlist; //Variables used in BDT
     std::vector<TString > thevarlist_ttZ; //Variables used in BDTttZ
+    std::vector<TString > thevarlist_BDTfakeSR; //Variables used in BDTfakeSR
 
 //------------------------ for tZq
     thevarlist.push_back("etaQ");
@@ -349,6 +367,18 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     }
 
 
+    //CHANGED --- NEW BDT IN SR TO SEPARATE FAKES FROM SIGNAL (then cut on it)
+    thevarlist_BDTfakeSR.push_back("mTW");
+    thevarlist_BDTfakeSR.push_back("thirdLeptonPT");
+    thevarlist_BDTfakeSR.push_back("etaQ");
+    thevarlist_BDTfakeSR.push_back("LeadingJetNonB_pT");
+    thevarlist_BDTfakeSR.push_back("secondLeptonPT");
+    // thevarlist_BDTfakeSR.push_back("METpt");
+    // thevarlist_BDTfakeSR.push_back("btagDiscri");
+    // thevarlist_BDTfakeSR.push_back("leadingLeptonPT");
+    // thevarlist_BDTfakeSR.push_back("ptQ");
+    // thevarlist_BDTfakeSR.push_back("dRAddLepB");
+
 //-------------------
 
 
@@ -367,6 +397,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
+    if(!use_BDTfake_SR)
+    {
     v_add_var_names.push_back("mTW");
     v_add_var_names.push_back("METpt");
     v_add_var_names.push_back("TopPT");
@@ -389,7 +421,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         v_add_var_names.push_back("LeadingJetCSV");
         v_add_var_names.push_back("SecondJetCSV");
     }
-
+    }
 
 //---------------------------------------------------------------------------
 //  ######  ##    ##  ######  ######## ######## ##     ##    ###    ######## ####  ######   ######
@@ -401,7 +433,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = true;
+    bool use_systematics = false;
 //----------------
 
 //--- General names of systematics
@@ -468,14 +500,14 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
-        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
+        bool draw_templates = true; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
@@ -495,8 +527,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //Initialization
         std::vector<TString > thevarlist_tmp;
         if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
-        else       thevarlist_tmp = thevarlist;
-        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+        else if(!isWZ && !isttZ && use_BDTfake_SR) {thevarlist_tmp = thevarlist_BDTfakeSR;}
+        else {thevarlist_tmp = thevarlist;}
+
+        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
         //Template
@@ -505,7 +539,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         {
             if(SR_new_0light) template_name = "BDT0l";
             else if(use_mTWandBDT_SR) template_name = "mTWandBDT";
-        }
+            else if(use_BDTfake_SR) template_name = "BDTfakeSR";
+        };
         if(isttZ)  template_name = "BDTttZ"; //BDTttZ output in ttZ Control region
         if(isWZ)
         {
@@ -515,8 +550,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         //BDT cut
         // float cut_BDT_value = -99; //Initialization -- used to cut on BDT & stay blind
-        bool cut_on_BDT_tmp = cut_on_BDT; //Hard-coded : 1 boolean needed for production and the other for plotting
-        if(isWZ || isttZ)  cut_on_BDT_tmp = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
+        bool cut_on_BDTtZq_tmp = cut_on_BDTtZq; //Hard-coded : 1 boolean needed for production and the other for plotting
+        if(isWZ || isttZ)  cut_on_BDTtZq_tmp = false; //No BDT in WZ CR ; & don't cut on BDTttZ for now
 
         //#############################################
         // TRAINING
@@ -538,8 +573,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         if(create_templates)
         {
-            if(cut_on_BDT_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
-            MVAtool->Read(template_name, fakes_from_data, real_data_templates, cut_on_BDT_tmp, keep_high_BDT_events, cut_BDT_value);
+            if(cut_on_BDTtZq_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+            MVAtool->Read(template_name, fakes_from_data, real_data_templates, cut_on_BDTtZq_tmp, keep_high_BDT_events, cut_BDT_value, cut_on_BDTfakeSR);
         }
 
         //#############################################
@@ -549,11 +584,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //Create trees and then histograms, which can later be used to create plots
         if(create_control_histograms)
         {
-            if(cut_on_BDT_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
+            if(cut_on_BDTtZq_tmp && define_cut_auto) {cut_BDT_value = MVAtool->Determine_Control_Cut();}
 
-            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDT_tmp, cut_BDT_value, !real_data_templates, keep_high_BDT_events);
+            MVAtool->Create_Control_Trees(fakes_from_data, cut_on_BDTtZq_tmp, cut_BDT_value, !real_data_templates, keep_high_BDT_events);
 
-            MVAtool->Create_Control_Histograms(fakes_from_data, false, cut_on_BDT_tmp);
+            MVAtool->Create_Control_Histograms(fakes_from_data, false, cut_on_BDTtZq_tmp);
         }
 
         //#############################################
@@ -563,20 +598,20 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // --- SINGLE CHANNELS
         for(int i=0; i<thechannellist.size(); i++)
         {
-            if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit, cut_on_BDT); //Draw plots for the BDT CR
+            if(draw_input_vars) MVAtool->Draw_Control_Plots(thechannellist[i], fakes_from_data, false, postfit, cut_on_BDTtZq); //Draw plots for the BDT CR
             if(draw_templates)
             {
-                if(!postfit) MVAtool->Plot_Prefit_Templates(thechannellist[i], template_name, false, cut_on_BDT); //Plot the prefit templates
-                else MVAtool->Plot_Postfit_Templates(thechannellist[i], template_name, false, cut_on_BDT); //Postfit templates from Combine file
+                if(!postfit) MVAtool->Plot_Prefit_Templates(thechannellist[i], template_name, false, cut_on_BDTtZq); //Plot the prefit templates
+                else MVAtool->Plot_Postfit_Templates(thechannellist[i], template_name, false, cut_on_BDTtZq); //Postfit templates from Combine file
             }
         }
 
         // --- ALL CHANNELS
-        if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit, cut_on_BDT);
+        if(draw_input_vars) MVAtool->Draw_Control_Plots("", fakes_from_data, true, postfit, cut_on_BDTtZq);
         if(draw_templates)
         {
-            if(!postfit) MVAtool->Plot_Prefit_Templates("all", template_name, true, cut_on_BDT); //Plot the prefit templates
-            else MVAtool->Plot_Postfit_Templates("all", template_name, true, cut_on_BDT); //Postfit templates from Combine file
+            if(!postfit) MVAtool->Plot_Prefit_Templates("all", template_name, true, cut_on_BDTtZq); //Plot the prefit templates
+            else MVAtool->Plot_Postfit_Templates("all", template_name, true, cut_on_BDTtZq); //Postfit templates from Combine file
         }
 
         //#############################################
@@ -591,9 +626,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  Additional functions
         //#############################################
 
-        // TString file_to_rescale = "./outputs/Control_Histograms"+MVAtool->filename_suffix+"_CutBDT.root";
         // TString file_to_rescale = "outputs/Combine_Input.root";
         // TString file_to_rescale = "./outputs/Reader_"+template_name+MVAtool->filename_suffix+"_unScaled.root";
+        // TString file_to_rescale = "./outputs/Reader_BDTfakeSR_badMuonEq0_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin1Max4_NBJetsEq1.root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale, "mTW"); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
         bool superpose_fakes_signal = false;
@@ -620,6 +655,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
 
+        // vector<bool> v;
+        // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", cut_BDT_value, keep_high_BDT_events);
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
@@ -814,7 +851,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 std::vector<TString > thevarlist_tmp;
                 if(isttZ)  thevarlist_tmp = thevarlist_ttZ;
                 else       thevarlist_tmp = thevarlist;
-                theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name_optim, set_v_cut_def_optim, set_v_cut_IsUsedForOptim_BDTvar, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name_optim, set_v_cut_def_optim, set_v_cut_IsUsedForOptim_BDTvar, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
                 MVAtool->Set_Luminosity(set_luminosity);
 
 
@@ -864,7 +901,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
                 if(create_templates)
                 {
-                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99);
+                    MVAtool->Read(template_name, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, cut_on_BDTfakeSR);
                 }
 
                 MoveFile( ("./outputs/Reader_"+template_name+MVAtool->filename_suffix+".root"), ("outputs/optim_cuts/"+cut1_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut1_values[icut1]))+cut2_name+Convert_Number_To_TString(Find_Number_In_TString(v_cut2_values[icut2])) ) ); //Move file
@@ -903,7 +940,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //#############################################
         //  CREATE INSTANCE OF CLASS & INITIALIZE
         //#############################################
-        theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+        theMVAtool* MVAtool = new theMVAtool(thevarlist, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity); //only used to call a class-function, initialization not important
 
         for(int icut1 = 0; icut1 < v_cut1_values.size(); icut1++)
@@ -1107,7 +1144,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 //  CREATE INSTANCE OF CLASS & INITIALIZE
                 //#############################################
 
-                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, v_cut_name_optim, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, v_cut_name_optim, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
                 MVAtool->Set_Luminosity(set_luminosity);
 
                 //#############################################
@@ -1131,7 +1168,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 //  CREATE INSTANCE OF CLASS & INITIALIZE
                 //#############################################
 
-                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, v_cut_name_optim, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, v_cut_name_optim, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
                 MVAtool->Set_Luminosity(set_luminosity);
 
                 //#############################################
@@ -1145,7 +1182,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     CopyFile( ("./weights/optim_BDTvar/weights_without_"+removed_var_name+"/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
                 }
 
-                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99);
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, cut_on_BDTfakeSR);
 
                 MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("./outputs/optim_BDTvar/"+bdt_type+"/without_"+removed_var_name) ); //Move file
 
@@ -1178,7 +1215,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  CREATE INSTANCE OF CLASS & INITIALIZE
         //#############################################
 
-        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+        theMVAtool* MVAtool = new theMVAtool(thevarlist_tmp, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
         for(int ivar=0; ivar<thevarlist_tmp.size(); ivar++)
@@ -1335,7 +1372,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 //  CREATE INSTANCE OF CLASS & INITIALIZE
                 //#############################################
 
-                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
                 MVAtool->Set_Luminosity(set_luminosity);
 
                 //#############################################
@@ -1359,7 +1396,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                 //  CREATE INSTANCE OF CLASS & INITIALIZE
                 //#############################################
 
-                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+                theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT_optim, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
                 MVAtool->Set_Luminosity(set_luminosity);
 
                 //#############################################
@@ -1373,7 +1410,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
                     CopyFile( ("weights/optim_BDTvar/RemoveWorstVars/weights_without_"+Convert_Number_To_TString(ivar+1)+"WorstVar/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml"), ("./weights/"+bdt_type+"_"+thechannellist[jchan]+MVAtool->filename_suffix+".weights.xml") ); //Copy weight file back to the ./weights/ dir. --> found by Reader !
                 }
 
-                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99);
+                MVAtool->Read(bdt_type, fakes_from_data, real_data_templates, false, keep_high_BDT_events, -99, cut_on_BDTfakeSR);
 
                 MoveFile( ("./outputs/Reader_"+bdt_type+"*"+MVAtool->filename_suffix+".root"), ("outputs/optim_BDTvar/RemoveWorstVars/"+bdt_type+"/without_"+Convert_Number_To_TString(ivar+1)+"WorstVar") ); //Move file
 
@@ -1406,7 +1443,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         //  CREATE INSTANCE OF CLASS & INITIALIZE
         //#############################################
 
-        theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name); if(MVAtool->stop_program) {return 1;}
+        theMVAtool* MVAtool = new theMVAtool(varlist_optim, thesamplelist, thesystlist, thechannellist, v_color, set_v_cut_name, set_v_cut_def, set_v_cut_IsUsedForBDT, v_add_var_names, nofbin_templates, isttZ, isWZ, format, combine_naming_convention, dir_ntuples, t_name, thevarlist_BDTfakeSR); if(MVAtool->stop_program) {return 1;}
         MVAtool->Set_Luminosity(set_luminosity);
 
         for(int ivar=0; ivar<v_worst_vars.size(); ivar++)

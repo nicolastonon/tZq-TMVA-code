@@ -83,7 +83,7 @@ class theMVAtool
 	public :
 
 //Methods
-	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString);
+	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString, vector<TString> var_list_BDTcut);
 	// ~theMVAtool() {delete reader;}; //Free memory
 	~theMVAtool() {};
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
@@ -93,7 +93,8 @@ class theMVAtool
 	double Compute_Fake_SF(TFile*, TString, bool, TString, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
 	void Rescale_Fake_Histograms(TString, TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
 	double Get_Zpt_Reweighting_SF(int, int, double); //Returns SF for Fakes event (Zpt reweighting)
-	int Read(TString, bool, bool, bool, bool, double); //Produce templates of BDT or mTW
+	void Vector_isEventPassingBDTfakeSRCut(vector<bool>&, TString, double, bool);
+	int Read(TString, bool, bool, bool, bool, double, bool); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool, bool); //Create new trees with events passing the cuts
 	void Create_Control_Histograms(bool, bool, bool); //Use the trees created with Create_Control_Trees to create histograms in same file
@@ -117,6 +118,7 @@ class theMVAtool
 	TMVA::Reader *reader;
 
 	std::vector<TString> var_list; std::vector<float> var_list_floats; //TMVA variables
+	std::vector<TString> var_list_BDTcut; std::vector<float> BDTcut_floats; //List of variables used in BDTfake, on which we cut
 	std::vector<TString> v_add_var_names; vector<float> v_add_var_floats; //Additional vars only for CR plots
 	std::vector<TString> v_cut_name; std::vector<TString> v_cut_def; std::vector<float> v_cut_float; std::vector<bool> v_cut_IsUsedForBDT; //Variables for region cuts (e.g. NJets, ...)
 	std::vector<TString> sample_list;

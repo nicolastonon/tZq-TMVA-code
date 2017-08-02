@@ -91,7 +91,7 @@ TH1D* GetHistoWeight(TTree* t, string variable, int nbins, double xmin, double x
 TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, string var, double valmin, double valmax, int npoints, string TitleGraph)
 {
 
-	// cout << "GetEffSvsEffB_Optim"<<endl;
+	cout << "GetEffSvsEffB_Optim"<<endl;
 
 	int nbins = npoints;
 
@@ -119,6 +119,7 @@ TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, str
 	double denom_bg = Histo_bg->Integral();
 	// cout << "denom_bg=" << denom_bg<< endl;
 
+
 	for (int i=1; i<=nbins; i++){
 
 		//double valcut = valmin*((double)i)/((double)nbins) + valmax*(1-((double)i)/((double)nbins));
@@ -139,6 +140,8 @@ TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, str
 
 	}
 
+	cout<<__LINE__<<endl;
+
 	TGraph* GraphEff = new TGraph(nbins+1, Eff_bg, Eff_sg);
 	GraphEff->SetName(TitleGraph.c_str());
 	GraphEff->SetTitle(TitleGraph.c_str());
@@ -150,7 +153,7 @@ TGraph* GetEffSvsEffB_Optim(TTree* Signal, TTree* Background, string presel, str
 TGraph* GetEffSvsEffB_Optim_SameSample(TTree* Sample, string presel_sig, string presel_bkg, string var, double valmin, double valmax, int npoints, string TitleGraph)
 {
 
-	// cout << "GetEffSvsEffB_Optim_SameSample"<<endl;
+	cout << "GetEffSvsEffB_Optim_SameSample"<<endl;
 
 	int nbins = npoints;
 
@@ -686,20 +689,29 @@ TCanvas* Plot4RocCurves_SameSample(TTree* t, string discrim1, string legend1, TT
 
 TCanvas* Plot5RocCurves_SameSample(TTree* t, string discrim1, string legend1, TTree* t2, string discrim2, string legend2, TTree* t3, string discrim3, string legend3, TTree* t4, string discrim4, string legend4, TTree* t5, string discrim5, string legend5, string selection, int windowtype, string legentitle, string PicName){
 
+cout<<__LINE__<<endl;
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_1;
+	cout<<__LINE__<<endl;
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_2;
+	cout<<__LINE__<<endl;
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_3;
+	cout<<__LINE__<<endl;
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_4;
+	cout<<__LINE__<<endl;
 	TGraph* Graph_EffSvsRejB_MEMdiscrim_5;
+	cout<<__LINE__<<endl;
 
 	string sel_sg = selection + " && classID==0";
 	string sel_bg = selection + " && classID==1";
+	cout<<__LINE__<<endl;
 
 	Graph_EffSvsRejB_MEMdiscrim_1 = GetEffSvsEffB_Optim_SameSample(t, sel_sg, sel_bg, discrim1, -2, 2, 100, "Eff_1");
+	cout<<__LINE__<<endl;
 	Graph_EffSvsRejB_MEMdiscrim_2 = GetEffSvsEffB_Optim_SameSample(t2, sel_sg, sel_bg, discrim2, -2, 2, 100, "Eff_2");
 	Graph_EffSvsRejB_MEMdiscrim_3 = GetEffSvsEffB_Optim_SameSample(t3, sel_sg, sel_bg, discrim3, -2, 2, 100, "Eff_3");
 	Graph_EffSvsRejB_MEMdiscrim_4 = GetEffSvsEffB_Optim_SameSample(t4, sel_sg, sel_bg, discrim4, -2, 2, 100, "Eff_4");
 	Graph_EffSvsRejB_MEMdiscrim_5 = GetEffSvsEffB_Optim_SameSample(t5, sel_sg, sel_bg, discrim5, -2, 2, 100, "Eff_5");
+	cout<<__LINE__<<endl;
 
 	TCanvas* CanvasEffSvsRejB = new TCanvas("CanvasEffSvsRejB","EffSvsRejB");
 
@@ -815,17 +827,18 @@ int main()
 
 		string selection = "1";
 
-		name1 = dir + "files_noMEM_CIEMAT"; label1 = "CIEMAT";
-		name2 = dir + "files_noMEM_newFakes/training_files_renamed"; label2 = "IPHC";
-		// name2 = dir + "files_noMEM_newFakes/training_files_renamed"; label2 = "IPHC";
-		name3 = dir + ""; label3 = "";
-		name4 = dir + ""; label4 = "";
-		name5 = dir + ""; label5 = "";
+		name1 = dir + "ROCS/conf1"; label1 = "1";
+		name2 = dir + "ROCS/conf2"; label2 = "2";
+		name3 = dir + "ROCS/conf3"; label3 = "3";
+		name4 = dir + "ROCS/conf4"; label4 = "4";
+		name5 = dir + "ROCS/conf5"; label5 = "5";
 
 		for (int i=0; i<channel.size(); i++)
 		{
 			//FIXME -- no cuts taken into account in filenames here -- (ex : MET10mTW10)
-			string suffix_tZq = "/BDT_"+ channel[i]+ "_NJetsMin1Max4_NBJetsEq1.root";
+			string suffix_tZq = "/BDTfakeSR_"+ channel[i]+ "_badMuonEq0_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin1Max4_NBJetsEq1.root";
+			// string suffix_tZq = "/BDT_"+ channel[i]+ "_badMuonEq0_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin1Max4_NBJetsEq1.root";
+			// string suffix_tZq = "/BDT_"+ channel[i]+ "_NJetsMin1Max4_NBJetsEq1.root";
 			string suffix_ttZ = "/BDTttZ_"+ channel[i]+ "_NJetsMin1_NBJetsMin1.root";
 
 			//--- tZq SR
@@ -859,13 +872,14 @@ int main()
 			tree5[i] = 0;
 			tree5[i] = (TTree*)file5[i]->Get("TestTree"); if(!tree5[i]) cout<<"Tree not found !"<<endl;
 
-
-			name = channel[i]+"_NJetsMin1Max4_NBJetsEq1";
+			//FIXME -- need to change variable 'name' accordingly here (additional cuts in filename, etc.)
+			name = channel[i]+"_badMuonEq0_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin1Max4_NBJetsEq1";
+			// name = channel[i]+"_NJetsMin1Max4_NBJetsEq1";
 			picname = "CompareBDT_"+ channel[i]+"_SignalRegion.png";
 			legendtitle = "tZq Signal Region - "+ channel[i];
 
-			Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
-			// Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
+			// Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
+			Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
 			// Plot4RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, selection, 0, legendtitle, picname);
 			// Plot5RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, tree5[i], name, label5, selection, 0, legendtitle, picname);
 
@@ -906,7 +920,7 @@ int main()
 			picname = "CompareBDT_"+ channel[i]+"_ttZControlRegion.png";
 			legendtitle = "ttZ Control Region - "+ channel[i];
 
-			Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
+			// Plot2RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, selection, 0, legendtitle, picname);
 			// Plot3RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, selection, 0, legendtitle, picname);
 			// Plot4RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, selection, 0, legendtitle, picname);
 			// Plot5RocCurves_SameSample(tree1[i], name, label1, tree2[i], name, label2, tree3[i], name, label3, tree4[i], name, label4, tree5[i], name, label5, selection, 0, legendtitle, picname);
