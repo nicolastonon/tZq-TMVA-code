@@ -717,13 +717,13 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString template_name, boo
 
 
 //---------------------------------------------------------------------------
-// ########     ########                ######      ######        ###       ##          ####    ##    ##     ######
-// ##     ##    ##                     ##    ##    ##    ##      ## ##      ##           ##     ###   ##    ##    ##
-// ##     ##    ##                     ##          ##           ##   ##     ##           ##     ####  ##    ##
-// ########     ######      #######     ######     ##          ##     ##    ##           ##     ## ## ##    ##   ####
-// ##   ##      ##                           ##    ##          #########    ##           ##     ##  ####    ##    ##
-// ##    ##     ##                     ##    ##    ##    ##    ##     ##    ##           ##     ##   ###    ##    ##
-// ##     ##    ########                ######      ######     ##     ##    ########    ####    ##    ##     ######
+// ########    ###    ##    ## ########  ######      ######  ########
+// ##         ## ##   ##   ##  ##       ##    ##    ##    ## ##
+// ##        ##   ##  ##  ##   ##       ##          ##       ##
+// ######   ##     ## #####    ######    ######      ######  ######
+// ##       ######### ##  ##   ##             ##          ## ##
+// ##       ##     ## ##   ##  ##       ##    ##    ##    ## ##
+// ##       ##     ## ##    ## ########  ######      ######  ##
 //---------------------------------------------------------------------------
 
 
@@ -979,6 +979,43 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 
 
 
+
+
+
+// double Get_MCFake_Integral(TFile* f, TString channel)
+// {
+// 	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return 0;}
+//
+// 	TString h_name = "mTW_" + channel + "Fakes"
+//
+// 	TH1F*
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------
+// ########     ########                ######      ######        ###       ##          ####    ##    ##     ######
+// ##     ##    ##                     ##    ##    ##    ##      ## ##      ##           ##     ###   ##    ##    ##
+// ##     ##    ##                     ##          ##           ##   ##     ##           ##     ####  ##    ##
+// ########     ######      #######     ######     ##          ##     ##    ##           ##     ## ## ##    ##   ####
+// ##   ##      ##                           ##    ##          #########    ##           ##     ##  ####    ##    ##
+// ##    ##     ##                     ##    ##    ##    ##    ##     ##    ##           ##     ##   ###    ##    ##
+// ##     ##    ########                ######      ######     ##     ##    ########    ####    ##    ##     ######
+//---------------------------------------------------------------------------
 
 
 
@@ -1327,12 +1364,12 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name, TString t
 // ##        ##     ##  ######   ######     ########  ########     ##        ######   #######     ##
 //---------------------------------------------------------------------------
 
-void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString sample, double cut_value, bool keep_high_BDT_events)
+void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString sample, TString systname, double cut_value, bool keep_high_BDT_events)
 {
 	bool print_spectator_vars = false; //to debug spectator variables issues from TMVA
-	bool add_spectators = false; //to avoid weird bug, don't use spectator variables in BDTfakeSR for now !
+	bool add_spectators = false; //if for debugging BDTfakeSR was trained without spectators
 
-	cout<<FGRN("---- Starting to fill vector containing BDTfakeSR cut results for ")<<sample<<endl;
+	cout<<FMAG("---- Filling vector containing BDTfakeSR cut results for ")<<sample<<FGRN(" -- syst ")<<systname<<endl;
 
 	int nevents_passingCut = 0;
 
@@ -1350,7 +1387,7 @@ void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString samp
 		if(v_cut_name[i] == "NJets") //HARD-CODED, NJets used in BDTtZq but not in BDTfakeSR
 		{
 			if(print_spectator_vars) cout<<v_cut_name[i]<<endl;
-			// cout<<v_cut_float[i]<<endl;
+
 			reader_cut->AddSpectator(v_cut_name[i], &v_cut_float[i]);
 			continue;
 		}
@@ -1364,112 +1401,17 @@ void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString samp
 	}
 	for(int i=0; i<v_add_var_names.size(); i++)
 	{
+		bool var_already_in_vector = false;
+		for(int j=0; j<var_list_BDTcut.size(); j++)
+		{
+			if(v_add_var_names[i] == var_list_BDTcut[j]) {var_already_in_vector = true; break;}
+		}
+		if(var_already_in_vector) continue;
+
 		if(print_spectator_vars) cout<<v_add_var_names[i]<<endl;
+
 		if(add_spectators) reader_cut->AddSpectator(v_add_var_names[i].Data(), &v_add_var_floats[i]);
 	}
-
-/*
-	vector<float> BDTcut_floats;
-	for(int i=0; i<var_list_BDTcut.size(); i++)
-	{
-		BDTcut_floats.push_back(0);
-		// cout<<BDTcut_floats[i]<<endl;
-		reader_cut->AddVariable(var_list_BDTcut[i], &BDTcut_floats[i]);
-	}
-
-	for(int i=0; i<v_cut_name.size(); i++)
-	{
-		if(v_cut_name[i] == "NJets") //HARD-CODED, NJets used in BDTtZq but not in BDTfakeSR
-		{
-			if(print_spectator_vars) cout<<v_cut_name[i]<<endl;
-			// cout<<v_cut_float[i]<<endl;
-			reader_cut->AddSpectator(v_cut_name[i], &v_cut_float[i]);
-			continue;
-		}
-
-		if(!v_cut_IsUsedForBDT[i] || v_cut_def[i].Contains("=="))
-		{
-			if(print_spectator_vars) cout<<v_cut_name[i]<<endl;
-			// cout<<v_cut_float[i]<<endl;
-			reader_cut->AddSpectator(v_cut_name[i], &v_cut_float[i]);
-		}
-	}*/
-
-	//IF DISACTIVATE THIS BLOCK, BUG, values changing ??? ??? WTF ???
-	// vector<float> test;
-	// vector<float> test(15);
-	// cout<<v_add_var_names.size()<<endl;
-	// for(int i=0; i<v_add_var_names.size(); i++) //Additional vars, only for CR plots
-	// {
-	// 	test.push_back(-999);
-	// } //FIXME //FIXME
-
-
-	// v_add_var_floats.clear();
-	// cout<<v_add_var_floats.size()<<endl;
-	// v_add_var_floats.resize(v_add_var_names.size());
-	// cout<<v_add_var_floats.size()<<endl;
-	//
-	// for(int i=0; i<v_add_var_names.size(); i++) //Additional vars, only for CR plots
-	// {
-	// 	// v_add_var_floats.push_back(-999);
-	// 	v_add_var_floats[i] = -999;
-	// }
-
-	/*vector<float> test;
-	for(int i=0; i<v_add_var_names.size(); i++) //Additional vars, only for CR plots
-	{
-		test.push_back(0);
-	}
-
-	for(int i=0; i<v_add_var_names.size(); i++)
-	{
-		// bool var_already_in_vector = false;
-		// for(int j=0; j<var_list_BDTcut.size(); j++)
-		// {
-		// 	if(v_add_var_names[i] == var_list_BDTcut[j]) {var_already_in_vector = true; break;}
-		// }
-		// if(var_already_in_vector) continue;
-
-		if(print_spectator_vars) cout<<v_add_var_names[i]<<endl;
-
-
-		reader_cut->AddSpectator(v_add_var_names[i], &test[i]);
-
-		// reader_cut->AddSpectator(v_add_var_names[i], &v_add_var_floats[i]);
-
-
-		// float tmp = 0;
-		// reader_cut->AddSpectator(v_add_var_names[i], &tmp);
-	}*/
-
-	vector<TString> v_spectators;
-	v_spectators.push_back("METpt");
-	v_spectators.push_back("TopPT");
-	v_spectators.push_back("Zpt");
-	v_spectators.push_back("AdditionalMuonIso");
-	v_spectators.push_back("AdditionalEleIso");
-
-
-	v_spectators.push_back("tZ_pT");
-	v_spectators.push_back("tZ_mass");
-	v_spectators.push_back("bj_mass_leadingJet");
-	v_spectators.push_back("bj_mass_subleadingJet");
-	v_spectators.push_back("bj_mass_leadingJet_pT40");
-	v_spectators.push_back("bj_mass_leadingJet_pT50");
-	v_spectators.push_back("bj_mass_leadingJet_pTlight40");
-	v_spectators.push_back("bj_mass_leadingJet_pTlight50");
-	v_spectators.push_back("bj_mass_leadingJet_etaCut");
-	v_spectators.push_back("LeadingJetCSV");
-	v_spectators.push_back("SecondJetCSV");
-
-	vector<float> v_spec_float;
-
-  // for(int i=0; i<v_spectators.size(); i++)
-  // {
-  //  v_spec_float.push_back(0);
-  //  reader_cut->AddSpectator(v_spectators[i], &v_spec_float[i]);
-  // }
 
 
 	for(int ichan=0; ichan<channel_list.size(); ichan++) //Book the method for each channel (separate BDTs)
@@ -1484,11 +1426,22 @@ void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString samp
 
 	TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample + ".root";
 
+	//For these systematics, info stored in separate ntuples ! (events are not the same)
+	if(sample.Contains("tZq") && systname == "PSscale__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQup.root";}
+	if(sample.Contains("tZq") && systname == "PSscale__minus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqQdw.root";}
+	else if(sample.Contains("tZq") && systname == "Hadron__plus") {inputfile = dir_ntuples + "/FCNCNTuple_tZqhwpp.root";}
 
 	if(!Check_File_Existence(inputfile) ) {cout<<inputfile.Data()<<" not found!"<<endl; return;}
 	TFile* file_input = TFile::Open( inputfile.Data() );
 
-	TTree* tree = (TTree*) file_input->Get(t_name);
+	TTree* tree = 0;
+
+	if(systname.Contains("JER") || systname.Contains("JES") || systname.Contains("Fakes") )
+	{
+		tree = (TTree*) file_input->Get(systname);
+	}
+	else {tree = (TTree*) file_input->Get(t_name);}
+
 
 	for(int ivar=0; ivar<var_list_BDTcut.size(); ivar++)
 	{
@@ -1507,13 +1460,6 @@ void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString samp
 
 		tree->GetEntry(ientry);
 
-		// for(int k=0; k<BDTcut_floats.size(); k++)	{BDTcut_floats[k]=0;}
-
-
-		// if(ientry==0)
-		{
-			// for(int k=0; k<BDTcut_floats.size(); k++)	{cout<<BDTcut_floats[k]<<endl;}
-		}
 
 		TString chan_name;
 		if(i_channel == 0) chan_name = "uuu";
@@ -1537,7 +1483,7 @@ void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString samp
 	delete tree; delete file_input;
 	delete reader_cut;
 
-	cout<<FGRN("---- Vector containing BDTfakeSR cut results is filled !")<<endl;
+	cout<<FMAG("---- Vector containing BDTfakeSR cut results is filled !")<<endl;
 	cout<<"(Number of events passing the BDTfakeSR cut in "<<sample<<" = "<<nevents_passingCut<<" !)"<<endl;
 
 	return;
@@ -1614,6 +1560,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 	if(cut_on_BDT) output_file_name+= "_CutBDT";
 	if(cut_on_BDTfakeSR) output_file_name+= "_CutBDTfakeSR";
 	//Cf. Fakes rescaling function : need to have an 'unscaled' version of the mTW template to compute the Fakes SFs
+	if(!fakes_from_data) output_file_name+= "_FakesMC";
 	if(template_name == "mTW" || template_name == "BDTfake") output_file_name+= "_unScaled.root"; //Add suffix to distinguish it : this file will be used to compute SFs
 	else output_file_name+= ".root";
 
@@ -1701,8 +1648,8 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
 
-			vector<bool> v_isEventPassingBDTfakeSRCut(0);
-			if(cut_on_BDTfakeSR && template_name == "BDT") Vector_isEventPassingBDTfakeSRCut(v_isEventPassingBDTfakeSRCut, sample_list[isample], BDT_cut_value, keep_high_BDT_events);
+			vector<bool> v_isEventPassingBDTfakeSRCut;
+			if(cut_on_BDTfakeSR && template_name == "BDT") {Vector_isEventPassingBDTfakeSRCut(v_isEventPassingBDTfakeSRCut, sample_list[isample], syst_list[isyst], BDT_cut_value, keep_high_BDT_events);}
 
 			TString inputfile = dir_ntuples + "/FCNCNTuple_" + sample_list[isample] + ".root";
 
@@ -1717,7 +1664,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			if(dbgMode) std::cout << "--- Select "<<sample_list[isample]<<" sample" << __LINE__ <<std::endl;
 
 
-			if(fakes_from_data || (!fakes_from_data && !sample_list[isample-1].Contains("DY") && !sample_list[isample-1].Contains("TT") && !sample_list[isample-1].Contains("WW")) ) //MC Fakes : Don't reinitialize histos -> sum !
+			if(fakes_from_data || !isample || (!fakes_from_data && !sample_list[isample-1].Contains("DY") && !sample_list[isample-1].Contains("TT") && !sample_list[isample-1].Contains("WW") ) ) //MC Fakes : Don't reinitialize histos -> sum them !
 			{
 				// Book output histograms
 				if(template_name=="mTWandBDT")
@@ -1726,11 +1673,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					hist_uue     = new TH1F( (template_name+"_uue").Data(),           (template_name+"_uue").Data(),           15, 0, 150);
 					hist_eeu     = new TH1F( (template_name+"_eeu").Data(),           (template_name+"_eeu").Data(),           15, 0, 150);
 					hist_eee     = new TH1F( (template_name+"_eee").Data(),           (template_name+"_eee").Data(),           15, 0, 150);
-					//
-					// hist_uuu     = new TH1F( (template_name+"_uuu").Data(),           (template_name+"_uuu").Data(),           10, 0, 200);
-					// hist_uue     = new TH1F( (template_name+"_uue").Data(),           (template_name+"_uue").Data(),           10, 0, 200);
-					// hist_eeu     = new TH1F( (template_name+"_eeu").Data(),           (template_name+"_eeu").Data(),           10, 0, 200);
-					// hist_eee     = new TH1F( (template_name+"_eee").Data(),           (template_name+"_eee").Data(),           10, 0, 200);
 				}
 				else if (template_name.Contains("BDT")) //create histogram for each channel (-1 = bkg, +1 = signal)
 				{
@@ -1738,12 +1680,6 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					hist_uue     = new TH1F( (template_name+"_uue").Data(),           (template_name+"_uue").Data(),           nbin, -1, 1 );
 					hist_eeu     = new TH1F( (template_name+"_eeu").Data(),           (template_name+"_eeu").Data(),           nbin, -1, 1 );
 					hist_eee     = new TH1F( (template_name+"_eee").Data(),           (template_name+"_eee").Data(),           nbin, -1, 1 );
-
-					//BDTfake has different range
-					// hist_uuu     = new TH1F( (template_name+"_uuu").Data(),           (template_name+"_uuu").Data(),           nbin, -0.6, 0.6);
-					// hist_uue     = new TH1F( (template_name+"_uue").Data(),           (template_name+"_uue").Data(),           nbin, -0.6, 0.6);
-					// hist_eeu     = new TH1F( (template_name+"_eeu").Data(),           (template_name+"_eeu").Data(),           nbin, -0.6, 0.6);
-					// hist_eee     = new TH1F( (template_name+"_eee").Data(),           (template_name+"_eee").Data(),           nbin, -0.6, 0.6);
 				}
 				else if (template_name == "mTW")
 				{
@@ -1826,6 +1762,12 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 			// int n_entries = 100;
 			int n_entries = tree->GetEntries();
+
+			if(cut_on_BDTfakeSR && template_name == "BDT" && v_isEventPassingBDTfakeSRCut.size() != n_entries)
+			{
+				cout<<BOLD(FRED("ERROR : vector containing BDTfakeSR cut results has different number of entries than sample itself ! Continue !"))<<endl;
+				continue;
+			}
 
 			for(int ievt=0; ievt<n_entries; ievt++)
 			{
@@ -2155,9 +2097,13 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 				if(combine_naming_convention) sample_name = "data_obs";
 				else sample_name = "DATA";
 			}
+			else if(!fakes_from_data && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) )
+			{
+				sample_name = "FakesMC";
+			}
 
 
-			if(!fakes_from_data && isample != sample_list.size()-1 && (sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) ) //MC Fakes : Don't reinitialize histos -> sum ! //OBSOLETE !!!
+			if(!fakes_from_data && isample <= sample_list.size()-2 && (sample_list[isample+1].Contains("DY") || sample_list[isample+1].Contains("TT") || sample_list[isample+1].Contains("WW") ) ) //MC Fakes : if next sample is also MC Fakes, don't delete histos, re-use them to sum the Fakes samples in same histos !
 			{
 				continue;
 			}
@@ -4762,7 +4708,8 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	if(file_input_noMEM == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
 
 	//WITH MEM (nominal)
-	TString input_name_MEM = "outputs/files_nominal/Combine_Input.root";
+	TString input_name_MEM = "outputs/files_fourthLep10_WZ10/Combine_Input.root";
+	// TString input_name_MEM = "outputs/files_nominal/Combine_Input.root";
 	if(!Check_File_Existence(input_name_MEM) ) {input_name_MEM = "outputs/files_nominal/Reader_" + template_name + this->filename_suffix + ".root";}
 	if(!Check_File_Existence(input_name_MEM) ) {cout<<"No template files in dir. outputs/files_nominal/ ! Abort"<<endl; return;}
 	TFile* file_input_MEM = 0;
@@ -4845,17 +4792,17 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 
 	h_sum_background_noMEM->SetLineColor(kBlue);
 	h_sum_background_noMEM->SetLineWidth(2);
+	h_sum_background_noMEM->SetLineStyle(2);
 
 	h_sum_background_MEM->SetLineColor(kBlue);
-	h_sum_background_MEM->SetLineStyle(2);
 	h_sum_background_MEM->SetLineWidth(2);
 
 	h_signal_noMEM->SetLineColor(kRed);
-	h_signal_noMEM->SetLineWidth(2);
+	h_signal_noMEM->SetLineWidth(5); //CHANGED
+	h_signal_noMEM->SetLineStyle(2);
 
 	h_signal_MEM->SetLineColor(kRed);
-	h_signal_MEM->SetLineStyle(2);
-	h_signal_MEM->SetLineWidth(2);
+	h_signal_MEM->SetLineWidth(5);
 
 	if(!normalized) //Changes which histo should be drawn first
 	{
@@ -4872,7 +4819,8 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 
 		h_sum_background_MEM->SetMinimum(0);
 		h_sum_background_MEM->SetMaximum(h_sum_background_MEM->GetMaximum()*1.1);
-		h_sum_background_MEM->GetYaxis()->SetTitle("Events");
+		// h_sum_background_MEM->GetYaxis()->SetTitle("Events");
+		h_sum_background_MEM->GetYaxis()->SetTitle("Normalised event distributions"); //CHANGED
 		if(template_name=="BDT") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
 		else if(template_name=="BDTttZ") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
 		else if(template_name=="mTW") h_sum_background_MEM->GetXaxis()->SetTitle("mTW [GeV]");
@@ -4892,7 +4840,8 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 
 		h_signal_MEM->SetMinimum(0);
 		h_signal_MEM->SetMaximum(h_signal_MEM->GetMaximum()*1.4);
-		h_signal_MEM->GetYaxis()->SetTitle("Events");
+		// h_signal_MEM->GetYaxis()->SetTitle("Events");
+		h_signal_MEM->GetYaxis()->SetTitle("Normalised event distributions"); //CHANGED
 		if(template_name=="BDT") h_signal_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
 		else if(template_name=="BDTttZ") h_signal_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
 		else if(template_name=="mTW") h_signal_MEM->GetXaxis()->SetTitle("mTW [GeV]");
@@ -4922,10 +4871,10 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	h_sum_background_noMEM->Draw("same hist");
 	h_signal_noMEM->Draw("same hist");
 
-	qw->AddEntry(h_sum_background_noMEM, "Sum backgrounds" , "L");
-	qw->AddEntry(h_sum_background_MEM, "Sum backgrounds (+MEM)" , "L");
 	qw->AddEntry(h_signal_noMEM, "Signal" , "L");
 	qw->AddEntry(h_signal_MEM, "Signal (+MEM)" , "L");
+	qw->AddEntry(h_sum_background_noMEM, "Sum backgrounds" , "L");
+	qw->AddEntry(h_sum_background_MEM, "Sum backgrounds (+MEM)" , "L");
 
 	//-------------------
 	//CAPTIONS
@@ -4992,7 +4941,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	else if (channel=="eeu")  info_data = "ee#mu channel";
 	else if (channel=="uue")  info_data = "#mu#mu e channel";
 	else if (channel=="uuu") info_data = "#mu#mu #mu channel";
-	else if(channel=="allchannels") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
+	else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 	TString extrainfo_data;
 	if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
@@ -5394,7 +5343,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		else if (channel=="eeu")  info_data = "ee#mu channel";
 		else if (channel=="uue")  info_data = "#mu#mu e channel";
 		else if (channel=="uuu") info_data = "#mu#mu #mu channel";
-		// else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
+		else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 		TString extrainfo_data;
 		if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}

@@ -46,7 +46,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool cut_on_BDTtZq = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
     bool cut_on_BDTfakeSR = false; //To cut on dedicated BDTfake in SR
         bool keep_high_BDT_events = true; //if false : keep only low BDT events (blind)
-        double cut_BDT_value = 0;
+        double cut_BDT_value = 0.4;
         bool define_cut_auto = false; //define cut based on bkg/sig contamination
 
 
@@ -268,6 +268,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         thesamplelist.push_back("FakesElectron");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
         thesamplelist.push_back("FakesMuon");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
     }
+
     //WARNING : OBSOLETE -- don't use MC fakes (or update code) -- must be last samples !
     else
     {
@@ -397,7 +398,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
-    if(!use_BDTfake_SR)
+    if(!use_BDTfake_SR) //FIXME -- can remove this protection from now on
     {
     v_add_var_names.push_back("mTW");
     v_add_var_names.push_back("METpt");
@@ -507,7 +508,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
-        bool draw_templates = true; //Plot templates (mTW/BDT/BDTttZ)
+        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
@@ -631,13 +632,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // TString file_to_rescale = "./outputs/Reader_BDTfakeSR_badMuonEq0_ContainsBadJetEq0_fourthLep10Eq0_NJetsMin1Max4_NBJetsEq1.root";
         // MVAtool->Rescale_Fake_Histograms(file_to_rescale, "mTW"); //To rescale manually the fakes in a template file -- Make sure it wasn't rescaled yet !!
 
-        bool superpose_fakes_signal = false;
-
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
-            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+            MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
-            if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
+            // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
 
             // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
 
@@ -647,16 +646,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
 
-        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
+        MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
-        if(superpose_fakes_signal) MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true, true);
+        // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true, true);
 
         // MVAtool->Rebin_Template_File("./outputs/binning/Combine_Input_40Bins_HalfStat.root", 10);
 
         // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions("allchan", true);
 
         // vector<bool> v;
-        // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", cut_BDT_value, keep_high_BDT_events);
+        // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", "", cut_BDT_value, keep_high_BDT_events);
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object

@@ -1399,11 +1399,11 @@ void MEM_NtupleMaker::NtupleMaker(TString samplename)
       tree_output->Fill();
     }
 
-    cout<<"----------"<<endl;
-    cout<<"Number of SR events with medium WP : "<<nevents_1mediumBjet<<endl;
-    cout<<"Number of bjets with loose WP : "<<n_looseBjet_total<<endl;
-    cout<<"Number of bjets with medium WP : "<<n_mediumBjet_total<<endl;
-    cout<<"----------"<<endl;
+    // cout<<"----------"<<endl;
+    // cout<<"Number of SR events with medium WP : "<<nevents_1mediumBjet<<endl;
+    // cout<<"Number of bjets with loose WP : "<<n_looseBjet_total<<endl;
+    // cout<<"Number of bjets with medium WP : "<<n_mediumBjet_total<<endl;
+    // cout<<"----------"<<endl;
 
 
     f_output->cd();
@@ -1461,7 +1461,7 @@ int main()
 
   vector<TString> v_samplenames;
   // v_samplenames.push_back("Data");
-  v_samplenames.push_back("tZqmcNLO");
+  // v_samplenames.push_back("tZqmcNLO");
   // v_samplenames.push_back("tZqQup");
   // v_samplenames.push_back("tZqQdw");
   // v_samplenames.push_back("WZB");
@@ -1475,8 +1475,8 @@ int main()
   // v_samplenames.push_back("FakesElectron");
   // v_samplenames.push_back("FakesMuon");
 
-  // v_samplenames.push_back("DY");
-  // v_samplenames.push_back("TT");
+  v_samplenames.push_back("DY");
+  v_samplenames.push_back("TT");
   // v_samplenames.push_back("FakesNewNew");
   // v_samplenames.push_back("Fakes");
   // v_samplenames.push_back("tZqhwpp");
@@ -1620,7 +1620,7 @@ int main()
   double eta_threshold = 2.4 ; //No Bjet SF beyond that
 
   bool do_MEM_regions = true;
-  bool do_WZ_region = false;
+  bool do_WZ_region = true;
   bool do_1btag_region = false;
 
   // TString specific_dir = "ntuples_lowpT"; //specify specific input/output dir. name

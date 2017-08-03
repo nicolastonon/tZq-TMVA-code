@@ -93,7 +93,7 @@ class theMVAtool
 	double Compute_Fake_SF(TFile*, TString, bool, TString, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
 	void Rescale_Fake_Histograms(TString, TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
 	double Get_Zpt_Reweighting_SF(int, int, double); //Returns SF for Fakes event (Zpt reweighting)
-	void Vector_isEventPassingBDTfakeSRCut(vector<bool>&, TString, double, bool);
+	void Vector_isEventPassingBDTfakeSRCut(vector<bool>&, TString, TString, double, bool);
 	int Read(TString, bool, bool, bool, bool, double, bool); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
 	void Create_Control_Trees(bool, bool, double, bool, bool); //Create new trees with events passing the cuts
