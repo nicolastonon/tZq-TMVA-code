@@ -271,130 +271,6 @@ void theMVAtool::Set_Luminosity(double desired_luminosity)
 
 
 
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-/**
- * Initialize vectors with SFs used for Zpt reweighting
- */
-void theMVAtool::Fill_Zpt_Vectors()
-{
-	v_Zpt_el_tZq[0]=1.59077;
-	v_Zpt_el_tZq[1]=0.977813;
-	v_Zpt_el_tZq[2]=0.871409;
-	v_Zpt_el_tZq[3]=0.859375;
-	v_Zpt_el_tZq[4]=0.967098;
-	v_Zpt_el_tZq[5]=1.12737;
-	v_Zpt_el_tZq[6]=0.647202;
-	v_Zpt_el_tZq[7]=0.635454;
-	v_Zpt_el_tZq[8]=1.07226;
-	v_Zpt_el_tZq[9]=0.775253;
-
-	v_Zpt_el_ttZ[0]=0.943188;
-	v_Zpt_el_ttZ[1]=1.02488;
-	v_Zpt_el_ttZ[2]=1.27178;
-	v_Zpt_el_ttZ[3]=1.04542;
-	v_Zpt_el_ttZ[4]=0.958649;
-	v_Zpt_el_ttZ[5]=0.990099;
-	v_Zpt_el_ttZ[6]=0.543444;
-	v_Zpt_el_ttZ[7]=1.05011;
-	v_Zpt_el_ttZ[8]=2.15717;
-	v_Zpt_el_ttZ[9]=0.660766;
-
-	v_Zpt_el_WZ1jet[0]=1.79345;
-	v_Zpt_el_WZ1jet[1]=1.12125;
-	v_Zpt_el_WZ1jet[2]=0.748378;
-	v_Zpt_el_WZ1jet[3]=0.582597;
-	v_Zpt_el_WZ1jet[4]=0.436228;
-	v_Zpt_el_WZ1jet[5]=0.414118;
-	v_Zpt_el_WZ1jet[6]=0.432137;
-	v_Zpt_el_WZ1jet[7]=0.618596;
-	v_Zpt_el_WZ1jet[8]=0.609542;
-	v_Zpt_el_WZ1jet[9]=0.526724;
-
-	v_Zpt_el_WZ2jet[0]=1.63767;
-	v_Zpt_el_WZ2jet[1]=1.20519;
-	v_Zpt_el_WZ2jet[2]=0.857887;
-	v_Zpt_el_WZ2jet[3]=0.710257;
-	v_Zpt_el_WZ2jet[4]=0.840998;
-	v_Zpt_el_WZ2jet[5]=0.639715;
-	v_Zpt_el_WZ2jet[6]=0.605022;
-	v_Zpt_el_WZ2jet[7]=0.654072;
-	v_Zpt_el_WZ2jet[8]=1.0467;
-	v_Zpt_el_WZ2jet[9]=0.704575;
-
-	v_Zpt_el_WZ3morejet[0]=1.20234;
-	v_Zpt_el_WZ3morejet[1]=1.17959;
-	v_Zpt_el_WZ3morejet[2]=0.8368;
-	v_Zpt_el_WZ3morejet[3]=1.01174;
-	v_Zpt_el_WZ3morejet[4]=0.932266;
-	v_Zpt_el_WZ3morejet[5]=1.05073;
-	v_Zpt_el_WZ3morejet[6]=0.652322;
-	v_Zpt_el_WZ3morejet[7]=1.20203;
-	v_Zpt_el_WZ3morejet[8]=1.11716;
-	v_Zpt_el_WZ3morejet[9]=0.814289;
-
-
-
-	v_Zpt_mu_tZq[0]=1.67468;
-	v_Zpt_mu_tZq[1]=1.12136;
-	v_Zpt_mu_tZq[2]=0.944309;
-	v_Zpt_mu_tZq[3]=0.762743;
-	v_Zpt_mu_tZq[4]=0.74524;
-	v_Zpt_mu_tZq[5]=0.871755;
-	v_Zpt_mu_tZq[6]=0.576436;
-	v_Zpt_mu_tZq[7]=0.645049;
-	v_Zpt_mu_tZq[8]=0.450624;
-	v_Zpt_mu_tZq[9]=0.748974;
-
-	v_Zpt_mu_ttZ[0]=1.78967;
-	v_Zpt_mu_ttZ[1]=1.52187;
-	v_Zpt_mu_ttZ[2]=0.945639;
-	v_Zpt_mu_ttZ[3]=0.830342;
-	v_Zpt_mu_ttZ[4]=0.903506;
-	v_Zpt_mu_ttZ[5]=0.608179;
-	v_Zpt_mu_ttZ[6]=0.553372;
-	v_Zpt_mu_ttZ[7]=1.44008;
-	v_Zpt_mu_ttZ[8]=0.637702;
-	v_Zpt_mu_ttZ[9]=0.271906;
-
-	v_Zpt_mu_WZ1jet[0]=3.07308;
-	v_Zpt_mu_WZ1jet[1]=1.45012;
-	v_Zpt_mu_WZ1jet[2]=0.714364;
-	v_Zpt_mu_WZ1jet[3]=0.437299;
-	v_Zpt_mu_WZ1jet[4]=0.288349;
-	v_Zpt_mu_WZ1jet[5]=0.24043;
-	v_Zpt_mu_WZ1jet[6]=0.193958;
-	v_Zpt_mu_WZ1jet[7]=0.223087;
-	v_Zpt_mu_WZ1jet[8]=0.1316;
-	v_Zpt_mu_WZ1jet[9]=0.150708;
-
-	v_Zpt_mu_WZ2jet[0]=1.84157;
-	v_Zpt_mu_WZ2jet[1]=1.3925;
-	v_Zpt_mu_WZ2jet[2]=1.02222;
-	v_Zpt_mu_WZ2jet[3]=0.773407;
-	v_Zpt_mu_WZ2jet[4]=0.641132;
-	v_Zpt_mu_WZ2jet[5]=0.573534;
-	v_Zpt_mu_WZ2jet[6]=0.36697;
-	v_Zpt_mu_WZ2jet[7]=0.445029;
-	v_Zpt_mu_WZ2jet[8]=0.265312;
-	v_Zpt_mu_WZ2jet[9]=0.309481;
-
-	v_Zpt_mu_WZ3morejet[0]=1.8712;
-	v_Zpt_mu_WZ3morejet[1]=1.43556;
-	v_Zpt_mu_WZ3morejet[2]=1.02624;
-	v_Zpt_mu_WZ3morejet[3]=0.789222;
-	v_Zpt_mu_WZ3morejet[4]=0.843388;
-	v_Zpt_mu_WZ3morejet[5]=0.985938;
-	v_Zpt_mu_WZ3morejet[6]=0.530604;
-	v_Zpt_mu_WZ3morejet[7]=0.487662;
-	v_Zpt_mu_WZ3morejet[8]=0.560811;
-	v_Zpt_mu_WZ3morejet[9]=0.57125;
-
-	return;
-}
-
-
-
 
 
 
@@ -736,7 +612,8 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString template_name, boo
  */
 double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_together, TString FakeName, TString template_name)
 {
-	bool fit_WZ_separately = true;
+	// bool fit_WZ_separately = true;
+	bool fit_WZ_separately = true; //FIXME
 
 	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return 0;}
 	if(FakeName!="FakeMu" && FakeName!="FakeEl" && FakeName!="") {cout<<"Wrong arg FakeName !"<<endl; return 0;}
@@ -847,9 +724,9 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	double fracwz = 0;
 	if(fit_WZ_separately) fracwz = h_WZ->Integral()/hdata->Integral() ;
 
-	fit->Constrain(0, 0.01, 1); //Constrain param 0 (fakes integral) between 0 & 1
+	// fit->Constrain(0, 0.01, 1); //Constrain param 0 (fakes integral) between 0 & 1 //FIXME
 
-	// fit->Constrain(1, 0, fracsum*2); //Constrain param 0 (fakes integral) between 0 & 1 //FIXME
+	// fit->Constrain(1, 0, fracsum*2); //Constrain param 0 (fakes integral) between 0 & 1
 	// fit->Constrain(2, 0, fracwz*2); //Constrain param 0 (fakes integral) between 0 & 1
 
 	if(fit_ElandMu_together)
@@ -1029,7 +906,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
  */
 void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name, TString template_name)
 {
-	template_name = "mTW"; //FIXME -- is use BDTfake to rescale, find SF=0 for muons
+	template_name = "mTW"; //if use BDTfake to rescale, find SF=0 for muons
 
 	if(!Check_File_Existence(file_to_rescale_name) ) {cout<<file_to_rescale_name<<" doesn't exist ! Can't rescale Fakes ! "<<endl; return;}
 
@@ -1098,7 +975,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name, TString t
 		SF_eee_FakeEl = Compute_Fake_SF(file_mTW_templates_unscaled, "eee", fit_ElandMu_together, "FakeEl", template_name);
 	}
 
-	//FIXME
+	//If want to manually modify the rescaling of the fakes (to see its impact on results)
 	// SF_uuu/=3; SF_uue/=3; SF_eeu/=3; SF_eee/=3;
 
 	cout<<endl<<BOLD(FYEL("--- Re-scaling the Fake histograms ---"))<<endl;
@@ -1275,86 +1152,6 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name, TString t
 
 
 //---------------------------------------------------------------------------
-// ######## ########  ########    ########  ######## ##      ## ######## ####  ######   ##     ## ########
-//      ##  ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-//     ##   ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##        ##     ##    ##
-//    ##    ########     ##       ########  ######   ##  ##  ## ######    ##  ##   #### #########    ##
-//   ##     ##           ##       ##   ##   ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-//  ##      ##           ##       ##    ##  ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-// ######## ##           ##       ##     ## ########  ###  ###  ######## ####  ######   ##     ##    ##
-//---------------------------------------------------------------------------
-
-/**
- * Extract properties of data-driven event, and reads class-member vectors to return corresponding Scale factor
- * This is used to add a "Zpt reweighting" systematic, in order to account for a cinematic bias in construction of data-driven Fakes sample
- */
- // double theMVAtool::Get_Zpt_Reweighting_SF(int event_ientry)
- double theMVAtool::Get_Zpt_Reweighting_SF(int Channel, int NJets, double Zpt)
-{
-	double SF=0;
-
-	double tmp = Zpt/30; //Scale factors are computed for ranges of 30 GeV
-	int index_vector = tmp;
-	if(index_vector > 9) {index_vector=9;} //Overflow in last bin
-	else if(index_vector<0) {cout<<"Error : wrong Zpt value ! Can't add systematic 'ZptReweight' !"<<endl;}
-
-
-	if(Channel==0 || Channel==2) //uuu & eeu
-	{
-		if(!isWZ && !isttZ)
-		{
-			return v_Zpt_mu_tZq[index_vector];
-		}
-		else if(!isWZ && isttZ)
-		{
-			return v_Zpt_mu_ttZ[index_vector];
-		}
-		else if(isWZ && !isttZ)
-		{
-			if(NJets==1) {return v_Zpt_mu_WZ1jet[index_vector];}
-			else if(NJets==2) {return v_Zpt_mu_WZ2jet[index_vector];}
-			else {return v_Zpt_mu_WZ3morejet[index_vector];}
-		}
-		else {cout<<"ERROR in Zpt reweighting : wrong region !"<<endl; return 0;
-		}
-	}
-	else if(Channel==1 || Channel==3) //uue & eee
-	{
-		if(!isWZ && !isttZ)
-		{
-			// cout<<"Zpt "<<Zpt<<" - i "<<index_vector<<" - SF = "<<v_Zpt_el_tZq[index_vector]<<endl;
-			return v_Zpt_el_tZq[index_vector];
-		}
-		else if(!isWZ && isttZ)
-		{
-			return v_Zpt_el_ttZ[index_vector];
-		}
-		else if(isWZ && !isttZ)
-		{
-			if(NJets==1) {return v_Zpt_el_WZ1jet[index_vector];}
-			else if(NJets==2) {return v_Zpt_el_WZ2jet[index_vector];}
-			else {return v_Zpt_el_WZ3morejet[index_vector];}
-		}
-		else {cout<<"ERROR in Zpt reweighting : wrong region !"<<endl; return 0;
-		}
-	}
-
-	else {cout<<"Error : wrong channel name !"<<endl; return 0;}
-
-	return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-//---------------------------------------------------------------------------
 // ########     ###     ######   ######     ########  ########  ########     ######  ##     ## ########
 // ##     ##   ## ##   ##    ## ##    ##    ##     ## ##     ##    ##       ##    ## ##     ##    ##
 // ##     ##  ##   ##  ##       ##          ##     ## ##     ##    ##       ##       ##     ##    ##
@@ -1488,12 +1285,6 @@ void theMVAtool::Vector_isEventPassingBDTfakeSRCut(vector<bool> &v, TString samp
 
 	return;
 }
-
-
-
-
-
-
 
 
 
@@ -1898,7 +1689,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 
 				TString MVA_method_name = template_name + "_" + chan_name + this->filename_suffix + " method";
-				if(cut_on_BDT && !template_name.Contains("BDT")) {MVA_method_name = "BDT_" + chan_name + this->filename_suffix + " method";} //For mTW templates with cut on BDT //FIXME
+				if(cut_on_BDT && !template_name.Contains("BDT")) {MVA_method_name = "BDT_" + chan_name + this->filename_suffix + " method";} //For mTW templates with cut on BDT
 
 				// if(cut_on_BDT && reader->EvaluateMVA(MVA_method_name.Data() ) < 0.4) {continue;} //CHANGE HERE IF WANT TO KEEP HIGH BDT VALUES INSTEAD !!
 				if(cut_on_BDT)
@@ -1913,11 +1704,11 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 
 				// --- Return the MVA outputs and fill into histograms
 
-				//Add 1-sided systematic to reweight data-driven Fakes sample
-				if(syst_list[isyst] == "ZptReweight__minus")
-				{
-					weight*= Get_Zpt_Reweighting_SF(i_channel, *njets, *Zpt); //Multiply by scale-factor ; njets & Zpt are dedicated variables, see where they are defined
-				}
+				//Add 1-sided systematic to reweight data-driven Fakes sample --- OBSOLETE
+				// if(syst_list[isyst] == "ZptReweight__minus")
+				// {
+				// 	weight*= Get_Zpt_Reweighting_SF(i_channel, *njets, *Zpt); //Multiply by scale-factor ; njets & Zpt are dedicated variables, see where they are defined
+				// }
 
 				//Same boundaries & nbins for all 4 histos
 
@@ -6427,6 +6218,204 @@ void theMVAtool::Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TSt
 
 
 
+
+
+
+
+//---------------------------------------------------------------------------
+// ######## ########  ########    ########  ######## ##      ## ######## ####  ######   ##     ## ########
+//      ##  ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
+//     ##   ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##        ##     ##    ##
+//    ##    ########     ##       ########  ######   ##  ##  ## ######    ##  ##   #### #########    ##
+//   ##     ##           ##       ##   ##   ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
+//  ##      ##           ##       ##    ##  ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
+// ######## ##           ##       ##     ## ########  ###  ###  ######## ####  ######   ##     ##    ##
+//---------------------------------------------------------------------------
+
+/**
+ * Extract properties of data-driven event, and reads class-member vectors to return corresponding Scale factor
+ * This is used to add a "Zpt reweighting" systematic, in order to account for a cinematic bias in construction of data-driven Fakes sample
+ */
+ // double theMVAtool::Get_Zpt_Reweighting_SF(int event_ientry)
+ double theMVAtool::Get_Zpt_Reweighting_SF(int Channel, int NJets, double Zpt)
+{
+	double SF=0;
+
+	double tmp = Zpt/30; //Scale factors are computed for ranges of 30 GeV
+	int index_vector = tmp;
+	if(index_vector > 9) {index_vector=9;} //Overflow in last bin
+	else if(index_vector<0) {cout<<"Error : wrong Zpt value ! Can't add systematic 'ZptReweight' !"<<endl;}
+
+
+	if(Channel==0 || Channel==2) //uuu & eeu
+	{
+		if(!isWZ && !isttZ)
+		{
+			return v_Zpt_mu_tZq[index_vector];
+		}
+		else if(!isWZ && isttZ)
+		{
+			return v_Zpt_mu_ttZ[index_vector];
+		}
+		else if(isWZ && !isttZ)
+		{
+			if(NJets==1) {return v_Zpt_mu_WZ1jet[index_vector];}
+			else if(NJets==2) {return v_Zpt_mu_WZ2jet[index_vector];}
+			else {return v_Zpt_mu_WZ3morejet[index_vector];}
+		}
+		else {cout<<"ERROR in Zpt reweighting : wrong region !"<<endl; return 0;
+		}
+	}
+	else if(Channel==1 || Channel==3) //uue & eee
+	{
+		if(!isWZ && !isttZ)
+		{
+			// cout<<"Zpt "<<Zpt<<" - i "<<index_vector<<" - SF = "<<v_Zpt_el_tZq[index_vector]<<endl;
+			return v_Zpt_el_tZq[index_vector];
+		}
+		else if(!isWZ && isttZ)
+		{
+			return v_Zpt_el_ttZ[index_vector];
+		}
+		else if(isWZ && !isttZ)
+		{
+			if(NJets==1) {return v_Zpt_el_WZ1jet[index_vector];}
+			else if(NJets==2) {return v_Zpt_el_WZ2jet[index_vector];}
+			else {return v_Zpt_el_WZ3morejet[index_vector];}
+		}
+		else {cout<<"ERROR in Zpt reweighting : wrong region !"<<endl; return 0;
+		}
+	}
+
+	else {cout<<"Error : wrong channel name !"<<endl; return 0;}
+
+	return 0;
+}
+
+
+
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/**
+ * Initialize vectors with SFs used for Zpt reweighting
+ */
+void theMVAtool::Fill_Zpt_Vectors()
+{
+	v_Zpt_el_tZq[0]=1.59077;
+	v_Zpt_el_tZq[1]=0.977813;
+	v_Zpt_el_tZq[2]=0.871409;
+	v_Zpt_el_tZq[3]=0.859375;
+	v_Zpt_el_tZq[4]=0.967098;
+	v_Zpt_el_tZq[5]=1.12737;
+	v_Zpt_el_tZq[6]=0.647202;
+	v_Zpt_el_tZq[7]=0.635454;
+	v_Zpt_el_tZq[8]=1.07226;
+	v_Zpt_el_tZq[9]=0.775253;
+
+	v_Zpt_el_ttZ[0]=0.943188;
+	v_Zpt_el_ttZ[1]=1.02488;
+	v_Zpt_el_ttZ[2]=1.27178;
+	v_Zpt_el_ttZ[3]=1.04542;
+	v_Zpt_el_ttZ[4]=0.958649;
+	v_Zpt_el_ttZ[5]=0.990099;
+	v_Zpt_el_ttZ[6]=0.543444;
+	v_Zpt_el_ttZ[7]=1.05011;
+	v_Zpt_el_ttZ[8]=2.15717;
+	v_Zpt_el_ttZ[9]=0.660766;
+
+	v_Zpt_el_WZ1jet[0]=1.79345;
+	v_Zpt_el_WZ1jet[1]=1.12125;
+	v_Zpt_el_WZ1jet[2]=0.748378;
+	v_Zpt_el_WZ1jet[3]=0.582597;
+	v_Zpt_el_WZ1jet[4]=0.436228;
+	v_Zpt_el_WZ1jet[5]=0.414118;
+	v_Zpt_el_WZ1jet[6]=0.432137;
+	v_Zpt_el_WZ1jet[7]=0.618596;
+	v_Zpt_el_WZ1jet[8]=0.609542;
+	v_Zpt_el_WZ1jet[9]=0.526724;
+
+	v_Zpt_el_WZ2jet[0]=1.63767;
+	v_Zpt_el_WZ2jet[1]=1.20519;
+	v_Zpt_el_WZ2jet[2]=0.857887;
+	v_Zpt_el_WZ2jet[3]=0.710257;
+	v_Zpt_el_WZ2jet[4]=0.840998;
+	v_Zpt_el_WZ2jet[5]=0.639715;
+	v_Zpt_el_WZ2jet[6]=0.605022;
+	v_Zpt_el_WZ2jet[7]=0.654072;
+	v_Zpt_el_WZ2jet[8]=1.0467;
+	v_Zpt_el_WZ2jet[9]=0.704575;
+
+	v_Zpt_el_WZ3morejet[0]=1.20234;
+	v_Zpt_el_WZ3morejet[1]=1.17959;
+	v_Zpt_el_WZ3morejet[2]=0.8368;
+	v_Zpt_el_WZ3morejet[3]=1.01174;
+	v_Zpt_el_WZ3morejet[4]=0.932266;
+	v_Zpt_el_WZ3morejet[5]=1.05073;
+	v_Zpt_el_WZ3morejet[6]=0.652322;
+	v_Zpt_el_WZ3morejet[7]=1.20203;
+	v_Zpt_el_WZ3morejet[8]=1.11716;
+	v_Zpt_el_WZ3morejet[9]=0.814289;
+
+
+
+	v_Zpt_mu_tZq[0]=1.67468;
+	v_Zpt_mu_tZq[1]=1.12136;
+	v_Zpt_mu_tZq[2]=0.944309;
+	v_Zpt_mu_tZq[3]=0.762743;
+	v_Zpt_mu_tZq[4]=0.74524;
+	v_Zpt_mu_tZq[5]=0.871755;
+	v_Zpt_mu_tZq[6]=0.576436;
+	v_Zpt_mu_tZq[7]=0.645049;
+	v_Zpt_mu_tZq[8]=0.450624;
+	v_Zpt_mu_tZq[9]=0.748974;
+
+	v_Zpt_mu_ttZ[0]=1.78967;
+	v_Zpt_mu_ttZ[1]=1.52187;
+	v_Zpt_mu_ttZ[2]=0.945639;
+	v_Zpt_mu_ttZ[3]=0.830342;
+	v_Zpt_mu_ttZ[4]=0.903506;
+	v_Zpt_mu_ttZ[5]=0.608179;
+	v_Zpt_mu_ttZ[6]=0.553372;
+	v_Zpt_mu_ttZ[7]=1.44008;
+	v_Zpt_mu_ttZ[8]=0.637702;
+	v_Zpt_mu_ttZ[9]=0.271906;
+
+	v_Zpt_mu_WZ1jet[0]=3.07308;
+	v_Zpt_mu_WZ1jet[1]=1.45012;
+	v_Zpt_mu_WZ1jet[2]=0.714364;
+	v_Zpt_mu_WZ1jet[3]=0.437299;
+	v_Zpt_mu_WZ1jet[4]=0.288349;
+	v_Zpt_mu_WZ1jet[5]=0.24043;
+	v_Zpt_mu_WZ1jet[6]=0.193958;
+	v_Zpt_mu_WZ1jet[7]=0.223087;
+	v_Zpt_mu_WZ1jet[8]=0.1316;
+	v_Zpt_mu_WZ1jet[9]=0.150708;
+
+	v_Zpt_mu_WZ2jet[0]=1.84157;
+	v_Zpt_mu_WZ2jet[1]=1.3925;
+	v_Zpt_mu_WZ2jet[2]=1.02222;
+	v_Zpt_mu_WZ2jet[3]=0.773407;
+	v_Zpt_mu_WZ2jet[4]=0.641132;
+	v_Zpt_mu_WZ2jet[5]=0.573534;
+	v_Zpt_mu_WZ2jet[6]=0.36697;
+	v_Zpt_mu_WZ2jet[7]=0.445029;
+	v_Zpt_mu_WZ2jet[8]=0.265312;
+	v_Zpt_mu_WZ2jet[9]=0.309481;
+
+	v_Zpt_mu_WZ3morejet[0]=1.8712;
+	v_Zpt_mu_WZ3morejet[1]=1.43556;
+	v_Zpt_mu_WZ3morejet[2]=1.02624;
+	v_Zpt_mu_WZ3morejet[3]=0.789222;
+	v_Zpt_mu_WZ3morejet[4]=0.843388;
+	v_Zpt_mu_WZ3morejet[5]=0.985938;
+	v_Zpt_mu_WZ3morejet[6]=0.530604;
+	v_Zpt_mu_WZ3morejet[7]=0.487662;
+	v_Zpt_mu_WZ3morejet[8]=0.560811;
+	v_Zpt_mu_WZ3morejet[9]=0.57125;
+
+	return;
+}
 
 
 

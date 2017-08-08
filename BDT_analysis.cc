@@ -39,14 +39,14 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     //Matrix Element Method ==> TRUE
-    bool include_MEM_variables = false;
+    bool include_MEM_variables = true;
 
 
     //To keep only low of high-BDT events
     bool cut_on_BDTtZq = false; //FOR BLINDING SIGNAL REGION (--> observed signif.)
     bool cut_on_BDTfakeSR = false; //To cut on dedicated BDTfake in SR
         bool keep_high_BDT_events = true; //if false : keep only low BDT events (blind)
-        double cut_BDT_value = 0.4;
+        double cut_BDT_value = 0.2;
         bool define_cut_auto = false; //define cut based on bkg/sig contamination
 
 
@@ -131,12 +131,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     }
 
     //HARD-CODED FROM NOW -- don't appear in filename suffix
-    // set_v_cut_name.push_back("lept252015");  set_v_cut_def.push_back("==1"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
-    // set_v_cut_name.push_back("leadingLeptonPT");  set_v_cut_def.push_back(">25"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
-    // set_v_cut_name.push_back("secondLeptonPT");  set_v_cut_def.push_back(">20"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
-    // set_v_cut_name.push_back("thirdLeptonPT");  set_v_cut_def.push_back(">15"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+    // set_v_cut_name.push_back("lept252015");  set_v_cut_def.push_back("==1"); set_v_cut_IsUsedForBDT.push_back(false);
+    // set_v_cut_name.push_back("leadingLeptonPT");  set_v_cut_def.push_back(">25"); set_v_cut_IsUsedForBDT.push_back(false);
+    // set_v_cut_name.push_back("secondLeptonPT");  set_v_cut_def.push_back(">20"); set_v_cut_IsUsedForBDT.push_back(false);
+    // set_v_cut_name.push_back("thirdLeptonPT");  set_v_cut_def.push_back(">15"); set_v_cut_IsUsedForBDT.push_back(false);
 
-    set_v_cut_name.push_back("badMuon");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
+    // set_v_cut_name.push_back("badMuon");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
 
     set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
     set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
@@ -195,16 +195,16 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    // if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    // else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    // t_name = "Tree";
+    if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    t_name = "Tree";
 
     //--- Other
     // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_mediumBTAG"; //Without MEM (empty vars)
     // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/ntuples_lowpT_mediumBTAG"; //With MEM
-    if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_lowBTAG"; //Without MEM (empty vars)
-    else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/ntuples_lowpT_lowBTAG"; //With MEM
-    t_name = "Tree";
+    // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_lowBTAG"; //Without MEM (empty vars)
+    // else 		dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_readyForMEM/ntuples_lowpT_lowBTAG"; //With MEM
+    // t_name = "Tree";
 
     //--- CIEMAT's Ntuples ---
     // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
@@ -398,7 +398,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
-    if(!use_BDTfake_SR) //FIXME -- can remove this protection from now on
+    // if(!use_BDTfake_SR) //FIXME -- can remove this protection from now on
     {
     v_add_var_names.push_back("mTW");
     v_add_var_names.push_back("METpt");
@@ -434,7 +434,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //  ######     ##     ######     ##    ######## ##     ## ##     ##    ##    ####  ######   ######
 //---------------------------------------------------------------------------
 
-    bool use_systematics = false;
+    bool use_systematics = true;
 //----------------
 
 //--- General names of systematics
@@ -498,10 +498,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
@@ -565,6 +565,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
             {
                 MVAtool->Train_Test_Evaluate(thechannellist[i], template_name, true);
             }
+            // MVAtool->Train_Test_Evaluate("all", template_name, true);
+
         }
 
 
@@ -634,7 +636,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
-            MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
             // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
 
@@ -646,7 +648,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
 
-        MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
+        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
         // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true, true);
 

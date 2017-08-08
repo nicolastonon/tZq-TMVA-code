@@ -1460,23 +1460,23 @@ int main()
   //---------------------------------------------------------------------------
 
   vector<TString> v_samplenames;
-  // v_samplenames.push_back("Data");
-  // v_samplenames.push_back("tZqmcNLO");
-  // v_samplenames.push_back("tZqQup");
-  // v_samplenames.push_back("tZqQdw");
-  // v_samplenames.push_back("WZB");
-  // v_samplenames.push_back("WZL");
-  // v_samplenames.push_back("WZC");
-  // v_samplenames.push_back("ttZ");
-  // v_samplenames.push_back("ZZ");
-  // v_samplenames.push_back("ttH");
-  // v_samplenames.push_back("ttW");
-  // v_samplenames.push_back("STtWll");
-  // v_samplenames.push_back("FakesElectron");
-  // v_samplenames.push_back("FakesMuon");
+  v_samplenames.push_back("Data");
+  v_samplenames.push_back("tZqmcNLO");
+  v_samplenames.push_back("tZqQup");
+  v_samplenames.push_back("tZqQdw");
+  v_samplenames.push_back("WZB");
+  v_samplenames.push_back("WZL");
+  v_samplenames.push_back("WZC");
+  v_samplenames.push_back("ttZ");
+  v_samplenames.push_back("ZZ");
+  v_samplenames.push_back("ttH");
+  v_samplenames.push_back("ttW");
+  v_samplenames.push_back("STtWll");
+  v_samplenames.push_back("FakesElectron");
+  v_samplenames.push_back("FakesMuon");
 
-  v_samplenames.push_back("DY");
-  v_samplenames.push_back("TT");
+  // v_samplenames.push_back("DY");
+  // v_samplenames.push_back("TT");
   // v_samplenames.push_back("FakesNewNew");
   // v_samplenames.push_back("Fakes");
   // v_samplenames.push_back("tZqhwpp");
