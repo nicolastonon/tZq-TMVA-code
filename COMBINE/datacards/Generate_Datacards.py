@@ -43,7 +43,6 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
 if channel=="uuu":
     FakeEl_rateEl="-"
     FakeRateMu_ch="FakeRateMu_uuu"
-    #FakeRateMu_ch="FakeRateMu_Mu"
     if fakes_NP_value=="0":
         if double_uncert=="y":
             FakeMu_rateMu="2.2"
@@ -60,8 +59,6 @@ if channel=="uuu":
 elif channel=="uue":
     FakeRateMu_ch="FakeRateMu_uue"
     FakeRateEl_ch="FakeRateEl_uue"
-    # FakeRateMu_ch="FakeRateMu_Mu"
-    # FakeRateEl_ch="FakeRateEl_El"
 
     if fakes_NP_value=="0":
         if double_uncert=="y":
@@ -82,8 +79,6 @@ elif channel=="uue":
 elif channel=="eeu":
     FakeRateMu_ch="FakeRateMu_eeu"
     FakeRateEl_ch="FakeRateEl_eeu"
-    # FakeRateMu_ch="FakeRateMu_Mu"
-    # FakeRateEl_ch="FakeRateEl_El"
 
     if fakes_NP_value=="0":
         if double_uncert=="y":
@@ -104,7 +99,6 @@ elif channel=="eeu":
 elif channel=="eee":
     FakeMu_rateMu="-"
     FakeRateEl_ch="FakeRateEl_eee"
-    # FakeRateEl_ch="FakeRateEl_El"
 
     if fakes_NP_value=="0":
         if double_uncert=="y":

@@ -26,7 +26,7 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(char include_systematics, double fake_rate, int WZ_template, int SR_template, char add_region, char double_uncert)
+void Script_Datacards_InputVars(char include_systematics, double fake_rate, int WZ_template, int SR_template, int add_region, char double_uncert)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -149,7 +149,7 @@ void Script_Datacards_InputVars(char include_systematics, double fake_rate, int 
 
 
 
-void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, int WZ_template, int SR_template, char add_region, char double_uncert)
+void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, int WZ_template, int SR_template, int add_region, char double_uncert)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -168,7 +168,10 @@ void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, in
 
 	if(SR_template==0) var_list.push_back("BDT");
 	else if(SR_template==1) var_list.push_back("mTWandBDT");
-	if(add_region=='y') var_list.push_back("BDT0l");
+
+	if(add_region==1) var_list.push_back("BDT2l");
+	else if(add_region==2) var_list.push_back("BDT0l");
+
 	var_list.push_back("BDTttZ");
 	if(WZ_template==0) var_list.push_back("mTW");
 	else if(WZ_template==1) var_list.push_back("BDTfake");
@@ -281,15 +284,16 @@ int main()
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
 	double fake_rate = 400;
+	char double_uncert = 'n';
+
 	// double fake_bkg = 30;
 	int WZ_template = 0;
 	int SR_template = 0;
-	char add_region = 'n';
-	char double_uncert = 'n';
+	int add_region = 0;
 
 	cout<<BOLD(FBLU("### Will create script for generation of combined Datacard ###"))<<endl<<endl;
 
-	cout<<FYEL("--- What templates do you want to use in SR region ? (0 : BDT / 1 : mTWandBDT)")<<endl;
+/*	cout<<FYEL("--- What templates do you want to use in SR region ? (0 : BDT / 1 : mTWandBDT)")<<endl;
 	cin>>SR_template;
 	while(SR_template != 0 && SR_template != 1)
 	{
@@ -311,16 +315,16 @@ int main()
 		cin>>WZ_template;
 	}
 
-	cout<<FYEL("--- Do you want to add region [1 bjet, 0 light] ? (y/n)")<<endl;
+	cout<<FYEL("--- Region choice : 0 default // 1 split SR in two // 2 add region 1b0l  ? (choose 0/1/2)")<<endl;
 	cin>>add_region;
-	while(add_region != 'y' && add_region != 'n')
+	while(add_region != 0 && add_region != 1 && add_region !=2)
 	{
 		cin.clear();
 		cin.ignore(1000, '\n');
 
-		cout<<" Wrong answer ! Need to type 'y' or 'n' ! Retry :"<<endl;
+		cout<<" Wrong answer ! Need to choose 0 or 1 or 2 ! Retry :"<<endl;
 		cin>>add_region;
-	}
+	}*/
 
 	cout<<FYEL("--- Do you want to include all the systematic nuisances in the datacards ? (y/n)")<<endl;
 	cin>>include_systematics;

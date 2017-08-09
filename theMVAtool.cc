@@ -724,28 +724,25 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	double fracwz = 0;
 	if(fit_WZ_separately) fracwz = h_WZ->Integral()/hdata->Integral() ;
 
-	// fit->Constrain(0, 0.01, 1); //Constrain param 0 (fakes integral) between 0 & 1 //FIXME
-
-	// fit->Constrain(1, 0, fracsum*2); //Constrain param 0 (fakes integral) between 0 & 1
-	// fit->Constrain(2, 0, fracwz*2); //Constrain param 0 (fakes integral) between 0 & 1
+	// fit->Constrain(0, 0.01, 1); //Constrain param 0 (fakes integral) between 0 & 1
 
 	if(fit_ElandMu_together)
 	{
 		fit->Constrain(1, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1);
+		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
 	}
 	else
 	{
 		if(channel == "uuu" || channel == "eee")
 		{
 			fit->Constrain(1, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1);
+			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
 		}
 		else
 		{
 			fit->Constrain(1, 0, 1);
 			fit->Constrain(2, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.9, fracwz*1.1);
+			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.9, fracwz*1.1); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
 		}
 	}
 
@@ -4484,6 +4481,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	{
 		cout<<"Wrong channel  Abort"<<endl; return;
 	}
+	if(template_name == "mTW") {cout<<"Template name is 'mTW' -- Not producing plots"<<endl; return;}
 
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	if(template_name == "BDT" || template_name == "BDTttZ" || template_name == "mTW") {cout<<FYEL("--- Producing "<<template_name<<" Template Plots ---")<<endl;}
@@ -4582,18 +4580,27 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	}
 
 	h_sum_background_noMEM->SetLineColor(kBlue);
-	h_sum_background_noMEM->SetLineWidth(2);
 	h_sum_background_noMEM->SetLineStyle(2);
+	// h_sum_background_noMEM->SetLineWidth(2);
+	h_sum_background_noMEM->SetLineWidth(4);
+	h_sum_background_noMEM->SetLineStyle(9);
+	// h_sum_background_noMEM->SetFillStyle(3005);
+	// h_sum_background_noMEM->SetFillColor(1);
 
 	h_sum_background_MEM->SetLineColor(kBlue);
-	h_sum_background_MEM->SetLineWidth(2);
+	// h_sum_background_MEM->SetLineWidth(2);
+	h_sum_background_MEM->SetLineWidth(4);
+	h_sum_background_noMEM->SetLineStyle(9);
+	// h_sum_background_MEM->SetFillStyle(3001);
+	// h_sum_background_MEM->SetFillColor(1);
 
 	h_signal_noMEM->SetLineColor(kRed);
-	h_signal_noMEM->SetLineWidth(5); //CHANGED
-	h_signal_noMEM->SetLineStyle(2);
+	h_signal_noMEM->SetLineWidth(7); //CHANGED
+	// h_signal_noMEM->SetLineStyle(2);
+	h_signal_noMEM->SetLineStyle(9);
 
 	h_signal_MEM->SetLineColor(kRed);
-	h_signal_MEM->SetLineWidth(5);
+	h_signal_MEM->SetLineWidth(8);
 
 	if(!normalized) //Changes which histo should be drawn first
 	{
@@ -4612,9 +4619,10 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 		h_sum_background_MEM->SetMaximum(h_sum_background_MEM->GetMaximum()*1.1);
 		// h_sum_background_MEM->GetYaxis()->SetTitle("Events");
 		h_sum_background_MEM->GetYaxis()->SetTitle("Normalised event distributions"); //CHANGED
-		if(template_name=="BDT") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
-		else if(template_name=="BDTttZ") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
-		else if(template_name=="mTW") h_sum_background_MEM->GetXaxis()->SetTitle("mTW [GeV]");
+		if(template_name.Contains("BDT") ) h_sum_background_MEM->GetXaxis()->SetTitle("BDT"); //CHANGED
+		// if(template_name=="BDT") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
+		// else if(template_name=="BDTttZ") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
+		// else if(template_name=="mTW") h_sum_background_MEM->GetXaxis()->SetTitle("mTW [GeV]");
 	}
 	else
 	{
@@ -4633,9 +4641,10 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 		h_signal_MEM->SetMaximum(h_signal_MEM->GetMaximum()*1.4);
 		// h_signal_MEM->GetYaxis()->SetTitle("Events");
 		h_signal_MEM->GetYaxis()->SetTitle("Normalised event distributions"); //CHANGED
-		if(template_name=="BDT") h_signal_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
-		else if(template_name=="BDTttZ") h_signal_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
-		else if(template_name=="mTW") h_signal_MEM->GetXaxis()->SetTitle("mTW [GeV]");
+		if(template_name.Contains("BDT") ) h_signal_MEM->GetXaxis()->SetTitle("BDT"); //CHANGED
+		// if(template_name=="BDT") h_signal_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
+		// else if(template_name=="BDTttZ") h_signal_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
+		// else if(template_name=="mTW") h_signal_MEM->GetXaxis()->SetTitle("mTW [GeV]");
 	}
 
 
