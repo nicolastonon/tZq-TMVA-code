@@ -283,7 +283,7 @@ int main()
 	char include_systematics = 'n';
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
-	double fake_rate = 400;
+	double fake_rate = 10000;
 	char double_uncert = 'n';
 
 	// double fake_bkg = 30;
@@ -337,17 +337,17 @@ int main()
 		cin>>include_systematics;
 	}
 
-	// cout<<FYEL("--- Choose FakeBackgrounds uncertainties (correlated b/w channels) in % : (ex : 30%)")<<endl;
-	// cin>>fake_bkg;
-	// while(cin.fail() || fake_bkg<0 )
-	// {
-	// 	cin.clear();
-	// 	cin.ignore(1000, '\n');
-	//
-	// 	cout<<" Wrong answer ! :"<<endl;
-	// 	cin>>fake_bkg;
-	// }
-	// if(fake_bkg != 0) fake_bkg = 1 + (fake_bkg / 100.0);
+	/*cout<<FYEL("--- Choose FakeBackgrounds uncertainties (correlated b/w channels) in % : (ex : 30%)")<<endl;
+	cin>>fake_bkg;
+	while(cin.fail() || fake_bkg<0 )
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		cout<<" Wrong answer ! :"<<endl;
+		cin>>fake_bkg;
+	}
+	if(fake_bkg != 0) fake_bkg = 1 + (fake_bkg / 100.0);
 
 	cout<<FYEL("--- Choose FakeRates uncertainties (uncorrelated) in % : ('0' <-> use hard-coded values)")<<endl;
 	cin>>fake_rate;
@@ -374,8 +374,21 @@ int main()
 			cout<<" Wrong answer ! Need to choose y or n :"<<endl;
 			cin>>double_uncert;
 		}
+	}*/
+
+	cout<<FYEL("--- Choose FakeRates uncertainties (correlated) in % : ")<<endl;
+	cout<<FYEL("[Type 0 to use default 10k %]")<<endl;
+	cin>>fake_rate;
+	while(cin.fail() || fake_rate<0)
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		cout<<" Wrong answer ! Need to choose fake rate > 0 :"<<endl;
+		cin>>fake_rate;
 	}
 
+	if(fake_rate != 0) fake_rate = 1 + (fake_rate / 100.0);
 
 	cout<<FYEL("--- Do you want to create datacard for a Template Fit ? (y/n) ")<<endl;
 	cin>>datacard_template_fit;

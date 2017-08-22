@@ -40,16 +40,24 @@ if (channel!="uuu" and channel!="uue" and channel!="eeu" and channel!="eee"):
     print "channel should be uuu, uue, eeu or uuu"
     exit()
 
+FakeRateMu_ch="FakeRateMu"
+FakeRateEl_ch="FakeRateEl"
+
 if channel=="uuu":
     FakeEl_rateEl="-"
-    FakeRateMu_ch="FakeRateMu_uuu"
     if fakes_NP_value=="0":
-        if double_uncert=="y":
-            FakeMu_rateMu="2.2"
-        else:
-            FakeMu_rateMu="1.6"
+        FakeMu_rateMu="101"
     else:
         FakeMu_rateMu=fakes_NP_value
+
+    # FakeRateMu_ch="FakeRateMu_uuu"
+    # if fakes_NP_value=="0":
+    #     if double_uncert=="y":
+    #         FakeMu_rateMu="2.2"
+    #     else:
+    #         FakeMu_rateMu="1.6"
+    # else:
+    #     FakeMu_rateMu=fakes_NP_value
 
     FakeEl_shapeEl="-"
     FakeMu_shapeMu="1"
@@ -57,57 +65,75 @@ if channel=="uuu":
     fileToSearch = "Template_Datacard_uuu.txt"
 
 elif channel=="uue":
-    FakeRateMu_ch="FakeRateMu_uue"
-    FakeRateEl_ch="FakeRateEl_uue"
-
     if fakes_NP_value=="0":
-        if double_uncert=="y":
-            FakeMu_rateMu="1.5"
-            FakeEl_rateEl="1.5"
-        else:
-            FakeMu_rateMu="1.25"
-            FakeEl_rateEl="1.25"
-
+        FakeMu_rateMu="101"
+        FakeEl_rateEl="101"
     else:
         FakeMu_rateMu=fakes_NP_value
         FakeEl_rateEl=fakes_NP_value
+
+    # FakeRateMu_ch="FakeRateMu_uue"
+    # FakeRateEl_ch="FakeRateEl_uue"
+    # if fakes_NP_value=="0":
+    #     if double_uncert=="y":
+    #         FakeMu_rateMu="1.5"
+    #         FakeEl_rateEl="1.5"
+    #     else:
+    #         FakeMu_rateMu="1.25"
+    #         FakeEl_rateEl="1.25"
+    #
+    # else:
+    #     FakeMu_rateMu=fakes_NP_value
+    #     FakeEl_rateEl=fakes_NP_value
 
     FakeEl_shapeEl="1"
     FakeMu_shapeMu="1"
     trigsyst = "1.01"
 
 elif channel=="eeu":
-    FakeRateMu_ch="FakeRateMu_eeu"
-    FakeRateEl_ch="FakeRateEl_eeu"
-
     if fakes_NP_value=="0":
-        if double_uncert=="y":
-            FakeMu_rateMu="2.5"
-            FakeEl_rateEl="2.5"
-        else:
-            FakeMu_rateMu="1.75"
-            FakeEl_rateEl="1.75"
-
+        FakeMu_rateMu="101"
+        FakeEl_rateEl="101"
     else:
         FakeMu_rateMu=fakes_NP_value
         FakeEl_rateEl=fakes_NP_value
+
+    # FakeRateMu_ch="FakeRateMu_eeu"
+    # FakeRateEl_ch="FakeRateEl_eeu"
+    # if fakes_NP_value=="0":
+    #     if double_uncert=="y":
+    #         FakeMu_rateMu="2.5"
+    #         FakeEl_rateEl="2.5"
+    #     else:
+    #         FakeMu_rateMu="1.75"
+    #         FakeEl_rateEl="1.75"
+    #
+    # else:
+    #     FakeMu_rateMu=fakes_NP_value
+    #     FakeEl_rateEl=fakes_NP_value
 
     FakeEl_shapeEl="1"
     FakeMu_shapeMu="1"
     trigsyst = "1.01"
 
 elif channel=="eee":
-    FakeMu_rateMu="-"
-    FakeRateEl_ch="FakeRateEl_eee"
-
     if fakes_NP_value=="0":
-        if double_uncert=="y":
-            FakeEl_rateEl="1.5"
-        else:
-            FakeEl_rateEl="1.25"
-
+        FakeMu_rateMu="101"
+        FakeEl_rateEl="101"
     else:
+        FakeMu_rateMu=fakes_NP_value
         FakeEl_rateEl=fakes_NP_value
+
+    # FakeMu_rateMu="-"
+    # FakeRateEl_ch="FakeRateEl_eee"
+    # if fakes_NP_value=="0":
+    #     if double_uncert=="y":
+    #         FakeEl_rateEl="1.5"
+    #     else:
+    #         FakeEl_rateEl="1.25"
+    #
+    # else:
+    #     FakeEl_rateEl=fakes_NP_value
 
     FakeEl_shapeEl="1"
     FakeMu_shapeMu="-"
