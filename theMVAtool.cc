@@ -29,7 +29,7 @@ using namespace std;
 /**
  * Overloaded Constructor -- Initialize all the class members
  */
-theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, vector<TString> v_add_vars, int nofbin_templates, bool in_isttZ, bool in_isWZ, TString extension_format, bool set_combine_naming_convention, TString set_dir_ntuples, TString set_t_name, vector<TString> thevar_list_BDTcut)
+theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > thesamplelist, std::vector<TString > thesystlist, std::vector<TString > thechanlist, vector<int> v_color, std::vector<TString > set_v_cut_name, std::vector<TString > set_v_cut_def, std::vector<bool > set_v_cut_IsUsedForBDT, vector<TString> v_add_vars, int nofbin_templates, bool in_isttZ, bool in_isWZ, TString extension_format, bool set_combine_naming_convention, TString set_dir_ntuples, TString set_t_name, vector<TString> thevar_list_BDTcut, bool set_draw_preliminary_label)
 {
 	//Each time a TF1 is created, this automatically creates a structure to store the sum of the squared weights of the entries (used to compute final bin errors)
 	//NOTE : if a bin has already been incremented via Fill(), then AddBinContent() & SetBinContent() do not modify it's error !!
@@ -238,6 +238,8 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 
 
 	combine_naming_convention = set_combine_naming_convention;
+
+	draw_preliminary_label = set_draw_preliminary_label;
 
 	luminosity_rescale = 1;
 
@@ -612,8 +614,7 @@ void theMVAtool::Train_Test_Evaluate(TString channel, TString template_name, boo
  */
 double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_together, TString FakeName, TString template_name)
 {
-	// bool fit_WZ_separately = true;
-	bool fit_WZ_separately = true; //FIXME
+	bool fit_WZ_separately = false; //CHANGED
 
 	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return 0;}
 	if(FakeName!="FakeMu" && FakeName!="FakeEl" && FakeName!="") {cout<<"Wrong arg FakeName !"<<endl; return 0;}
@@ -729,20 +730,20 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_ElandMu_t
 	if(fit_ElandMu_together)
 	{
 		fit->Constrain(1, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
+		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.99, fracwz*1.01); //CHANGED -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
 	}
 	else
 	{
 		if(channel == "uuu" || channel == "eee")
 		{
 			fit->Constrain(1, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.9, fracwz*1.1); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
+			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.99, fracwz*1.01); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
 		}
 		else
 		{
 			fit->Constrain(1, 0, 1);
 			fit->Constrain(2, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.9, fracwz*1.1); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
+			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.99, fracwz*1.01); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
 		}
 	}
 
@@ -2584,7 +2585,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "ZEta")			 				{h_tmp = new TH1F( "","", control_binning, -4, 4 );}
 					else if(total_var_list[ivar] == "AddLepAsym") 					{h_tmp = new TH1F( "","", control_binning, -2.5, 2.5 );}
 					else if(total_var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", control_binning, 60, 500 );}
-					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 22, -0.1, 1.2 );}
+					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 20, 0.2, 1. );}
 					else if(total_var_list[ivar] == "etaQ")							{h_tmp = new TH1F( "","", control_binning, -4.5, 4.5 );}
 					else if(total_var_list[ivar] == "NBJets")						{h_tmp = new TH1F( "","", 5, 0, 5 );}
 					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", control_binning, 0, 200 );}
@@ -2716,7 +2717,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	delete f_output;
 
 	if(fakes_from_data) Rescale_Fake_Histograms(output_file_name, "mTW");
-	// if(fakes_from_data) Rescale_Fake_Histograms(output_file_name, "BDTfake"); //FIXME
+	// if(fakes_from_data) Rescale_Fake_Histograms(output_file_name, "BDTfake"); //Rather uyse
 
 	return ;
 }
@@ -2815,18 +2816,26 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 	stringv_list.resize( total_var_list.size() );
 
+	std::vector<TString> stringv1_list;
+	stringv1_list.resize( total_var_list.size() );
+
 //---------------------
 //Loop on var > chan > sample > syst
 //Retrieve histograms, stack, compare, plot
 	for(int ivar=0; ivar<total_var_list.size(); ivar++)
 	{
+
+		  stringv1_list[ivar] = "Events";
+
 		TH1F *h_tmp = 0, *h_data = 0;
 
 		vector<TH1F*> v_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
 
-		TLegend* qw = new TLegend(.85,.7,0.99,0.99);
+		//TLegend* qw = new TLegend(.84,.66,0.999,0.999);
 		// qw->SetLineColor(0);
-		// TLegend* qw = new TLegend(.2,.4,0.34,0.69); //CHANGED
+
+// LEFT LEGEND
+	  TLegend* qw = new TLegend(.2,.4,0.359,0.739); //CHANGED
 		qw->SetShadowColor(0);
 		qw->SetFillColor(0);
 		qw->SetLineColor(1);
@@ -3116,7 +3125,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//---------------------------
 
 		TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-		c1->SetBottomMargin(0.3); //Leave space for ratio plot
+                c1->SetTopMargin(0.1); //Leave space for legend
+		c1->SetBottomMargin(0.25); //Leave space for ratio plot
 
 		c1->cd();
 
@@ -3260,7 +3270,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		latex.SetTextFont(extraTextFont);
 		//latex.SetTextAlign(align_);
 		latex.SetTextSize(extraTextSize*t);
-		latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+		//latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
 
 
 //------------------
@@ -3284,19 +3294,24 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 */
 
 		TString extrainfo_data;
-		if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
-		else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
-		else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+
+                if(isWZ) {extrainfo_data= "0bjet";}
+                else if(isttZ) {extrainfo_data= "2bjets";}
+                else if(!isWZ && !isttZ) {extrainfo_data= "1bjet";}
+
+//		if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
+//		else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
+//		else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
 
 		TLatex text2 ; //= new TLatex(0, 0, info_data);
 		text2.SetNDC();
 		text2.SetTextAlign(13);
 		text2.SetTextFont(42);
 		text2.SetTextSize(0.04);
-		text2.DrawLatex(0.195,0.91,info_data);
+		text2.DrawLatex(0.195,0.86,info_data);
 
 		text2.SetTextFont(62);
-		text2.DrawLatex(0.63,0.9,extrainfo_data);
+		text2.DrawLatex(0.63,0.86,extrainfo_data);
 
 		qw->Draw(); //Draw legend
 
@@ -3306,6 +3321,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//SET VARIABLES LABELS
 		//--------------------------
 
+		double minCsvPlot = 0.05; //Modify here binning of btagDiscri
+		int nbcsv = 21;
 
 		if(total_var_list[ivar] == "mTW")                       {       stringv_list[ivar] = "M_{T}_{W} [GeV]"; }
 		else if(total_var_list[ivar] == "METpt")                {       stringv_list[ivar] = "E_{T}^{miss} [GeV]"; }
@@ -3314,14 +3331,14 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else if(total_var_list[ivar] == "dPhiAddLepB")  {       stringv_list[ivar] = "#Delta#Phi(l_{W},b)"; }
 		else if(total_var_list[ivar] == "Zpt")          {       stringv_list[ivar] = "Z p_{T} [GeV]"; }
 		else if(total_var_list[ivar] == "ZEta")         {       stringv_list[ivar] = "Z #eta"; }
-		else if(total_var_list[ivar] == "AddLepAsym")   {       stringv_list[ivar] = " q_{#font[12]{l}}|#eta(#font[12]{l})|"; }
+		else if(total_var_list[ivar] == "AddLepAsym")   {  stringv1_list[ivar] = "Events/0.25" ;   stringv_list[ivar] = " q_{#font[12]{l}}|#eta(#font[12]{l})|"; }
 		else if(total_var_list[ivar] == "mtop")                 {       stringv_list[ivar] = "M_{top} [GeV]"; }
-		else if(total_var_list[ivar] == "btagDiscri")   {       stringv_list[ivar] = "CSVv2 discriminant"; }
-		else if(total_var_list[ivar] == "etaQ")         {       stringv_list[ivar] = "#eta(#font[12]{j'})"; }
+		else if(total_var_list[ivar] == "btagDiscri")   {   double binsiCSV= (1.-minCsvPlot)/nbcsv; stringv1_list[ivar] = "Events/0.05" ;     stringv_list[ivar] = "CSVv2 discriminant"; }
+		else if(total_var_list[ivar] == "etaQ")         { stringv1_list[ivar] = "Events/0.45" ;      stringv_list[ivar] = "#eta(#font[12]{j'})"; }
 		else if(total_var_list[ivar] == "NBJets")               {       stringv_list[ivar] = "B Jets multiplicity"; }
 		else if(total_var_list[ivar] == "AddLepPT")             {       stringv_list[ivar] = "l_{W} p_{T} [GeV]"; }
 		else if(total_var_list[ivar] == "AddLepETA")            {       stringv_list[ivar] = "l_{W} #eta"; }
-		else if(total_var_list[ivar] == "LeadJetPT")            {       stringv_list[ivar] = "p_{T}(#font[12]{j'}) [GeV]"; }
+		else if(total_var_list[ivar] == "LeadJetPT")            {  stringv1_list[ivar] = "Events/11 GeV";     stringv_list[ivar] = "p_{T}(#font[12]{j'}) [GeV]"; }
 		else if(total_var_list[ivar] == "LeadJetEta")           {       stringv_list[ivar] = "Leading jet #eta"; }
 		else if(total_var_list[ivar] == "dPhiZMET")             {       stringv_list[ivar] = "#Delta#Phi(Z,E_{T}^{miss})"; }
 		else if(total_var_list[ivar] == "dPhiZAddLep")  {       stringv_list[ivar] = "#Delta#Phi(Z,l_{W})"; }
@@ -3331,7 +3348,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else if(total_var_list[ivar] == "TopPT")                {       stringv_list[ivar] = "top p_{T} [GeV]"; }
 		else if(total_var_list[ivar] == "NJets")                {       stringv_list[ivar] = "Jets multiplicity"; }
 		else if(total_var_list[ivar] == "ptQ")          {       stringv_list[ivar] = "p_{T}(#font[12]{j'}) [GeV]"; }
-		else if(total_var_list[ivar] == "dRjj")         {       stringv_list[ivar] = "#Delta R(b,#font[12]{j'})"; }
+		else if(total_var_list[ivar] == "dRjj")         {      stringv1_list[ivar] = "Events/0.20" ;     stringv_list[ivar] = "#Delta R(b,#font[12]{j'})"; }
 		else if(total_var_list[ivar] == "AdditionalEleIso")     {       stringv_list[ivar] = "e_{W} isolation"; }
 		else if(total_var_list[ivar] == "AdditionalMuonIso")    {       stringv_list[ivar] = "#mu_{W} isolation"; }
 		else if(total_var_list[ivar] == "dRAddLepQ")            {       stringv_list[ivar] = "#Delta R(l_{W},#font[12]{j'})"; }
@@ -3341,7 +3358,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else if(total_var_list[ivar] == "leadingLeptonPT")    {       stringv_list[ivar] = "Leading lepton p_{T} [GeV]"; }
 		else if(total_var_list[ivar] == "MAddLepB")           {       stringv_list[ivar] = "l_{W}+b system mass "; }
 		else if(total_var_list[ivar] == "MEMvar_0")             {       stringv_list[ivar] = "MEM LR tZq-ttZ"; }
-		else if(total_var_list[ivar] == "MEMvar_1")             {       stringv_list[ivar] = "MEM Kin w_{tZq}"; }
+		else if(total_var_list[ivar] == "MEMvar_1")             { stringv1_list[ivar] = "Events/1.5" ;    stringv_list[ivar] = "MEM log(w_{tZq})"; }
 		else if(total_var_list[ivar] == "MEMvar_2")             {       stringv_list[ivar] = "MEM Kin w_{ttZ}"; }
 		else if(total_var_list[ivar] == "MEMvar_3")             {       stringv_list[ivar] = "MEM LR tZq-ttZ"; }
 		else if(total_var_list[ivar] == "MEMvar_4")             {       stringv_list[ivar] = "MEM w_{WZ}"; }
@@ -3368,7 +3385,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 
 		TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-		canvas_2->SetTopMargin(0.7);
+		canvas_2->SetTopMargin(0.75);
 		canvas_2->SetFillColor(0);
 		canvas_2->SetFillStyle(0);
 		canvas_2->SetGridy(1);
@@ -3389,9 +3406,10 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		// histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
 		histo_ratio_data->GetXaxis()->SetTitle(stringv_list[ivar].Data());
+		histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 		histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 
-		histo_ratio_data->GetXaxis()->SetTitleOffset(1.4);
+		histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
 		histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
 		histo_ratio_data->GetXaxis()->SetLabelSize(0.05);
 		histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
@@ -3404,8 +3422,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		histo_ratio_data->GetYaxis()->SetNdivisions(503);
 		// histo_ratio_data->GetYaxis()->SetNdivisions(303);
 		histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+		histo_ratio_data->GetXaxis()->SetTitleSize(0.05);
 
-		histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
 
 		histo_ratio_data->SetMinimum(0.0);
 		histo_ratio_data->SetMaximum(1.999);
@@ -3467,7 +3485,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			stack->GetYaxis()->SetTickLength(0.04);
 			stack->GetXaxis()->SetLabelSize(0.0);
 			stack->GetYaxis()->SetLabelSize(0.048);
-			stack->GetYaxis()->SetTitle("Events");
+			stack->GetYaxis()->SetTitle(stringv1_list[ivar].Data());
 		}
 
 		//-------------------
@@ -3555,11 +3573,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 //    ##    ######## ##     ## ##        ######## ##     ##    ##    ########  ######
 //-----------------------------------------------------------------------------------------
 
-//CHANGED
-// Mara: 25/April/2017 -- this method was modified to cope with the
 // style requirements from https://twiki.cern.ch/twiki/bin/view/CMS/Internal/FigGuidelines
-// and from the ARC
-
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 /**
@@ -3596,12 +3610,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 	vector<TString> MC_samples_legend; //List the MC samples which are actually used (to get correct legend)
 
-	// TLegend* qw = new TLegend(.81,.63,.95,.91);
-	// TLegend* qw = new TLegend(.85,.7,0.965,.915); //CHANGED
-	// qw->SetShadowColor(0);
-	// qw->SetFillColor(0);
-	// qw->SetLineColor(0);
-	TLegend* qw = new TLegend(.82,.65,.99,.99);
+	// TLegend* qw = new TLegend(.82,.65,.99,.99);
+	TLegend* qw = new TLegend(.84,.66,0.999,0.999); //CHANGED
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
 	qw->SetLineColor(1); //CHANGED
@@ -3770,7 +3780,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	//Canvas definition
 	Load_Canvas_Style();
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-	c1->SetBottomMargin(0.3);
+	c1->SetTopMargin(0.1); //Leave space for legend
+	c1->SetBottomMargin(0.25);
 
 	//w_caw stack & data
 	stack_MC->Draw("hist");
@@ -3779,14 +3790,13 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	h_sum_data->Draw("e0psame");
 
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-	canvas_2->SetTopMargin(0.7);
+	canvas_2->SetTopMargin(0.7); //DIFFERENT FROM POSTFIT ??
 	canvas_2->SetFillColor(0);
 	canvas_2->SetFillStyle(0);
 	canvas_2->SetGridy(1);
 	canvas_2->Draw();
 	canvas_2->cd(0);
 
-	//CHANGED
 	TH1F * histo_ratio_data = (TH1F*) h_sum_data->Clone();
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
 
@@ -3870,7 +3880,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	// ratio of "CMS" and extra text size
 	float extraOverCmsTextSize  = 0.76;
 
-	float lumi = 35.9 * luminosity_rescale; //CHANGED
+	float lumi = 35.9 * luminosity_rescale;
 	TString lumi_13TeV = Convert_Number_To_TString(lumi);
 	lumi_13TeV += " fb^{-1} (13 TeV)";
 
@@ -3895,7 +3905,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
 	latex.SetTextFont(extraTextFont);
 	latex.SetTextSize(extraTextSize*t);
-	latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
+	// latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);
 
 
 	//------------------
@@ -3925,9 +3935,13 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 */
 
 	TString extrainfo_data;
-	if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
-	else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
-	else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+	// if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
+	// else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
+	// else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+
+	if(isWZ) {extrainfo_data= "0bjet";} //CHANGED
+	else if(isttZ) {extrainfo_data= "2bjets";}
+	else if(!isWZ && !isttZ) {extrainfo_data= "1bjet";}
 
 	TLatex text2 ; //= new TLatex(0, 0, info_data);
 	text2.SetNDC();
@@ -4025,11 +4039,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	vector<TString> MC_samples_legend; //List the MC samples which are actually used (to get correct legend)
 
-	// TLegend* qw = new TLegend(.85,.7,0.965,.915);
-	// qw->SetShadowColor(0);
-	// qw->SetFillColor(0);
-	// qw->SetLineColor(0);
-	TLegend* qw = new TLegend(.82,.65,.99,.99); //CHANGED
+	TLegend* qw = new TLegend(.84,.66,0.999,0.999); //CHANGED
+	// TLegend* qw = new TLegend(.82,.65,.99,.99); //CHANGED
    	qw->SetShadowColor(0);
    	qw->SetFillColor(0);
    	qw->SetLineColor(1);
@@ -4145,7 +4156,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	//Canvas definition
 	Load_Canvas_Style();
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-	c1->SetBottomMargin(0.3);
+	c1->SetTopMargin(0.1); //Leave space for legend
+	c1->SetBottomMargin(0.25);
 
 
 	//Stack all the MC nominal histograms (contained in v_MC_histo)
@@ -4239,7 +4251,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	h_data_new->Draw("epsame");
 
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-	canvas_2->SetTopMargin(0.7);
+	canvas_2->SetTopMargin(0.75);
 	canvas_2->SetFillColor(0);
 	canvas_2->SetFillStyle(0);
 	canvas_2->SetGridy(1);
@@ -4296,8 +4308,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	TGaxis *axis = new TGaxis(histo_ratio_data->GetXaxis()->GetXmin(),histo_ratio_data->GetMinimum(),histo_ratio_data->GetXaxis()->GetXmax(),histo_ratio_data->GetMinimum(),xmin_data,xmax_data, 510, "+"); // + : tick marks on positive side ; = : label on same side as marks
    // axis->SetLineColor(1);
 
-	if (template_name == "BDT" ) axis->SetTitle("BDT output (1 tag)") ;
-	else if ( template_name == "BDTttZ" ) axis->SetTitle("BDT output (2 tags)");
+	// if (template_name == "BDT" ) axis->SetTitle("BDT output (1 tag)") ;
+	// else if ( template_name == "BDTttZ" ) axis->SetTitle("BDT output (2 tags)");
+
+   	if (template_name == "BDT" || template_name == "BDTttZ") axis->SetTitle("BDT output") ;
 	else if ( template_name == "mTW")  axis->SetTitle("m_{T}^{W} [GeV]");
 	axis->SetTitleSize(0.04);
 	axis->SetTitleFont(42);
@@ -4316,6 +4330,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	stack_MC->GetXaxis()->SetLabelSize(0.0);
 	stack_MC->GetYaxis()->SetLabelSize(0.048);
 	stack_MC->GetYaxis()->SetTitle("Events");
+
+	if(template_name=="mTW") {stack_MC->GetYaxis()->SetTitle("Events/25 GeV");}
+	else if(template_name == "BDTttZ") {stack_MC->GetYaxis()->SetTitle("Events/0.2");}
+	else if(template_name == "BDT") {stack_MC->GetYaxis()->SetTitle("Events/0.2");}
 
 	c1->Modified();
 
@@ -4393,19 +4411,23 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 		else if(allchannels) info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 		TString extrainfo_data;
-		if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
-		else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
-		else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
+		// if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
+		// else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
+		// else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
+
+		if(template_name=="mTW") {extrainfo_data= "0bjet";}
+		else if(template_name == "BDTttZ") {extrainfo_data= "2bjets";}
+		else if(template_name == "BDT") {extrainfo_data= "1bjet";}
 
 		TLatex text2 ; //= new TLatex(0, 0, info_data);
 		text2.SetNDC();
 		text2.SetTextAlign(13);
 		text2.SetTextFont(42);
 		text2.SetTextSize(0.04);
-		text2.DrawLatex(0.195,0.91,info_data);
+		text2.DrawLatex(0.195,0.86,info_data);
 
 		text2.SetTextFont(62);
-		text2.DrawLatex(0.63,0.9,extrainfo_data);
+		text2.DrawLatex(0.63,0.86,extrainfo_data);
 
 //------------------
 
@@ -4744,9 +4766,13 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 	TString extrainfo_data;
-	if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
-	else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
-	else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+	// if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
+	// else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
+	// else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
+
+	if(template_name=="mTW") {extrainfo_data= "0tag";}
+    else if(template_name == "BDTttZ") {extrainfo_data= "2tags";}
+    else if(template_name == "BDT") {extrainfo_data= "1tag";}
 
 	TLatex text2 ; //= new TLatex(0, 0, info_data);
 	text2.SetNDC();
@@ -5146,9 +5172,13 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 		TString extrainfo_data;
-		if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
-		else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
-		else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
+		// if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
+		// else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
+		// else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
+
+		if(template_name=="mTW") {extrainfo_data= "0tag";}
+        else if(template_name == "BDTttZ") {extrainfo_data= "2tags";}
+        else if(template_name == "BDT") {extrainfo_data= "1tag";}
 
 		TLatex text2 ; //= new TLatex(0, 0, info_data);
 		text2.SetNDC();
@@ -5182,7 +5212,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 	//Create Data/MC ratio plot (bottom of canvas)
 
-		canvas_2->SetTopMargin(0.7);
+		canvas_2->SetTopMargin(0.65);
 		canvas_2->SetFillColor(0);
 		canvas_2->SetFillStyle(0);
 		canvas_2->SetGridy(1);
@@ -5601,7 +5631,7 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		else if(varname_tmp == "leadingLeptonPT")    {       title_tmp = "Leading lepton p_{T} [GeV]"; }
 		else if(varname_tmp == "MAddLepB")           {       title_tmp = "l_{W}+b system mass "; }
 		else if(varname_tmp == "MEMvar_0")             {       title_tmp = "MEM LR tZq-ttZ"; }
-		else if(varname_tmp == "MEMvar_1")             {       title_tmp = "MEM Kin w_{tZq}"; }
+		else if(varname_tmp == "MEMvar_1")             {       title_tmp = "MEM log w_{tZq}"; }
 		else if(varname_tmp == "MEMvar_2")             {       title_tmp = "MEM Kin w_{ttZ}"; }
 		else if(varname_tmp == "MEMvar_3")             {       title_tmp = "MEM LR tZq-ttZ"; }
 		else if(varname_tmp == "MEMvar_4")             {       title_tmp = "MEM w_{WZ}"; }
@@ -5732,19 +5762,23 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 		TString extrainfo_data;
-		if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
-		else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
-		else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+		// if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
+		// else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
+		// else if(!isWZ && !isttZ) {extrainfo_data= "3l,2-3j,1bj";}
+
+        if(isWZ) {extrainfo_data= "0bjet";}
+        else if(isttZ) {extrainfo_data= "2bjets";}
+        else if(!isWZ && !isttZ) {extrainfo_data= "1bjet";}
 
 		TLatex text2 ; //= new TLatex(0, 0, info_data);
 		text2.SetNDC();
 		text2.SetTextAlign(13);
 		text2.SetTextFont(42);
 		text2.SetTextSize(0.04);
-		text2.DrawLatex(0.195,0.91,info_data);
+		text2.DrawLatex(0.195,0.86,info_data);
 
 		text2.SetTextFont(62);
-		text2.DrawLatex(0.63,0.9,extrainfo_data);
+		text2.DrawLatex(0.63,0.86,extrainfo_data);
 
 		qw->Draw(); //Draw legend
 

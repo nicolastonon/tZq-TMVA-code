@@ -83,7 +83,7 @@ class theMVAtool
 	public :
 
 //Methods
-	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString, vector<TString> var_list_BDTcut);
+	theMVAtool(vector<TString >, vector<TString >, vector<TString>, vector<TString>, vector<int>, vector<TString>, vector<TString>, vector<bool>, vector<TString>, int, bool, bool, TString, bool, TString, TString, vector<TString>, bool);
 	// ~theMVAtool() {delete reader;}; //Free memory
 	~theMVAtool() {};
 	void Set_Luminosity(double); //Set the luminosity re-scaling factor to be used thoughout the code
@@ -138,6 +138,7 @@ class theMVAtool
 	TString filename_suffix_noJet_noMET_nomTW; //suffix without NJet / MET / mTW variables (for scan 2D)
 	TString dir_ntuples; //path to input ntuples
 	TString t_name; //name of tree to be used in input ntuples
+	bool draw_preliminary_label; //NEW : choose to add or not a label "Preliminary" (needed for PAS)
 
 	bool dbgMode  ;
 	bool stop_program;
