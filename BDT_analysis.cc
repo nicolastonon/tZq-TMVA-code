@@ -121,23 +121,15 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 // ---- Specify here the cuts that you wish to apply to all/specific regions ---
 
 
+    set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
+    set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
+
 
     if(!isWZ)
     {
-        set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
-        set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("METpt");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
+        // set_v_cut_name.push_back("mTW");      set_v_cut_def.push_back(">10");            set_v_cut_IsUsedForBDT.push_back(false);
     }
-
-    //HARD-CODED FROM NOW -- don't appear in filename suffix
-    // set_v_cut_name.push_back("lept252015");  set_v_cut_def.push_back("==1"); set_v_cut_IsUsedForBDT.push_back(false);
-    // set_v_cut_name.push_back("leadingLeptonPT");  set_v_cut_def.push_back(">25"); set_v_cut_IsUsedForBDT.push_back(false);
-    // set_v_cut_name.push_back("secondLeptonPT");  set_v_cut_def.push_back(">20"); set_v_cut_IsUsedForBDT.push_back(false);
-    // set_v_cut_name.push_back("thirdLeptonPT");  set_v_cut_def.push_back(">15"); set_v_cut_IsUsedForBDT.push_back(false);
-
-    // set_v_cut_name.push_back("badMuon");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false); //FIXME
-
-    set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
-    set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
 //-------------------
 
@@ -496,17 +488,17 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //Some additional functions can be activated "by hand" at the end of this scope
 
 //-----------------    TRAINING
-        bool train_BDT = true; //Train BDT (if region is tZq or ttZ)
+        bool train_BDT = false; //Train BDT (if region is tZq or ttZ)
 
 //-----------------    TEMPLATES CREATION
-        bool create_templates = true; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
+        bool create_templates = false; //Create templates in selected region (NB : to cut on BDT value, use dedicated boolean in 'OPTIONS' section)
 
 //-----------------    CONTROL HISTOGRAMS
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
         bool draw_input_vars = false; //Plot input variables
-        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
+        bool draw_templates = true; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 

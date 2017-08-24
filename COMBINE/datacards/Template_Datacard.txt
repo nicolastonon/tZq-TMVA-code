@@ -24,8 +24,8 @@ WZl_rate       lnN      -                -           -           -	    		-      
 WZb_rate       lnN      -                -           -           -	    		-             -					-			-				-	   1.3			-
 WZc_rate       lnN      -                -           -           -	    		-             -					-			-				-		-			1.3
 
-FakeRateEl_ch  lnN      -                -           -           -	    		-             -			FakeEl_rateEl	 	-				-		-			-
-FakeRateMu_ch  lnN      -                -           -           -	    		-             -					-	 FakeMu_rateMu			-		-			-
+FakeRateEl_ch  lnU      -                -           -           -	    		-             -			FakeEl_rateEl	 	-				-		-			-
+FakeRateMu_ch  lnU      -                -           -           -	    		-             -					-	 FakeMu_rateMu			-		-			-
 
 [*]Q2 			shape    1 		 	     1 		  	  1 			1 			1 			  -					-				-			1			   1		1
 [*]pdf			shape    1 		 	     1 		  	  1 			1 			1 			  -					-				-			1			   1		1
