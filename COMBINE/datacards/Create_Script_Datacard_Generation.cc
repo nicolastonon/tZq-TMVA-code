@@ -133,7 +133,7 @@ void Script_Datacards_InputVars(char include_systematics, double fake_rate, int 
 		}
 	}
 
-	file_out<<"> COMBINED_datacard_InputVars_tZq";
+	file_out<<"> COMBINED_datacard_InputVars_" + region_choice;
 	if(systList == "noSyst") file_out<<"_noSyst";
 	file_out<<".txt"<<endl<<endl;
 

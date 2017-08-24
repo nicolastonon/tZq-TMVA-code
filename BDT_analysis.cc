@@ -500,7 +500,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool draw_input_vars = true ; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
-        bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
+        bool postfit = true; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
 //-----------------    OTHER
         // bool convert_templates_for_theta = false; //Use this if you already produced template files with Combine conventions, and want to convert them to Theta
