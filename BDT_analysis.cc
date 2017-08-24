@@ -497,8 +497,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = false; //Plot input variables
-        bool draw_templates = true; //Plot templates (mTW/BDT/BDTttZ)
+        bool draw_input_vars = true ; //Plot input variables
+        bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
         bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 

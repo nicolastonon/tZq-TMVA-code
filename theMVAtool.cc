@@ -2788,11 +2788,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		vector<TH1F*> v_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
 
-		//TLegend* qw = new TLegend(.84,.66,0.999,0.999);
-		// qw->SetLineColor(0);
 
-// LEFT LEGEND
-	  TLegend* qw = new TLegend(.2,.4,0.359,0.739); //CHANGED
+	//   TLegend* qw = new TLegend(.2,.4,0.359,0.739); //FIXME -- left legend better ??
+		TLegend* qw = new TLegend(.84,.66,0.999,0.999);
 		qw->SetShadowColor(0);
 		qw->SetFillColor(0);
 		qw->SetLineColor(1);
@@ -4376,7 +4374,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 		text2.SetTextFont(62);
 		if(!draw_preliminary_label) {text2.DrawLatex(0.63,0.86,extrainfo_data);}
-		else {text2.DrawLatex(0.63,0.9,extrainfo_data);}		text2.DrawLatex(0.195,0.86,info_data);
+		else {text2.DrawLatex(0.63,0.9,extrainfo_data);}
 
 //------------------
 
@@ -4460,7 +4458,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
 	//--- NO MEM
-	TString input_name_noMEM = "outputs/files_noMEM/Combine_Input.root";
+	TString input_name_noMEM = "outputs/noMEM/Combine_Input.root";
 	if(!Check_File_Existence(input_name_noMEM) ) {input_name_noMEM = "outputs/files_noMEM/Reader_" + template_name + this->filename_suffix + ".root";}
 	if(!Check_File_Existence(input_name_noMEM) ) {cout<<"No template files in dir. outputs/files_noMEM/ ! Abort"<<endl; return;}
 	TFile* file_input_noMEM = 0;
@@ -4468,7 +4466,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	if(file_input_noMEM == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
 
 	//WITH MEM (nominal)
-	TString input_name_MEM = "outputs/files_fourthLep10_WZ10/Combine_Input.root";
+	TString input_name_MEM = "outputs/default/Combine_Input.root";
 	// TString input_name_MEM = "outputs/files_nominal/Combine_Input.root";
 	if(!Check_File_Existence(input_name_MEM) ) {input_name_MEM = "outputs/files_nominal/Reader_" + template_name + this->filename_suffix + ".root";}
 	if(!Check_File_Existence(input_name_MEM) ) {cout<<"No template files in dir. outputs/files_nominal/ ! Abort"<<endl; return;}

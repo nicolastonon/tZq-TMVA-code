@@ -14,7 +14,6 @@ FakeEl_shapeEl=""
 FakeMu_shapeMu=""
 fakes_NP_value = "";
 fake_bkg = "";
-double_uncert = "";
 
 FakeRateMu_ch="";
 FakeRateEl_ch="";
@@ -27,8 +26,6 @@ theVar = str(sys.argv[2])
 theFiletoRead= sys.argv[3]
 systList = str(sys.argv[4])
 fakes_NP_value = str(sys.argv[5])
-double_uncert = str(sys.argv[6])
-# fake_bkg = str(sys.argv[6])
 
 fileToSearch = "Template_Datacard.txt"
 

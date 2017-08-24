@@ -26,7 +26,7 @@
 
 using namespace std;
 
-void Script_Datacards_InputVars(char include_systematics, double fake_rate, int WZ_template, int SR_template, int add_region, char double_uncert)
+void Script_Datacards_InputVars(char include_systematics, double fake_rate, int WZ_template, int SR_template, int add_region)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -149,7 +149,7 @@ void Script_Datacards_InputVars(char include_systematics, double fake_rate, int 
 
 
 
-void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, int WZ_template, int SR_template, int add_region, char double_uncert)
+void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, int WZ_template, int SR_template, int add_region)
 {
 	if( (include_systematics != 'y' && include_systematics != 'n') ) {cout<<"Wrong arguments ! Abort !"<<endl; return;}
 
@@ -186,7 +186,7 @@ void Script_Datacards_TemplateFit(char include_systematics, double fake_rate, in
 	{
 		for(int ichan=0; ichan<chan_list.size(); ichan++)
 		{
-			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " "<<fake_rate<<" "<<double_uncert<<endl;
+			file_out<<"python Generate_Datacards.py " + chan_list[ichan] + " " + var_list[ivar] + " " + file_histos + " " + systList + " "<<fake_rate<<endl;
 		}
 
 		file_out<<endl;
@@ -284,7 +284,6 @@ int main()
 	char datacard_template_fit = 'n';
 	char datacard_inputVars = 'n';
 	double fake_rate = 10000;
-	char double_uncert = 'n';
 
 	// double fake_bkg = 30;
 	int WZ_template = 0;
@@ -337,44 +336,6 @@ int main()
 		cin>>include_systematics;
 	}
 
-	/*cout<<FYEL("--- Choose FakeBackgrounds uncertainties (correlated b/w channels) in % : (ex : 30%)")<<endl;
-	cin>>fake_bkg;
-	while(cin.fail() || fake_bkg<0 )
-	{
-		cin.clear();
-		cin.ignore(1000, '\n');
-
-		cout<<" Wrong answer ! :"<<endl;
-		cin>>fake_bkg;
-	}
-	if(fake_bkg != 0) fake_bkg = 1 + (fake_bkg / 100.0);
-
-	cout<<FYEL("--- Choose FakeRates uncertainties (uncorrelated) in % : ('0' <-> use hard-coded values)")<<endl;
-	cin>>fake_rate;
-	while(cin.fail() || fake_rate<0)
-	{
-		cin.clear();
-		cin.ignore(1000, '\n');
-
-		cout<<" Wrong answer ! Need to choose fake rate > 0 :"<<endl;
-		cin>>fake_rate;
-	}
-
-	if(fake_rate != 0) fake_rate = 1 + (fake_rate / 100.0);
-
-	if(fake_rate==0)
-	{
-		cout<<FYEL("--- Double fakeRate uncertainties (wrt to default)? y/n")<<endl;
-		cin>>double_uncert;
-		while(cin.fail() || (double_uncert!= 'y' && double_uncert!= 'n'))
-		{
-			cin.clear();
-			cin.ignore(1000, '\n');
-
-			cout<<" Wrong answer ! Need to choose y or n :"<<endl;
-			cin>>double_uncert;
-		}
-	}*/
 
 	cout<<FYEL("--- Choose FakeRates uncertainties (correlated) in % : ")<<endl;
 	cout<<FYEL("[Type 0 to use default 10k %]")<<endl;
@@ -413,9 +374,9 @@ int main()
 	}
 
 
-	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, fake_rate, WZ_template, SR_template, add_region, double_uncert);
+	if(datacard_template_fit == 'y') Script_Datacards_TemplateFit(include_systematics, fake_rate, WZ_template, SR_template, add_region);
 
-	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, fake_rate, WZ_template, SR_template, add_region, double_uncert);
+	if( datacard_inputVars == 'y' ) Script_Datacards_InputVars(include_systematics, fake_rate, WZ_template, SR_template, add_region);
 
 	return 0;
 }
