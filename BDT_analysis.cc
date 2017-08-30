@@ -60,7 +60,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Outputs
     TString format = ".pdf"; //'.png' or '.pdf' only
-    bool draw_preliminary_label = true; //CHANGED : choose to add or not a label 'Preliminary' (needed for PAS)
+    bool draw_preliminary_label = false; //CHANGED : choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -497,10 +497,10 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         bool create_control_histograms = false; //Create histograms of input variables, needed to make plots of these variables -- Takes time !
 
 //-----------------    PLOTS
-        bool draw_input_vars = true ; //Plot input variables
+        bool draw_input_vars = false ; //Plot input variables
         bool draw_templates = false; //Plot templates (mTW/BDT/BDTttZ)
 
-        bool postfit = true; //Decide if want prefit OR combine postfit plots (NB : use different files)
+        bool postfit = false; //Decide if want prefit OR combine postfit plots (NB : use different files)
 
 //-----------------    OTHER
         // bool convert_templates_for_theta = false; //Use this if you already produced template files with Combine conventions, and want to convert them to Theta
@@ -626,7 +626,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
-            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+            MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
             // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
 
@@ -638,7 +638,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
 
-        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
+        MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
         // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true, true);
 

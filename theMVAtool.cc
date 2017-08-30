@@ -3225,10 +3225,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 */
 
 		TString extrainfo_data;
-
-                if(isWZ) {extrainfo_data= "0bjet";}
-                else if(isttZ) {extrainfo_data= "2bjets";}
-                else if(!isWZ && !isttZ) {extrainfo_data= "1bjet";}
+        if(isWZ) {extrainfo_data= "0bjet";}
+        else if(isttZ) {extrainfo_data= "2bjets";}
+        else if(!isWZ && !isttZ) {extrainfo_data= "1bjet";}
 
 //		if(isWZ) {extrainfo_data= "3l,>0j,0bj";}
 //		else if(isttZ) {extrainfo_data= "3l,>1j,>1bj";}
@@ -4480,8 +4479,8 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	TH1F *h_tmp_noMEM = 0, *h_signal_noMEM  = 0, *h_sum_background_noMEM = 0;
 	TH1F *h_tmp_MEM = 0, *h_signal_MEM = 0, *h_sum_background_MEM = 0;
 
-	//TLegend* qw = new TLegend(.80,.60,.95,.90);
-	TLegend* qw = new TLegend(.6,.77,0.85,.915);
+	// TLegend* qw = new TLegend(.6,.77,0.85,.915);
+	TLegend* qw = new TLegend(.4,.65,0.7,0.85); //CHANGED //x1, y1, x2, y2
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
 	qw->SetLineColor(0);
@@ -4571,18 +4570,23 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	h_signal_MEM->SetLineColor(kRed);
 	h_signal_MEM->SetLineWidth(8);
 
+	double label_size = 0.045;
+	double axis_title_size = 0.05;
 	if(!normalized) //Changes which histo should be drawn first
 	{
-		h_sum_background_MEM->GetXaxis()->SetTitleOffset(1.4);
-		h_sum_background_MEM->GetXaxis()->SetLabelSize(0.045);
+		// h_sum_background_MEM->GetXaxis()->SetTitleOffset(1.4);
+		h_sum_background_MEM->GetXaxis()->SetTitleOffset(1.2);
+		h_sum_background_MEM->GetXaxis()->SetLabelSize(label_size);
 		h_sum_background_MEM->GetXaxis()->SetLabelFont(42);
 		h_sum_background_MEM->GetXaxis()->SetTitleFont(42);
+		h_sum_background_MEM->GetXaxis()->SetTitleSize(axis_title_size);
 
-		h_sum_background_MEM->GetYaxis()->SetTitleOffset(1.42);
-		h_sum_background_MEM->GetYaxis()->SetLabelSize(0.04);
+		// h_sum_background_MEM->GetYaxis()->SetTitleOffset(1.42);
+		h_sum_background_MEM->GetYaxis()->SetTitleOffset(1.3);
+		h_sum_background_MEM->GetYaxis()->SetLabelSize(label_size);
 		h_sum_background_MEM->GetYaxis()->SetLabelFont(42);
 		h_sum_background_MEM->GetYaxis()->SetTitleFont(42);
-		h_sum_background_MEM->GetYaxis()->SetTitleSize(0.04);
+		h_sum_background_MEM->GetYaxis()->SetTitleSize(axis_title_size);
 
 		h_sum_background_MEM->SetMinimum(0);
 		h_sum_background_MEM->SetMaximum(h_sum_background_MEM->GetMaximum()*1.1);
@@ -4595,16 +4599,19 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	}
 	else
 	{
-		h_signal_MEM->GetXaxis()->SetTitleOffset(1.4);
-		h_signal_MEM->GetXaxis()->SetLabelSize(0.045);
+		// h_signal_MEM->GetXaxis()->SetTitleOffset(1.4);
+		h_signal_MEM->GetXaxis()->SetTitleOffset(1.2);
+		h_signal_MEM->GetXaxis()->SetLabelSize(label_size);
 		h_signal_MEM->GetXaxis()->SetLabelFont(42);
 		h_signal_MEM->GetXaxis()->SetTitleFont(42);
+		h_signal_MEM->GetXaxis()->SetTitleSize(axis_title_size);
 
-		h_signal_MEM->GetYaxis()->SetTitleOffset(1.42);
-		h_signal_MEM->GetYaxis()->SetLabelSize(0.04);
+		// h_signal_MEM->GetYaxis()->SetTitleOffset(1.42);
+		h_signal_MEM->GetYaxis()->SetTitleOffset(1.3);
+		h_signal_MEM->GetYaxis()->SetLabelSize(label_size);
 		h_signal_MEM->GetYaxis()->SetLabelFont(42);
 		h_signal_MEM->GetYaxis()->SetTitleFont(42);
-		h_signal_MEM->GetYaxis()->SetTitleSize(0.04);
+		h_signal_MEM->GetYaxis()->SetTitleSize(axis_title_size);
 
 		h_signal_MEM->SetMinimum(0);
 		h_signal_MEM->SetMaximum(h_signal_MEM->GetMaximum()*1.4);
@@ -4626,6 +4633,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	//Canvas definition
 	Load_Canvas_Style();
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+	if(!draw_preliminary_label) {c1->SetTopMargin(0.1);} //Leave space for legend --only if there isn't 'Prelim' label
 
 	if(!normalized)
 	{
@@ -4693,7 +4701,8 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	latex.SetTextFont(42);
 	latex.SetTextAlign(31);
 	latex.SetTextSize(lumiTextSize*t);
-	latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
+	// latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
+	latex.DrawLatex(0.8,1-t+lumiTextOffset*t,lumi_13TeV); //CHANGED
 
 	latex.SetTextFont(cmsTextFont);
 	latex.SetTextAlign(11);
@@ -4713,13 +4722,9 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	else if(channel=="allchan") info_data = "eee, #mu#mu#mu, #mu#mue, ee#mu channels";
 
 	TString extrainfo_data;
-	// if(template_name=="mTW") {extrainfo_data= "3l,>0j,0bj";}
-	// else if(template_name == "BDTttZ") {extrainfo_data= "3l,>1j,>1bj";}
-	// else if(template_name == "BDT") {extrainfo_data= "3l,2-3j,1bj";}
-
-	if(template_name=="mTW") {extrainfo_data= "0tag";}
-    else if(template_name == "BDTttZ") {extrainfo_data= "2tags";}
-    else if(template_name == "BDT") {extrainfo_data= "1tag";}
+	if(isWZ) {extrainfo_data= "0bjet";}
+	else if(isttZ) {extrainfo_data= "2bjets";}
+	else if(!isWZ && !isttZ) {extrainfo_data= "1bjet";}
 
 	TLatex text2 ; //= new TLatex(0, 0, info_data);
 	text2.SetNDC();
@@ -4727,12 +4732,11 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	text2.SetTextSize(0.04);
 
 	text2.SetTextFont(42);
-	if(!draw_preliminary_label) {text2.DrawLatex(0.195,0.86,info_data);}
-	else {text2.DrawLatex(0.195,0.91,info_data);}
+	// if(!draw_preliminary_label) {text2.DrawLatex(0.195,0.86,info_data);} //CHANGED
+	// else {text2.DrawLatex(0.195,0.91,info_data);}
 
 	text2.SetTextFont(62);
-	if(!draw_preliminary_label) {text2.DrawLatex(0.63,0.86,extrainfo_data);}
-	else {text2.DrawLatex(0.63,0.9,extrainfo_data);}
+	text2.DrawLatex(0.22,0.8,extrainfo_data);
 
 	qw->Draw(); //Draw legend
 
