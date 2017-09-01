@@ -2135,7 +2135,6 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 	{
 		string answer = "";
 		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
-		cout<<"(Or you could reduce the number of plotted variables)"<<endl;
 		cin>>answer;
 
 		while(answer != "yes" && answer!= "no")
@@ -2477,6 +2476,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	{
 		string answer = "";
 		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+		cout<<"(Could also choose only a few variables to plot)"<<endl;
 		cin>>answer;
 
 		while(answer != "yes" && answer!= "no")
@@ -2711,6 +2711,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
  */
 int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool allchannels, bool postfit, bool cut_on_BDT)
 {
+	bool test_plot = false;
+
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("--- Draw Control Plots ---")<<endl;
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
@@ -2729,8 +2731,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		t_mu->GetEntry(0);
 		sig_strength = (double) t_mu->GetLeaf("mu")->GetValue(0);
 		cout<<"SIGNAL STRENGTH = "<<sig_strength<<endl;
-		// delete f; //CHANGED
-		// delete t_mu; //Free memory
 
 		input_file_name = "outputs/PostfitInputVars.root";
 		f = TFile::Open( input_file_name );
@@ -2802,7 +2802,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
 
 		//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
-		//CHANGED
 		if (postfit && !f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) )
 		{
 			cout<<total_var_list[ivar].Data()<<"_uuu_postfit not found !"<<endl;
@@ -2876,8 +2875,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 				TH1F* histo_nominal = 0; //Nominal histogram <-> syst == "" //Create it here because it's also used in the (syst != "") loop
 
-
-				//CHANGED
 				// histo_name = "Control_" + thechannellist[ichan] + "_"+ total_var_list[ivar] + "_" + sample_list[isample];
 				if(postfit)
 				{
@@ -2956,7 +2953,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
 					{
-						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2); //Lumi error = 2.5% //CHANGED
+						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2); //Lumi error = 2.5%
 						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
 						//MC Stat error
 						v_eyl[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
@@ -3020,7 +3017,6 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		THStack *stack = 0;
 		TH1F* histo_total_MC = 0; //Sum of all MC samples
 
-		//CHANGED -- ARC request : plot tZq signal above stack
 		int index_tZq_sample = -99;
 
 		//Stack all the MC nominal histograms (contained in v_MC_histo)
@@ -3092,7 +3088,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 			if(h_data->GetMaximum() > stack->GetMaximum() ) {stack->SetMaximum(h_data->GetMaximum()+0.3*h_data->GetMaximum());}
 			else stack->SetMaximum(stack->GetMaximum()+0.3*stack->GetMaximum());
 		}
-		stack->SetMinimum(0); //CHANGED
+		stack->SetMinimum(0);
 		// stack->SetMinimum(0.0001);
 
 		//Draw stack
@@ -3104,7 +3100,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		  h_data->SetMarkerStyle(20);
 		  h_data->SetMarkerSize(1.2);
 		  h_data->SetLineColor(1);
-		  h_data->Draw("e0psame");
+		  h_data->Draw("epsame");
+		//   h_data->Draw("e0psame"); //CHANGED
 		}
 
 
@@ -3142,7 +3139,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//CAPTIONS
 		//-------------------
 
-// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines //CHANGED
+// -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines
 		//
 		TString cmsText     = "CMS";
 		float cmsTextFont   = 61;  // default is helvetic-bold
@@ -3165,7 +3162,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		// ratio of "CMS" and extra text size
 		float extraOverCmsTextSize  = 0.76;
 
-		float lumi = 35.9 * luminosity_rescale; //CHANGED
+		float lumi = 35.9 * luminosity_rescale;
 		TString lumi_13TeV = Convert_Number_To_TString(lumi);
 		lumi_13TeV += " fb^{-1} (13 TeV)";
 
@@ -3189,11 +3186,15 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//	Change position w.r.t. CMS recommendation, only for control plots
 		//      latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumi_13TeV);
 		// latex.DrawLatex(0.7,1-t+lumiTextOffset*t,lumi_13TeV);
-		latex.DrawLatex(0.8,1-t+lumiTextOffset*t,lumi_13TeV); //CHANGED
+
+		// if(!test_plot) latex.DrawLatex(0.8,1-t+lumiTextOffset*t,lumi_13TeV);
+		// else latex.DrawLatex(0.9,1-t+lumiTextOffset*t,lumi_13TeV);
+		if(!test_plot) latex.DrawLatex(0.8,1-t+lumiTextOffset*t,lumi_13TeV);
 
 		latex.SetTextFont(cmsTextFont);
 		latex.SetTextAlign(11);
 		latex.SetTextSize(cmsTextSize*t);
+		// if(!test_plot) latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
 		latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
 
 		//float posX_ =   l +  relPosX*(1-l-r);
@@ -3202,7 +3203,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		latex.SetTextFont(extraTextFont);
 		//latex.SetTextAlign(align_);
 		latex.SetTextSize(extraTextSize*t);
-		if(draw_preliminary_label) {latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);}
+		if(draw_preliminary_label && !test_plot) {latex.DrawLatex(l+cmsTextSize*l, 1-t+lumiTextOffset*t, extraText);}
 
 
 //------------------
@@ -3240,13 +3241,20 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		text2.SetTextSize(0.04);
 
 		text2.SetTextFont(42);
-		if(!draw_preliminary_label) {text2.DrawLatex(0.195,0.86,info_data);}
-		else {text2.DrawLatex(0.195,0.91,info_data);}
+		// if(!test_plot)
+		{
+			if(!draw_preliminary_label) {text2.DrawLatex(0.195,0.86,info_data);}
+			else {text2.DrawLatex(0.195,0.91,info_data);}
+		}
 
 		text2.SetTextFont(62);
-		if(!draw_preliminary_label) {text2.DrawLatex(0.63,0.86,extrainfo_data);}
-		else {text2.DrawLatex(0.63,0.9,extrainfo_data);}
+		// if(!test_plot)
+		{
+			if(!draw_preliminary_label) {text2.DrawLatex(0.63,0.86,extrainfo_data);}
+			else {text2.DrawLatex(0.63,0.9,extrainfo_data);}
+		}
 
+		// if(!test_plot) qw->Draw(); //Draw legend
 		qw->Draw(); //Draw legend
 
 
@@ -3342,6 +3350,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		// histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
 		histo_ratio_data->GetXaxis()->SetTitle(stringv_list[ivar].Data());
 		histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
+		if(test_plot) histo_ratio_data->GetYaxis()->SetTitle("Pulls");
 		histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 
 		histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
@@ -3433,6 +3442,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else region_name = "tZq_SR";
 
 		mkdir("plots/inputVars",0777);
+		if(test_plot) mkdir("plots/inputVars/test",0777);
 		mkdir( ("plots/inputVars/"+region_name).Data(), 0777);
 		if(postfit)
 		{
@@ -3446,7 +3456,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		}
 
 		//Iximumge name
-		TString outputname = "plots/inputVars/"+ region_name + "/";
+		TString outputname = "plots/inputVars/";
+		if(test_plot) outputname+= "test/";
+		outputname+= region_name + "/";
 		if(postfit) outputname+= "postfit/";
 		else outputname+= "prefit/";
 		if(channel == "" || allchannels) {outputname+= "allchans/";}
@@ -3546,10 +3558,10 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	vector<TString> MC_samples_legend; //List the MC samples which are actually used (to get correct legend)
 
 	// TLegend* qw = new TLegend(.82,.65,.99,.99);
-	TLegend* qw = new TLegend(.84,.66,0.999,0.999); //CHANGED
+	TLegend* qw = new TLegend(.84,.66,0.999,0.999);
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
-	qw->SetLineColor(1); //CHANGED
+	qw->SetLineColor(1);
 
 
 	int niter_chan = 0;
@@ -3650,7 +3662,6 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	THStack* stack_MC = 0;
 	TH1F* histo_total_MC = 0; //Sum of all MC samples
 
-	//CHANGED -- ARC request : plot tZq signal above stack
 	int index_tZq_sample = -99;
 
 	//Stack all the MC nominal histograms (contained in v_MC_histo)
@@ -3723,7 +3734,8 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	stack_MC->Draw("hist");
 	h_sum_data->SetMarkerStyle(20);
 	h_sum_data->SetMinimum(0.) ;
-	h_sum_data->Draw("e0psame");
+	h_sum_data->Draw("epsame");
+	// h_sum_data->Draw("e0psame");
 
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
 	if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
@@ -4670,8 +4682,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 
 	// text sizes and text offsets with respect to the top frame
 	// in unit of the top margin size
-	float lumiTextSize     = 0.52;
-	// float lumiTextSize     = 0.6;
+	float lumiTextSize     = 0.6;
 	float lumiTextOffset   = 0.2;
 	float cmsTextSize      = 0.75;
 	float cmsTextOffset    = 0.1;  // only used in outOfFrame version
@@ -4713,8 +4724,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
 	latex.SetTextFont(extraTextFont);
 	latex.SetTextSize(extraTextSize*t);
-	if(draw_preliminary_label) latex.SetTextSize(extraTextSize*t*0.8);
-	latex.DrawLatex(l+cmsTextSize*l+0.01, 1-t+lumiTextOffset*t, extraText);
+	latex.DrawLatex(l+cmsTextSize*l + 0.01, 1-t+lumiTextOffset*t, extraText);
 
 //------------------
 

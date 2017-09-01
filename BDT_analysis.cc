@@ -60,7 +60,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Outputs
     TString format = ".pdf"; //'.png' or '.pdf' only
-    bool draw_preliminary_label = false; //CHANGED : choose to add or not a label 'Preliminary' (needed for PAS)
+    bool draw_preliminary_label = false; //choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
