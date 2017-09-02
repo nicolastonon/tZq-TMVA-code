@@ -2790,7 +2790,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		vector<TH1F*> v_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
 
 
-	//   TLegend* qw = new TLegend(.2,.4,0.359,0.739); //FIXME -- left legend better ??
+	//   TLegend* qw = new TLegend(.2,.4,0.359,0.739); //left legend better ??
 		TLegend* qw = new TLegend(.84,.66,0.999,0.999);
 		qw->SetShadowColor(0);
 		qw->SetFillColor(0);
@@ -2956,57 +2956,64 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
 					{
-						v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2); //Lumi error = 2.5% //CHANGED
-						v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
-						//MC Stat error
+						// NOTE : for postfit, the bin error accounts for all systematics ! So need to only display the binError ! (for Prefit, binError only contains MC stat. error, so also need to add all systematics 1 by 1)
 						v_eyl[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
 						v_eyh[ibin]+= pow(histo_nominal->GetBinError(ibin+1), 2);
 
 						v_y[ibin]+= histo_nominal->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
 
-						if(ibin > 0) {continue;} //cout only first bin
+						if(!postfit) //Add lumi. error in prefit plots -- 2.5%
+						{
+							v_eyh[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
+							v_eyl[ibin]+= pow(histo_nominal->GetBinContent(ibin+1)*0.025, 2);
+						}
+
+						// if(ibin > 0) {continue;} //cout only first bin
 						//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
 					}
 				}
 
-				for(int isyst=0; isyst<syst_list.size(); isyst++)
+				if(!postfit) //if postfit, don't need to manually add syst. errors ; already accounted in binError
 				{
-					if(isData || ( (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && !syst_list[isyst].Contains("Fakes") && !syst_list[isyst].Contains("Zpt")) ) {continue;}
-					if(syst_list[isyst] == "") {continue;} //Already done
-					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
-					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
-
-					// if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
-
-					TH1F* histo_syst = 0; //Store the "systematic histograms"
-
-					TString histo_name_syst = histo_name;
-
-					if(postfit || combine_naming_convention) histo_name_syst+= "__" + Combine_Naming_Convention(syst_list[isyst]);
-					else histo_name_syst+= "__" + Theta_Naming_Convention(syst_list[isyst]);
-
-					if(syst_list[isyst] == "" && !f->GetListOfKeys()->Contains(histo_name_syst.Data())) {cout<<histo_name_syst<<" : not found !"<<endl; continue;}
-					else if(!f->GetListOfKeys()->Contains(histo_name_syst.Data()) ) {continue;} //No error messages if systematics histos not found
-
-					histo_syst = (TH1F*) f->Get(histo_name_syst.Data())->Clone();
-
-					//Add up here the different errors (quadratically), for each bin separately
-					for(int ibin=0; ibin<nofbins; ibin++)
+					for(int isyst=0; isyst<syst_list.size(); isyst++)
 					{
-						double tmp = 0;
+						if(isData || ( (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && !syst_list[isyst].Contains("Fakes") && !syst_list[isyst].Contains("Zpt")) ) {continue;}
+						if(syst_list[isyst] == "") {continue;} //Already done
+						if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
+						if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
 
-						//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding bin error
-						//--------------------------
-						tmp = histo_syst->GetBinContent(ibin+1) - histo_nominal->GetBinContent(ibin+1);
-						if(tmp>0) {v_eyh[ibin]+= pow(tmp,2);}
-						else if(tmp<0) {v_eyl[ibin]+= pow(tmp,2);}
-						//--------------------------
+						// if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
 
-						// if(ibin > 0) {continue;} //cout only first bin
-						//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+						TH1F* histo_syst = 0; //Store the "systematic histograms"
 
-					}
-				} //end syst loop
+						TString histo_name_syst = histo_name;
+
+						if(postfit || combine_naming_convention) histo_name_syst+= "__" + Combine_Naming_Convention(syst_list[isyst]);
+						else histo_name_syst+= "__" + Theta_Naming_Convention(syst_list[isyst]);
+
+						if(syst_list[isyst] == "" && !f->GetListOfKeys()->Contains(histo_name_syst.Data())) {cout<<histo_name_syst<<" : not found !"<<endl; continue;}
+						else if(!f->GetListOfKeys()->Contains(histo_name_syst.Data()) ) {continue;} //No error messages if systematics histos not found
+
+						histo_syst = (TH1F*) f->Get(histo_name_syst.Data())->Clone();
+
+						//Add up here the different errors (quadratically), for each bin separately
+						for(int ibin=0; ibin<nofbins; ibin++)
+						{
+							double tmp = 0;
+
+							//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding bin error
+							//--------------------------
+							tmp = histo_syst->GetBinContent(ibin+1) - histo_nominal->GetBinContent(ibin+1);
+							if(tmp>0) {v_eyh[ibin]+= pow(tmp,2);}
+							else if(tmp<0) {v_eyl[ibin]+= pow(tmp,2);}
+							//--------------------------
+
+							// if(ibin > 0) {continue;} //cout only first bin
+							//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+						}
+					} //end syst loop
+				} //--- systematics error loop
+
 			} //end sample loop
 
 			niter_chan++;
@@ -3133,7 +3140,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
 		TGraphAsymmErrors* gr = 0;
 		gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
-		gr->SetFillStyle(3005);
+		// gr->SetFillStyle(3013);
+		gr->SetFillStyle(3002);
 		gr->SetFillColor(1);
 		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
@@ -3341,22 +3349,21 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		// histo_ratio_data->GetXaxis()->SetTitle(total_var_list[ivar].Data());
 		histo_ratio_data->GetXaxis()->SetTitle(stringv_list[ivar].Data());
-		histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
+		// histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction"); //CHANGED
+		histo_ratio_data->GetYaxis()->SetTitle("Pulls");
 		histo_ratio_data->GetYaxis()->SetTickLength(0.15);
 
 		histo_ratio_data->GetXaxis()->SetTitleOffset(1.2);
 		histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
 		histo_ratio_data->GetXaxis()->SetLabelSize(0.05);
 		histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
-		// histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
 		histo_ratio_data->GetXaxis()->SetLabelFont(42);
 		histo_ratio_data->GetYaxis()->SetLabelFont(42);
 		histo_ratio_data->GetXaxis()->SetTitleFont(42);
 		histo_ratio_data->GetYaxis()->SetTitleFont(42);
-		// histo_ratio_data->GetYaxis()->SetNdivisions(6);
 		histo_ratio_data->GetYaxis()->SetNdivisions(503);
-		// histo_ratio_data->GetYaxis()->SetNdivisions(303);
-		histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+		// histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+		histo_ratio_data->GetYaxis()->SetTitleSize(0.045);
 		histo_ratio_data->GetXaxis()->SetTitleSize(0.05);
 
 
@@ -3405,7 +3412,8 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 		//--> Create new TGraphAsymmErrors
 		TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-		thegraph_ratio->SetFillStyle(3005);
+		// thegraph_ratio->SetFillStyle(3013);
+		thegraph_ratio->SetFillStyle(3002);
 		thegraph_ratio->SetFillColor(1);
 		thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
@@ -3549,8 +3557,38 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	TLegend* qw = new TLegend(.84,.66,0.999,0.999); //CHANGED
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
-	qw->SetLineColor(1); //CHANGED
+	qw->SetLineColor(1);
 
+	//---------------------------
+	//ERROR VECTORS INITIALIZATION
+	//---------------------------
+
+	TString histo_name = template_name + "_uuu__tZqmcNLO";
+	vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
+
+	//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
+	//CHANGED
+	if(!file_input->GetListOfKeys()->Contains(histo_name) )
+	{
+		cout<<__LINE__<<" : "<<histo_name<<" not found ! Can not initialize error vectors ! (This is hard-coded)"<<endl;
+	}
+
+	h_tmp = (TH1F*) file_input->Get(histo_name)->Clone();
+	if(!h_tmp) {cout<<"h_tmp is null !!"<<endl;}
+
+	int nofbins = h_tmp->GetNbinsX();
+	for(int ibin=0; ibin<nofbins; ibin++)
+	{
+		v_eyl.push_back(0); v_eyh.push_back(0);
+		v_exl.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2); v_exh.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2);
+		v_x.push_back( (h_tmp->GetXaxis()->GetBinLowEdge(nofbins+1) - h_tmp->GetXaxis()->GetBinLowEdge(1) ) * ((ibin+1 - 0.5)/nofbins) + h_tmp->GetXaxis()->GetBinLowEdge(1));
+		v_y.push_back(0);
+	}
+
+
+	//---------------------------
+	//RETRIEVE & SUM HISTOGRAMS, SUM ERRORS QUADRATICALLY
+	//---------------------------
 
 	int niter_chan = 0;
 	for(int ichan=0; ichan<thechannellist.size(); ichan++)
@@ -3591,24 +3629,87 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 			{
 				h_tmp = (TH1F*) file_input->Get(histo_name.Data())->Clone();
 
-				if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
-
-				//Use color vector filled in main() (use -1 because first sample should be data)
-				h_tmp->SetFillStyle(1001);
-				h_tmp->SetFillColor(colorVector[isample-1]);
-				h_tmp->SetLineColor(kBlack);
-				if( (isample+1) < sample_list.size())
+				//FIXME -- new : error bands
+				for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
 				{
-					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples
-					else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
-				}
+					// NOTE : for postfit, the bin error accounts for all systematics ! So need to only display the binError ! (for Prefit, binError only contains MC stat. error, so also need to add all systematics 1 by 1)
+					v_eyl[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+					v_eyh[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
 
-				// cout<<"isample-1 "<<isample-1<<endl;
-				// cout<<"v_MC_histo "<<v_MC_histo.size()<<endl;
-				if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
-				else if(v_MC_histo[isample-1]==0) {v_MC_histo[isample-1] = (TH1F*) h_tmp->Clone();} //For FakeEle and FakeMu
-				else {v_MC_histo[isample-1]->Add(h_tmp);}
+					v_y[ibin]+= h_tmp->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
+
+					//Lumi error
+					v_eyh[ibin]+= pow(h_tmp->GetBinContent(ibin+1)*0.025, 2);
+					v_eyl[ibin]+= pow(h_tmp->GetBinContent(ibin+1)*0.025, 2);
+
+
+					// if(ibin > 0) {continue;} //cout only first bin
+					//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+				} //end bin loop
+
+
+				for(int isyst=0; isyst<syst_list.size(); isyst++)
+				{
+					if(sample_list[isample].Contains("Data") || ( (sample_list[isample].Contains("Fakes") || sample_list[isample].Contains("DY") || sample_list[isample].Contains("TT") || sample_list[isample].Contains("WW") ) && !syst_list[isyst].Contains("Fakes") && !syst_list[isyst].Contains("Zpt")) ) {continue;}
+					if(syst_list[isyst] == "") {continue;} //Already done
+					if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
+					if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
+
+					// if(postfit) cout<<BOLD(FRED("POSTFIT PLOTS : NO SYST YET ! CHECK NAMING CONVENTIONS FIRST !"))<<endl;
+
+					TH1F* histo_syst = 0; //Store the "systematic histograms"
+
+					TString histo_name_syst = histo_name;
+
+					if(combine_naming_convention) histo_name_syst+= "__" + Combine_Naming_Convention(syst_list[isyst]);
+					else histo_name_syst+= "__" + Theta_Naming_Convention(syst_list[isyst]);
+
+					if(syst_list[isyst] == "" && !file_input->GetListOfKeys()->Contains(histo_name_syst.Data())) {cout<<histo_name_syst<<" : not found !"<<endl; continue;}
+					else if(!file_input->GetListOfKeys()->Contains(histo_name_syst.Data()) ) {continue;} //No error messages if systematics histos not found
+
+					histo_syst = (TH1F*) file_input->Get(histo_name_syst.Data())->Clone();
+
+					//Add up here the different errors (quadratically), for each bin separately
+					for(int ibin=0; ibin<nofbins; ibin++)
+					{
+						double tmp = 0;
+
+						//For each systematic, compute (shifted-nominal), check the sign, and add quadratically to the corresponding bin error
+						//--------------------------
+						tmp = histo_syst->GetBinContent(ibin+1) - h_tmp->GetBinContent(ibin+1);
+						if(tmp>0) {v_eyh[ibin]+= pow(tmp,2);}
+						else if(tmp<0) {v_eyl[ibin]+= pow(tmp,2);}
+						//--------------------------
+
+						// if(ibin > 0) {continue;} //cout only first bin
+						//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+					} //end bin loop
+				} //end syst loop
+			} //else
+
+
+
+			if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0) )
+			{
+				MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
 			}
+
+
+			//Use color vector filled in main() (use -1 because first sample should be data)
+			h_tmp->SetFillStyle(1001);
+			h_tmp->SetFillColor(colorVector[isample-1]);
+			h_tmp->SetLineColor(kBlack);
+			if( (isample+1) < sample_list.size())
+			{
+				if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);} //No black lines b/w 'ttW/H' samples
+				else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
+			}
+
+			// cout<<"isample-1 "<<isample-1<<endl;
+			// cout<<"v_MC_histo "<<v_MC_histo.size()<<endl;
+			if(niter_chan == 0) {v_MC_histo.push_back(h_tmp);}
+			else if(v_MC_histo[isample-1]==0) {v_MC_histo[isample-1] = (TH1F*) h_tmp->Clone();} //For FakeEle and FakeMu
+			else {v_MC_histo[isample-1]->Add(h_tmp);}
 		} //end sample loop
 
 	//--- DATA
@@ -3650,7 +3751,6 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	THStack* stack_MC = 0;
 	TH1F* histo_total_MC = 0; //Sum of all MC samples
 
-	//CHANGED -- ARC request : plot tZq signal above stack
 	int index_tZq_sample = -99;
 
 	//Stack all the MC nominal histograms (contained in v_MC_histo)
@@ -3725,6 +3825,35 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	h_sum_data->SetMinimum(0.) ;
 	h_sum_data->Draw("e0psame");
 
+	//---------------------------
+	//DRAW SYST ERRORS ON PLOT
+	//---------------------------
+
+	//Need to take sqrt of total errors
+	for(int ibin=0; ibin<nofbins; ibin++)
+	{
+		v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
+		v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
+
+		// if(ibin > 0) {continue;} //cout only first bin
+		//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+	}
+
+	//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
+	double* eyl = &v_eyl[0];
+	double* eyh = &v_eyh[0];
+	double* exl = &v_exl[0];
+	double* exh = &v_exh[0];
+	double* x = &v_x[0];
+	double* y = &v_y[0];
+
+	//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
+	TGraphAsymmErrors* gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+	// gr->SetFillStyle(3013);
+	gr->SetFillStyle(3002);
+	gr->SetFillColor(1);
+	gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
 	if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
 	else {canvas_2->SetTopMargin(0.7);}
@@ -3746,10 +3875,11 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	histo_ratio_data->GetXaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetNdivisions(503);
-	histo_ratio_data->GetXaxis()->SetTitleSize(0.04);
-	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+	histo_ratio_data->GetXaxis()->SetTitleSize(0.045);
+	// histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
 	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
-	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
+	// histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
+	histo_ratio_data->GetYaxis()->SetTitle("Pulls");
 	histo_ratio_data->SetMinimum(0.0);
 	histo_ratio_data->SetMaximum(1.999);
 
@@ -3782,6 +3912,31 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	h_line3->Draw("hist same");
 
 
+	//Copy previous TGraphAsymmErrors
+	TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+	double *theErrorX_h = thegraph_tmp->GetEXhigh();
+	double *theErrorY_h = thegraph_tmp->GetEYhigh();
+	double *theErrorX_l = thegraph_tmp->GetEXlow();
+	double *theErrorY_l = thegraph_tmp->GetEYlow();
+	double *theY        = thegraph_tmp->GetY() ;
+	double *theX        = thegraph_tmp->GetX() ;
+
+	//Divide error --> ratio
+	for(int i=0; i<thegraph_tmp->GetN(); i++)
+	{
+	  theErrorY_l[i] = theErrorY_l[i]/theY[i];
+	  theErrorY_h[i] = theErrorY_h[i]/theY[i];
+	  theY[i]=1; //To center the filled area around "1"
+	}
+
+	//--> Create new TGraphAsymmErrors
+	TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+	// thegraph_ratio->SetFillStyle(3013);
+	thegraph_ratio->SetFillStyle(3002);
+	thegraph_ratio->SetFillColor(1);
+	thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+
+
 	// stack_MC->GetXaxis()->SetTitle(template_name.Data());
 	stack_MC->GetXaxis()->SetLabelFont(42);
 	stack_MC->GetYaxis()->SetLabelFont(42);
@@ -3796,6 +3951,10 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	else if(template_name == "BDT") {stack_MC->GetYaxis()->SetTitle("Events/0.2");}
 	c1->Modified();
 
+
+//----------------
+	// CAPTIONS //
+//----------------
 
 // -- using https://twiki.cern.ch/twiki/pub/CMS/Internal/FigGuidelines
 
@@ -3988,6 +4147,37 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
    	qw->SetFillColor(0);
    	qw->SetLineColor(1);
 
+	//---------------------------
+	//ERROR VECTORS INITIALIZATION
+	//---------------------------
+
+	vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
+
+	TString dir_name = "shapes_fit_s/BDT_uuu";
+	TString histo_name = "tZqmcNLO";
+
+	//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
+	if(file_input->GetDirectory(dir_name))
+	{
+		h_tmp = (TH1F*) file_input->Get(dir_name + "/" + histo_name)->Clone();
+	}
+	else {cout<<__LINE__<<FRED(" : "<<dir_name<<" not found ! Can not initialize error vectors ! (This is hard-coded)")<<endl;}
+
+	if(!h_tmp) {cout<<"h_tmp is null !!"<<endl;}
+
+	int nofbins = h_tmp->GetNbinsX();
+	for(int ibin=0; ibin<nofbins; ibin++)
+	{
+		v_eyl.push_back(0); v_eyh.push_back(0);
+		v_exl.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2); v_exh.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2);
+		v_x.push_back( (h_tmp->GetXaxis()->GetBinLowEdge(nofbins+1) - h_tmp->GetXaxis()->GetBinLowEdge(1) ) * ((ibin+1 - 0.5)/nofbins) + h_tmp->GetXaxis()->GetBinLowEdge(1));
+		v_y.push_back(0);
+	}
+
+
+	//---------------------------
+	//RETRIEVE & SUM HISTOGRAMS, SUM ERRORS QUADRATICALLY
+	//---------------------------
 
 	int niter_chan = 0;
 	for(int ichan=0; ichan<channel_list.size(); ichan++)
@@ -4041,10 +4231,10 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 			else //MC
 			{
-				TString dir_name = "shapes_fit_s/" + template_name + "_" + channel_list[ichan];
+				dir_name = "shapes_fit_s/" + template_name + "_" + channel_list[ichan];
 
 				h_tmp = 0;
-				TString histo_name = sample_list[isample];
+				histo_name = sample_list[isample];
 
 				if (file_input->GetDirectory(dir_name))
 				{
@@ -4054,6 +4244,24 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 				// h_tmp = (TH1F*) file_input->Get((dir_name+histo_name).Data())->Clone();
 				if(!h_tmp) {cout<<__LINE__<<" : h_tmp is null ! "<<endl;}
+
+				//FIXME -- new : error bands
+				for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
+				{
+					// NOTE : for postfit, the bin error accounts for all systematics ! So need to only display the binError ! (for Prefit, binError only contains MC stat. error, so also need to add all systematics 1 by 1)
+					v_eyl[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+					v_eyh[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+
+					v_y[ibin]+= h_tmp->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
+
+					//Lumi error
+					v_eyh[ibin]+= pow(h_tmp->GetBinContent(ibin+1)*0.025, 2);
+					v_eyl[ibin]+= pow(h_tmp->GetBinContent(ibin+1)*0.025, 2);
+
+
+					// if(ibin > 0) {continue;} //cout only first bin
+					//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+				} //end bin loop
 
 				if(!sample_list[isample].Contains("Data") && (!allchannels || ichan==0)) MC_samples_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
 
@@ -4193,6 +4401,37 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	h_data_new->SetMarkerStyle(20);
 	h_data_new->Draw("epsame");
 
+	//---------------------------
+	//DRAW SYST ERRORS ON PLOT
+	//---------------------------
+
+	//Need to take sqrt of total errors
+	for(int ibin=0; ibin<nofbins; ibin++)
+	{
+		v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
+		v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
+
+		// if(ibin > 0) {continue;} //cout only first bin
+		//cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl; //cout<<", exl = "<<v_exl[ibin]<<endl;    cout<<", exh = "<<v_exh[ibin]<<endl;
+	}
+
+	//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
+	double* eyl = &v_eyl[0];
+	double* eyh = &v_eyh[0];
+	double* exl = &v_exl[0];
+	double* exh = &v_exh[0];
+	double* x = &v_x[0];
+	double* y = &v_y[0];
+
+	//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
+	TGraphAsymmErrors* gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+	// gr->SetFillStyle(3013);
+	gr->SetFillStyle(3002);
+	gr->SetFillColor(1);
+	gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+
+
+
 	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
 	if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
 	else {canvas_2->SetTopMargin(0.7);}
@@ -4220,9 +4459,11 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	histo_ratio_data->GetXaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetTitleFont(42);
 	histo_ratio_data->GetYaxis()->SetNdivisions(503);
-	histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+	// histo_ratio_data->GetYaxis()->SetTitleSize(0.04);
+	histo_ratio_data->GetYaxis()->SetTitleSize(0.045);
 	histo_ratio_data->GetYaxis()->SetTickLength(0.15);
-	histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
+	// histo_ratio_data->GetYaxis()->SetTitle("Data/Prediction");
+	histo_ratio_data->GetYaxis()->SetTitle("Pulls");
 	histo_ratio_data->SetMinimum(0.0);
 	histo_ratio_data->SetMaximum(1.999);
 	histo_ratio_data->Draw("E1X0"); //Draw ratio points
@@ -4246,6 +4487,30 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	h_line1->Draw("hist same");
 	h_line2->Draw("hist same");
 	h_line3->Draw("hist same");
+
+	//Copy previous TGraphAsymmErrors
+	TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+	double *theErrorX_h = thegraph_tmp->GetEXhigh();
+	double *theErrorY_h = thegraph_tmp->GetEYhigh();
+	double *theErrorX_l = thegraph_tmp->GetEXlow();
+	double *theErrorY_l = thegraph_tmp->GetEYlow();
+	double *theY        = thegraph_tmp->GetY() ;
+	double *theX        = thegraph_tmp->GetX() ;
+
+	//Divide error --> ratio
+	for(int i=0; i<thegraph_tmp->GetN(); i++)
+	{
+	  theErrorY_l[i] = theErrorY_l[i]/theY[i];
+	  theErrorY_h[i] = theErrorY_h[i]/theY[i];
+	  theY[i]=1; //To center the filled area around "1"
+	}
+
+	//--> Create new TGraphAsymmErrors
+	TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+	// thegraph_ratio->SetFillStyle(3013);
+	thegraph_ratio->SetFillStyle(3002);
+	thegraph_ratio->SetFillColor(1);
+	thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
 
 	//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES

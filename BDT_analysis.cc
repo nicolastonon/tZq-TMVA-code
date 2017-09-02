@@ -626,7 +626,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         for(int ichan=0; ichan<thechannellist.size(); ichan++)
         {
-            MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
+            // MVAtool->Superpose_With_Without_MEM_Templates(template_name, thechannellist[ichan], true);
 
             // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
 
@@ -638,7 +638,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         }
 
 
-        MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
+        // MVAtool->Superpose_With_Without_MEM_Templates(template_name, "allchan", true);
 
         // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, "allchan", true, true, true);
 
