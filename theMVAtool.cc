@@ -3982,8 +3982,8 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 
 	vector<TString> MC_samples_legend; //List the MC samples which are actually used (to get correct legend)
 
-	TLegend* qw = new TLegend(.84,.66,0.999,0.999); //CHANGED
-	// TLegend* qw = new TLegend(.82,.65,.99,.99); //CHANGED
+	TLegend* qw = new TLegend(.84,.66,0.999,0.999);
+	// TLegend* qw = new TLegend(.82,.65,.99,.99);
    	qw->SetShadowColor(0);
    	qw->SetFillColor(0);
    	qw->SetLineColor(1);
