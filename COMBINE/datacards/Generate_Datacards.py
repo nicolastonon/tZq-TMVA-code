@@ -7,11 +7,11 @@ import string
 import os
 
 
-trigsyst=""
+# trigsyst=""
 FakeEl_rateEl=""
 FakeMu_rateMu=""
-FakeEl_shapeEl=""
-FakeMu_shapeMu=""
+# FakeEl_shapeEl=""
+# FakeMu_shapeMu=""
 fakes_NP_value = "";
 fake_bkg = "";
 
@@ -56,9 +56,9 @@ if channel=="uuu":
     # else:
     #     FakeMu_rateMu=fakes_NP_value
 
-    FakeEl_shapeEl="-"
-    FakeMu_shapeMu="1"
-    trigsyst = "1.01"
+    # FakeEl_shapeEl="-"
+    # FakeMu_shapeMu="1"
+    # trigsyst = "1.01"
     fileToSearch = "Template_Datacard_uuu.txt"
 
 elif channel=="uue":
@@ -83,9 +83,9 @@ elif channel=="uue":
     #     FakeMu_rateMu=fakes_NP_value
     #     FakeEl_rateEl=fakes_NP_value
 
-    FakeEl_shapeEl="1"
-    FakeMu_shapeMu="1"
-    trigsyst = "1.01"
+    # FakeEl_shapeEl="1"
+    # FakeMu_shapeMu="1"
+    # trigsyst = "1.01"
 
 elif channel=="eeu":
     if fakes_NP_value=="0":
@@ -109,9 +109,9 @@ elif channel=="eeu":
     #     FakeMu_rateMu=fakes_NP_value
     #     FakeEl_rateEl=fakes_NP_value
 
-    FakeEl_shapeEl="1"
-    FakeMu_shapeMu="1"
-    trigsyst = "1.01"
+    # FakeEl_shapeEl="1"
+    # FakeMu_shapeMu="1"
+    # trigsyst = "1.01"
 
 elif channel=="eee":
     if fakes_NP_value=="0":
@@ -132,9 +132,9 @@ elif channel=="eee":
     # else:
     #     FakeEl_rateEl=fakes_NP_value
 
-    FakeEl_shapeEl="1"
-    FakeMu_shapeMu="-"
-    trigsyst = "1.02"
+    # FakeEl_shapeEl="1"
+    # FakeMu_shapeMu="-"
+    # trigsyst = "1.02"
     fileToSearch = "Template_Datacard_eee.txt"
 
 
@@ -156,15 +156,15 @@ s = s.replace("var",theVar)
 s = s.replace("FakeEl_rateEl", FakeEl_rateEl)
 s = s.replace("FakeMu_rateMu", FakeMu_rateMu)
 
-s = s.replace("FakeEl_shapeEl", FakeEl_shapeEl)
-s = s.replace("FakeMu_shapeMu", FakeMu_shapeMu)
+# s = s.replace("FakeEl_shapeEl", FakeEl_shapeEl)
+# s = s.replace("FakeMu_shapeMu", FakeMu_shapeMu)
 
 s = s.replace("FakeRateMu_ch", FakeRateMu_ch)
 s = s.replace("FakeRateEl_ch", FakeRateEl_ch)
 
 s = s.replace("Fake_bkg", fake_bkg)
 
-s = s.replace("trigsyst", trigsyst)
+# s = s.replace("trigsyst", trigsyst)
 
 s = s.replace("filetoread", theFiletoRead)
 
