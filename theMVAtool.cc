@@ -6596,16 +6596,16 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	//--------------------------
 
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+	// c1->Divide(3, 2, 0.01, 0); //colums, rows
 	c1->Divide(3,2); //colums, rows
-
 	//--------------------------
 	// DEFINE 3 VARIABLES TO PLOT
 	//--------------------------
 
-	vector<TString> total_var_list(3); vector<TString> v_X_label(3);
-	total_var_list[0] = "btagDiscri"; v_X_label.push_back("test");
-	total_var_list[1] = "MEMvar_1"; v_X_label.push_back("test");
-	total_var_list[2] = "dRjj"; v_X_label.push_back("test");
+	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
+	total_var_list[0] = "btagDiscri"; v_X_label[0] = "CSVv2 discriminant"; v_Y_label[0] = "Events/0.04"; //FIXME
+	total_var_list[1] = "MEMvar_1"; v_X_label[1] = "MEM log w_{tZq}"; v_Y_label[1] = "Events/3";
+	total_var_list[2] = "dRjj"; v_X_label[2] = "#Delta R(b,#font[12]{j'}) [GeV]"; v_Y_label[2] = "Events/0.2";
 
 	//--------------------------
 	// CREATE VECTORS OF OBJECTS
@@ -6640,11 +6640,12 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			f = TFile::Open( input_file_name );
 			if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 
-			qw = new TLegend(.84,.66,0.999,0.999);
+			qw = new TLegend(.08,0.22,0.18,0.42);
+			// qw = new TLegend(.84,.66,0.999,0.999);
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
 			qw->SetLineColor(1);
-			// qw->Draw(); //FIXME
+			qw->Draw(); //FIXME
 		}
 		//Then, plot 3 ttZ variables
 		else if(iplot==3)
@@ -6662,11 +6663,14 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 		if(iplot<3)	{gPad->SetTopMargin(0.1);}
 		else	{gPad->SetTopMargin(0.);}
-
-
-		gPad->SetTopMargin(0.1);
-
+		
 		gPad->SetBottomMargin(0.25);
+
+		// gPad->SetTopMargin(0.);
+
+		// gPad->SetFrameBorderMode(0);
+        // gPad->SetBorderMode(0);
+        // gPad->SetBorderSize(0);
 
 
 
@@ -6860,7 +6864,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		if(v_hdata[iplot] != 0)
 		{
 		  v_hdata[iplot]->SetMarkerStyle(20);
-		  v_hdata[iplot]->SetMarkerSize(1.2);
+		  v_hdata[iplot]->SetMarkerSize(1.);
 		  v_hdata[iplot]->SetLineColor(1);
 		  v_hdata[iplot]->Draw("epsame");
 		}
@@ -6898,6 +6902,85 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack //FIXME
 
 
+		//-------------------
+		//COSMETICS
+		//-------------------
+		if(v_stack[iplot]!= 0)
+		{
+			if(iplot==0 || iplot==3) {v_stack[iplot]->GetXaxis()->SetRange(9, nofbins);}
+
+			v_stack[iplot]->GetXaxis()->SetLabelFont(42);
+			v_stack[iplot]->GetYaxis()->SetLabelFont(42);
+			v_stack[iplot]->GetYaxis()->SetTitleFont(42);
+			v_stack[iplot]->GetYaxis()->SetTitleSize(0.045);
+			v_stack[iplot]->GetYaxis()->SetTickLength(0.04);
+			v_stack[iplot]->GetXaxis()->SetLabelSize(0.0);
+			v_stack[iplot]->GetYaxis()->SetLabelSize(0.048);
+
+			v_stack[iplot]->GetYaxis()->SetTitleOffset(1.7);
+			v_stack[iplot]->GetYaxis()->SetTitle(v_Y_label[ivar].Data());
+		}
+
+		//-------------------
+		//CAPTIONS && LEGEND
+		//-------------------
+
+		if(iplot==0 || iplot==3)
+		{
+			TString extrainfo_data;
+			if(iplot<3) {extrainfo_data= "1bjet";}
+			else {extrainfo_data= "2bjets";}
+
+			TLatex text2 ; //= new TLatex(0, 0, info_data);
+			text2.SetNDC();
+			text2.SetTextAlign(13);
+			text2.SetTextSize(0.08);
+			text2.SetTextFont(62);
+			text2.DrawLatex(0.63,0.84,extrainfo_data);
+		}
+
+
+		if(iplot==0)
+		{
+			TString cmsText     = "CMS";
+			TLatex latex;
+			latex.SetNDC();
+			latex.SetTextAngle(0);
+			latex.SetTextColor(kBlack);
+			float l = c1->GetLeftMargin();
+			float t = c1->GetTopMargin();
+
+			latex.SetTextFont(61);
+			latex.SetTextAlign(11);
+			latex.SetTextSize(0.1);
+			// latex.DrawLatex(l,1-t,cmsText);
+
+			TString extraText   = "Preliminary";
+			latex.SetTextFont(52);
+			if(draw_preliminary_label)
+			{
+				latex.SetTextSize(0.08);
+				// latex.DrawLatex(l + 0.3, 1-t, extraText);
+			}
+		}
+		else if(iplot==2)
+		{
+			float lumi = 35.9 * luminosity_rescale;
+			TString lumi_13TeV = Convert_Number_To_TString(lumi);
+			lumi_13TeV += " fb^{-1} (13 TeV)";
+			TLatex latex;
+			latex.SetNDC();
+			latex.SetTextAngle(0);
+			latex.SetTextColor(kBlack);
+			float l = c1->GetLeftMargin();
+			float t = c1->GetTopMargin();
+
+			latex.SetTextFont(42);
+			latex.SetTextAlign(31);
+			latex.SetTextSize(0.09);
+			// latex.DrawLatex(0.9,1-t,lumi_13TeV);
+		}
+
 
 		//--------------------------
 		//DRAW DATA/MC RATIO
@@ -6930,6 +7013,11 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			// cout<<"v_histo_total_MC[iplot]->GetBinError(ibin) "<<v_histo_total_MC[iplot]->GetBinError(ibin)<<endl;
 		}
 
+		if(iplot==0 || iplot==3)
+		{
+			v_histo_ratio_data[iplot]->GetXaxis()->SetRange(9, nofbins);
+			v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(504); //CHANGED
+		}
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("Pulls");
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTickLength(0.15);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleOffset(1.2);
@@ -6943,6 +7031,16 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.045);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleSize(0.05);
+		v_histo_ratio_data[iplot]->SetMarkerSize(0.8);
+		if(iplot<3)
+		{
+			v_histo_ratio_data[iplot]->GetXaxis()->SetLabelSize(0);
+			v_histo_ratio_data[iplot]->GetXaxis()->SetTitleSize(0);
+		}
+		else
+		{
+			v_histo_ratio_data[iplot]->GetXaxis()->SetTitle(v_X_label[ivar].Data());
+		}
 
 		// v_histo_ratio_data[iplot]->SetMinimum(0.0);
 		// v_histo_ratio_data[iplot]->SetMaximum(1.999);
@@ -6984,70 +7082,6 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_gr_ratio_error[iplot]->SetFillColor(1);
 		v_gr_ratio_error[iplot]->Draw("e2 same");*/ //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio) //FIXME
 
-
-		//Yaxis title
-		if(v_stack[iplot]!= 0)
-		{
-			v_stack[iplot]->GetXaxis()->SetLabelFont(42);
-			v_stack[iplot]->GetYaxis()->SetLabelFont(42);
-			v_stack[iplot]->GetYaxis()->SetTitleFont(42);
-			v_stack[iplot]->GetYaxis()->SetTitleSize(0.045);
-			v_stack[iplot]->GetYaxis()->SetTickLength(0.04);
-			v_stack[iplot]->GetXaxis()->SetLabelSize(0.0);
-			v_stack[iplot]->GetYaxis()->SetLabelSize(0.048);
-		}
-
-		//-------------------
-		//CAPTIONS && LEGEND
-		//-------------------
-
-		if(iplot==0 || iplot==3)
-		{
-			TString extrainfo_data;
-			if(iplot<3) {extrainfo_data= "1bjet";}
-			else {extrainfo_data= "2bjets";}
-
-			TLatex text2 ; //= new TLatex(0, 0, info_data);
-			text2.SetNDC();
-			text2.SetTextAlign(13);
-			text2.SetTextSize(0.08);
-			text2.SetTextFont(62);
-			text2.DrawLatex(0.63,0.84,extrainfo_data);
-		}
-
-
-		if(iplot==0)
-		{
-			TString cmsText     = "CMS";
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
-
-			latex.SetTextFont(61);
-			latex.SetTextAlign(11);
-			latex.SetTextSize(0.1);
-			latex.DrawLatex(l,1-t,cmsText);
-		}
-		else if(iplot==2)
-		{
-			float lumi = 35.9 * luminosity_rescale;
-			TString lumi_13TeV = Convert_Number_To_TString(lumi);
-			lumi_13TeV += " fb^{-1} (13 TeV)";
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
-
-			latex.SetTextFont(42);
-			latex.SetTextAlign(31);
-			latex.SetTextSize(0.09);
-			latex.DrawLatex(0.9,1-t,lumi_13TeV);
-		}
 
 	} //iplot loop
 
