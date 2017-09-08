@@ -92,7 +92,6 @@ class theMVAtool
 	void Train_Test_Evaluate(TString, TString, bool); //Train, Test, Evaluate BDT with MC samples
 	double Compute_Fake_SF(TFile*, TString, bool, TString, TString); //Compute SF to rescale data Fakes (using TFractionFitter & mTW templates)
 	void Rescale_Fake_Histograms(TString, TString); //Rescale Fake histograms with SFs computed with TFractionFitter (uses scaleFakes.cc function)
-	double Get_Zpt_Reweighting_SF(int, int, double); //Returns SF for Fakes event (Zpt reweighting)
 	void Vector_isEventPassingBDTfakeSRCut(vector<bool>&, TString, TString, double, bool);
 	int Read(TString, bool, bool, bool, bool, double, bool); //Produce templates of BDT or mTW
 	float Determine_Control_Cut(); //Determine at which discriminant value the cut should be applied, in order to keep mainly bkg
@@ -108,11 +107,8 @@ class theMVAtool
 	void Rebin_Template_File(TString, int); //Rebin all the templates in input file
 	void Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString, bool);
 
+	int Draw_Control_Plots_ForPaper();
 
-	//Obsolete functions
-	void Fit_mTW_SR(TString);
-	// int Fit_Fake_Templates(TString, TString); //Fit the fake templates
-	// int Create_Fake_Templates_From_Fit(TString, TString); //Create new template from fit or original template (no empty bin)
 
 //Members
 	TMVA::Reader *reader;

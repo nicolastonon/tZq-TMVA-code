@@ -649,6 +649,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // vector<bool> v;
         // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", "", cut_BDT_value, keep_high_BDT_events);
 
+        MVAtool->Draw_Control_Plots_ForPaper();
+
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
     }
@@ -1034,6 +1036,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         for(int ivar=0; ivar<set_v_cut_name.size(); ivar++)
         {
             if( (set_v_cut_name[ivar]=="METpt" || set_v_cut_name[ivar]=="mTW") && set_v_cut_def[ivar] == ">0") {continue;} //Useless cuts
+            else if(set_v_cut_name[ivar]=="fourthLep10" || set_v_cut_name[ivar]=="ContainsBadJet") {continue;} // not used in suffix
 
             if(set_v_cut_def[ivar] != "")
             {

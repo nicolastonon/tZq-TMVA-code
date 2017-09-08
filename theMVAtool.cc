@@ -243,8 +243,6 @@ theMVAtool::theMVAtool(std::vector<TString > thevarlist, std::vector<TString > t
 
 	luminosity_rescale = 1;
 
-	Fill_Zpt_Vectors();
-
 	cout<<endl<<endl;
 }
 
@@ -1059,7 +1057,7 @@ void theMVAtool::Rescale_Fake_Histograms(TString file_to_rescale_name, TString t
 			for(int ivar=0; ivar<total_var_list.size(); ivar++)
 			{
 
-				for(int isample=0; isample<sample_list[isample]; isample++)
+				for(int isample=0; isample<sample_list.size(); isample++)
 				{
 					if(!sample_list[isample].Contains("Fakes")) {continue;}
 
@@ -2543,7 +2541,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "ZEta")			 				{h_tmp = new TH1F( "","", control_binning, -4, 4 );}
 					else if(total_var_list[ivar] == "AddLepAsym") 					{h_tmp = new TH1F( "","", control_binning, -2.5, 2.5 );}
 					else if(total_var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", control_binning, 60, 500 );}
-					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 20, 0.2, 1. );}
+					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 20, 0.5, 1. );} //CHANGED
 					else if(total_var_list[ivar] == "etaQ")							{h_tmp = new TH1F( "","", control_binning, -4.5, 4.5 );}
 					else if(total_var_list[ivar] == "NBJets")						{h_tmp = new TH1F( "","", 5, 0, 5 );}
 					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", control_binning, 0, 200 );}
@@ -2557,7 +2555,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "dRZTop")						{h_tmp = new TH1F( "","", control_binning, 0, 5 );}
 					else if(total_var_list[ivar] == "TopPT")						{h_tmp = new TH1F( "","", control_binning, 0, 500 );}
 					else if(total_var_list[ivar] == "NJets")						{h_tmp = new TH1F( "","", 6, 0, 6 );}
-					else if(total_var_list[ivar] == "ptQ")							{h_tmp = new TH1F( "","", control_binning, 30, 250 );}
+					else if(total_var_list[ivar] == "ptQ")							{h_tmp = new TH1F( "","", control_binning, 30, 200 );} //CHANGED
 					else if(total_var_list[ivar] == "dRjj")							{h_tmp = new TH1F( "","", control_binning, 0.5, 4.5 );}
 					else if(total_var_list[ivar] == "AdditionalEleIso")				{h_tmp = new TH1F( "","", control_binning, 0, 0.5 );}
 					else if(total_var_list[ivar] == "AdditionalMuonIso")			{h_tmp = new TH1F( "","", control_binning, 0, 0.5 );}
@@ -3138,12 +3136,12 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		double* y = &v_y[0];
 
 		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
-		TGraphAsymmErrors* gr = 0;
-		gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
-		// gr->SetFillStyle(3013);
-		gr->SetFillStyle(3002);
-		gr->SetFillColor(1);
-		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+		TGraphAsymmErrors* gr_error = 0;
+		gr_error = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+		// gr_error->SetFillStyle(3013);
+		gr_error->SetFillStyle(3002);
+		gr_error->SetFillColor(1);
+		gr_error->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
 
 		//-------------------
@@ -3326,14 +3324,14 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		}
 
 
-		TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-		if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
-		else {canvas_2->SetTopMargin(0.7);}
-		canvas_2->SetFillColor(0);
-		canvas_2->SetFillStyle(0);
-		canvas_2->SetGridy(1);
-		canvas_2->Draw();
-		canvas_2->cd(0);
+		TPad *pad_ratio = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
+		if(!draw_preliminary_label){ pad_ratio->SetTopMargin(0.75);}
+		else {pad_ratio->SetTopMargin(0.7);}
+		pad_ratio->SetFillColor(0);
+		pad_ratio->SetFillStyle(0);
+		pad_ratio->SetGridy(1);
+		pad_ratio->Draw();
+		pad_ratio->cd(0);
 
 		TH1::SetDefaultSumw2();
 
@@ -3394,7 +3392,7 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 
 
 		//Copy previous TGraphAsymmErrors
-		TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+		TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr_error->Clone();
 		double *theErrorX_h = thegraph_tmp->GetEXhigh();
 		double *theErrorY_h = thegraph_tmp->GetEYhigh();
 		double *theErrorX_l = thegraph_tmp->GetEXlow();
@@ -3411,11 +3409,11 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		}
 
 		//--> Create new TGraphAsymmErrors
-		TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-		// thegraph_ratio->SetFillStyle(3013);
-		thegraph_ratio->SetFillStyle(3002);
-		thegraph_ratio->SetFillColor(1);
-		thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+		TGraphAsymmErrors *gr_ratio_error = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+		// gr_ratio_error->SetFillStyle(3013);
+		gr_ratio_error->SetFillStyle(3002);
+		gr_ratio_error->SetFillColor(1);
+		gr_ratio_error->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
 		//Yaxis title
 		// if(stack!= 0) {stack->GetYaxis()->SetTitleSize(0.04); stack->GetYaxis()->SetTitle("Events");}
@@ -3471,14 +3469,14 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		// cout << __LINE__ << endl;
 
 
-		delete thegraph_ratio;
+		delete gr_ratio_error;
 		delete h_line1; delete h_line2; delete h_line3;
 		delete thegraph_tmp;
 
 
 		delete c1; //Must free dinamically-allocated memory
-		// delete canvas_2;
-		delete qw; delete stack; delete gr;
+		// delete pad_ratio;
+		delete qw; delete stack; delete gr_error;
 
 		delete h_tmp; delete h_data;
 	} //end var loop
@@ -3848,20 +3846,20 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	double* y = &v_y[0];
 
 	//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
-	TGraphAsymmErrors* gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
-	// gr->SetFillStyle(3013);
-	gr->SetFillStyle(3002);
-	gr->SetFillColor(1);
-	gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+	TGraphAsymmErrors* gr_error = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+	// gr_error->SetFillStyle(3013);
+	gr_error->SetFillStyle(3002);
+	gr_error->SetFillColor(1);
+	gr_error->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
-	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-	if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
-	else {canvas_2->SetTopMargin(0.7);}
-	canvas_2->SetFillColor(0);
-	canvas_2->SetFillStyle(0);
-	canvas_2->SetGridy(1);
-	canvas_2->Draw();
-	canvas_2->cd(0);
+	TPad *pad_ratio = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
+	if(!draw_preliminary_label){ pad_ratio->SetTopMargin(0.75);}
+	else {pad_ratio->SetTopMargin(0.7);}
+	pad_ratio->SetFillColor(0);
+	pad_ratio->SetFillStyle(0);
+	pad_ratio->SetGridy(1);
+	pad_ratio->Draw();
+	pad_ratio->cd(0);
 
 	TH1F * histo_ratio_data = (TH1F*) h_sum_data->Clone();
 	histo_ratio_data->Divide(histo_total_MC); //Ratio
@@ -3913,7 +3911,7 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 
 
 	//Copy previous TGraphAsymmErrors
-	TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+	TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr_error->Clone();
 	double *theErrorX_h = thegraph_tmp->GetEXhigh();
 	double *theErrorY_h = thegraph_tmp->GetEYhigh();
 	double *theErrorX_l = thegraph_tmp->GetEXlow();
@@ -3930,11 +3928,11 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	}
 
 	//--> Create new TGraphAsymmErrors
-	TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-	// thegraph_ratio->SetFillStyle(3013);
-	thegraph_ratio->SetFillStyle(3002);
-	thegraph_ratio->SetFillColor(1);
-	thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+	TGraphAsymmErrors *gr_ratio_error = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+	// gr_ratio_error->SetFillStyle(3013);
+	gr_ratio_error->SetFillStyle(3002);
+	gr_ratio_error->SetFillColor(1);
+	gr_ratio_error->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
 
 	// stack_MC->GetXaxis()->SetTitle(template_name.Data());
@@ -4424,22 +4422,22 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	double* y = &v_y[0];
 
 	//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
-	TGraphAsymmErrors* gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
-	// gr->SetFillStyle(3013);
-	gr->SetFillStyle(3002);
-	gr->SetFillColor(1);
-	gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+	TGraphAsymmErrors* gr_error = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+	// gr_error->SetFillStyle(3013);
+	gr_error->SetFillStyle(3002);
+	gr_error->SetFillColor(1);
+	gr_error->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
 
 
-	TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
-	if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
-	else {canvas_2->SetTopMargin(0.7);}
-	canvas_2->SetFillColor(0);
-	canvas_2->SetFillStyle(0);
-	canvas_2->SetGridy(1);
-	canvas_2->Draw();
-	canvas_2->cd(0);
+	TPad *pad_ratio = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
+	if(!draw_preliminary_label){ pad_ratio->SetTopMargin(0.75);}
+	else {pad_ratio->SetTopMargin(0.7);}
+	pad_ratio->SetFillColor(0);
+	pad_ratio->SetFillStyle(0);
+	pad_ratio->SetGridy(1);
+	pad_ratio->Draw();
+	pad_ratio->cd(0);
 
 	TH1F * histo_ratio_data = (TH1F*) h_data_new->Clone();
 
@@ -4489,7 +4487,7 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	h_line3->Draw("hist same");
 
 	//Copy previous TGraphAsymmErrors
-	TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+	TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr_error->Clone();
 	double *theErrorX_h = thegraph_tmp->GetEXhigh();
 	double *theErrorY_h = thegraph_tmp->GetEYhigh();
 	double *theErrorX_l = thegraph_tmp->GetEXlow();
@@ -4506,11 +4504,11 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	}
 
 	//--> Create new TGraphAsymmErrors
-	TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-	// thegraph_ratio->SetFillStyle(3013);
-	thegraph_ratio->SetFillStyle(3002);
-	thegraph_ratio->SetFillColor(1);
-	thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+	TGraphAsymmErrors *gr_ratio_error = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+	// gr_ratio_error->SetFillStyle(3013);
+	gr_ratio_error->SetFillStyle(3002);
+	gr_ratio_error->SetFillColor(1);
+	gr_ratio_error->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
 
 	//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
@@ -4978,8 +4976,12 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
 	latex.SetTextFont(extraTextFont);
 	latex.SetTextSize(extraTextSize*t);
-	if(draw_preliminary_label) latex.SetTextSize(extraTextSize*t*0.8);
-	latex.DrawLatex(l+cmsTextSize*l+0.01, 1-t+lumiTextOffset*t, extraText);
+	if(draw_preliminary_label)
+	{
+		latex.SetTextSize(extraTextSize*t*0.8);
+		latex.DrawLatex(l+cmsTextSize*l+0.01, 1-t+lumiTextOffset*t, extraText);
+	}
+	else latex.DrawLatex(l+cmsTextSize*l+0.03, 1-t+lumiTextOffset*t, extraText);
 
 //------------------
 
@@ -5262,7 +5264,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		if(!draw_preliminary_label) {c1->SetTopMargin(0.1); c1->SetBottomMargin(0.25);} //Leave space for legend --only if there isn't 'Prelim' label
 		else c1->SetBottomMargin(0.3); //Leave space for ratio plot
 
-		TPad *canvas_2 = new TPad("canvas_2", "canvas_2", 0.0, 0.0, 1.0, 1.0);
+		TPad *pad_ratio = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
 
 		c1->cd();
 		histo_nominal->SetMinimum(0.0001);
@@ -5308,13 +5310,13 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		double* y = &v_y[0];
 
 		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
-		TGraphAsymmErrors* gr = 0;
-		gr = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
-		gr->SetFillStyle(3005); //Right strips
-		gr->SetFillColor(2);
-		gr->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+		TGraphAsymmErrors* gr_error = 0;
+		gr_error = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+		gr_error->SetFillStyle(3005); //Right strips
+		gr_error->SetFillColor(2);
+		gr_error->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
-		qw->AddEntry(gr, (systematic+" with MEM").Data(), "f");
+		qw->AddEntry(gr_error, (systematic+" with MEM").Data(), "f");
 
 
 		double* eyl_noMEM = &v_eyl_noMEM[0];
@@ -5439,13 +5441,13 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 	//Create Data/MC ratio plot (bottom of canvas)
 
-		if(!draw_preliminary_label){ canvas_2->SetTopMargin(0.75);}
-		else {canvas_2->SetTopMargin(0.7);}
-		canvas_2->SetFillColor(0);
-		canvas_2->SetFillStyle(0);
-		canvas_2->SetGridy(1);
-		canvas_2->Draw();
-		canvas_2->cd(0);
+		if(!draw_preliminary_label){ pad_ratio->SetTopMargin(0.75);}
+		else {pad_ratio->SetTopMargin(0.7);}
+		pad_ratio->SetFillColor(0);
+		pad_ratio->SetFillStyle(0);
+		pad_ratio->SetGridy(1);
+		pad_ratio->Draw();
+		pad_ratio->cd(0);
 
 		TH1::SetDefaultSumw2();
 
@@ -5506,7 +5508,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 
 
 		//Copy previous TGraphAsymmErrors
-		TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr->Clone();
+		TGraphAsymmErrors *thegraph_tmp = (TGraphAsymmErrors*) gr_error->Clone();
 		double *theErrorX_h = thegraph_tmp->GetEXhigh();
 		double *theErrorY_h = thegraph_tmp->GetEYhigh();
 		double *theErrorX_l = thegraph_tmp->GetEXlow();
@@ -5524,10 +5526,10 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		}
 
 		//--> Create new TGraphAsymmErrors
-		TGraphAsymmErrors *thegraph_ratio = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-		thegraph_ratio->SetFillStyle(3005);
-		thegraph_ratio->SetFillColor(2);
-		thegraph_ratio->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+		TGraphAsymmErrors *gr_ratio_error = new TGraphAsymmErrors(thegraph_tmp->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+		gr_ratio_error->SetFillStyle(3005);
+		gr_ratio_error->SetFillColor(2);
+		gr_ratio_error->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
 
 
@@ -5551,10 +5553,10 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		}
 
 		//--> Create new TGraphAsymmErrors
-		TGraphAsymmErrors *thegraph_ratio_noMEM = new TGraphAsymmErrors(thegraph_tmp_noMEM->GetN(), theX_noMEM , theY_noMEM ,  theErrorX_l_noMEM, theErrorX_h_noMEM, theErrorY_l_noMEM, theErrorY_h_noMEM);
-		thegraph_ratio_noMEM->SetFillStyle(3004);
-		thegraph_ratio_noMEM->SetFillColor(1);
-		thegraph_ratio_noMEM->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
+		TGraphAsymmErrors *gr_ratio_error_noMEM = new TGraphAsymmErrors(thegraph_tmp_noMEM->GetN(), theX_noMEM , theY_noMEM ,  theErrorX_l_noMEM, theErrorX_h_noMEM, theErrorY_l_noMEM, theErrorY_h_noMEM);
+		gr_ratio_error_noMEM->SetFillStyle(3004);
+		gr_ratio_error_noMEM->SetFillColor(1);
+		gr_ratio_error_noMEM->Draw("e2 same"); //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio)
 
 
 		histo_nominal->GetXaxis()->SetLabelFont(42);
@@ -5584,10 +5586,10 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		if(c1!= 0) {c1->SaveAs(outputname.Data() );}
 		// cout << __LINE__ << endl;
 
-		delete qw; delete gr;
+		delete qw; delete gr_error;
 		delete h_line1; delete h_line2;
-		delete thegraph_ratio;
-		delete canvas_2;
+		delete gr_ratio_error;
+		delete pad_ratio;
 		delete c1; //Must free dinamically-allocated memory
 		delete histo_nominal; delete histo_noMEM;
 		delete histo_nominal_syst; delete histo_noMEM_syst;
@@ -6497,213 +6499,6 @@ void theMVAtool::Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TSt
 
 
 
-//---------------------------------------------------------------------------
-// ######## ########  ########    ########  ######## ##      ## ######## ####  ######   ##     ## ########
-//      ##  ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-//     ##   ##     ##    ##       ##     ## ##       ##  ##  ## ##        ##  ##        ##     ##    ##
-//    ##    ########     ##       ########  ######   ##  ##  ## ######    ##  ##   #### #########    ##
-//   ##     ##           ##       ##   ##   ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-//  ##      ##           ##       ##    ##  ##       ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-// ######## ##           ##       ##     ## ########  ###  ###  ######## ####  ######   ##     ##    ##
-//---------------------------------------------------------------------------
-
-/**
- * Extract properties of data-driven event, and reads class-member vectors to return corresponding Scale factor
- * This is used to add a "Zpt reweighting" systematic, in order to account for a cinematic bias in construction of data-driven Fakes sample
- */
- // double theMVAtool::Get_Zpt_Reweighting_SF(int event_ientry)
- double theMVAtool::Get_Zpt_Reweighting_SF(int Channel, int NJets, double Zpt)
-{
-	double SF=0;
-
-	double tmp = Zpt/30; //Scale factors are computed for ranges of 30 GeV
-	int index_vector = tmp;
-	if(index_vector > 9) {index_vector=9;} //Overflow in last bin
-	else if(index_vector<0) {cout<<"Error : wrong Zpt value ! Can't add systematic 'ZptReweight' !"<<endl;}
-
-
-	if(Channel==0 || Channel==2) //uuu & eeu
-	{
-		if(!isWZ && !isttZ)
-		{
-			return v_Zpt_mu_tZq[index_vector];
-		}
-		else if(!isWZ && isttZ)
-		{
-			return v_Zpt_mu_ttZ[index_vector];
-		}
-		else if(isWZ && !isttZ)
-		{
-			if(NJets==1) {return v_Zpt_mu_WZ1jet[index_vector];}
-			else if(NJets==2) {return v_Zpt_mu_WZ2jet[index_vector];}
-			else {return v_Zpt_mu_WZ3morejet[index_vector];}
-		}
-		else {cout<<"ERROR in Zpt reweighting : wrong region !"<<endl; return 0;
-		}
-	}
-	else if(Channel==1 || Channel==3) //uue & eee
-	{
-		if(!isWZ && !isttZ)
-		{
-			// cout<<"Zpt "<<Zpt<<" - i "<<index_vector<<" - SF = "<<v_Zpt_el_tZq[index_vector]<<endl;
-			return v_Zpt_el_tZq[index_vector];
-		}
-		else if(!isWZ && isttZ)
-		{
-			return v_Zpt_el_ttZ[index_vector];
-		}
-		else if(isWZ && !isttZ)
-		{
-			if(NJets==1) {return v_Zpt_el_WZ1jet[index_vector];}
-			else if(NJets==2) {return v_Zpt_el_WZ2jet[index_vector];}
-			else {return v_Zpt_el_WZ3morejet[index_vector];}
-		}
-		else {cout<<"ERROR in Zpt reweighting : wrong region !"<<endl; return 0;
-		}
-	}
-
-	else {cout<<"Error : wrong channel name !"<<endl; return 0;}
-
-	return 0;
-}
-
-
-
-
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-/**
- * Initialize vectors with SFs used for Zpt reweighting
- */
-void theMVAtool::Fill_Zpt_Vectors()
-{
-	v_Zpt_el_tZq[0]=1.59077;
-	v_Zpt_el_tZq[1]=0.977813;
-	v_Zpt_el_tZq[2]=0.871409;
-	v_Zpt_el_tZq[3]=0.859375;
-	v_Zpt_el_tZq[4]=0.967098;
-	v_Zpt_el_tZq[5]=1.12737;
-	v_Zpt_el_tZq[6]=0.647202;
-	v_Zpt_el_tZq[7]=0.635454;
-	v_Zpt_el_tZq[8]=1.07226;
-	v_Zpt_el_tZq[9]=0.775253;
-
-	v_Zpt_el_ttZ[0]=0.943188;
-	v_Zpt_el_ttZ[1]=1.02488;
-	v_Zpt_el_ttZ[2]=1.27178;
-	v_Zpt_el_ttZ[3]=1.04542;
-	v_Zpt_el_ttZ[4]=0.958649;
-	v_Zpt_el_ttZ[5]=0.990099;
-	v_Zpt_el_ttZ[6]=0.543444;
-	v_Zpt_el_ttZ[7]=1.05011;
-	v_Zpt_el_ttZ[8]=2.15717;
-	v_Zpt_el_ttZ[9]=0.660766;
-
-	v_Zpt_el_WZ1jet[0]=1.79345;
-	v_Zpt_el_WZ1jet[1]=1.12125;
-	v_Zpt_el_WZ1jet[2]=0.748378;
-	v_Zpt_el_WZ1jet[3]=0.582597;
-	v_Zpt_el_WZ1jet[4]=0.436228;
-	v_Zpt_el_WZ1jet[5]=0.414118;
-	v_Zpt_el_WZ1jet[6]=0.432137;
-	v_Zpt_el_WZ1jet[7]=0.618596;
-	v_Zpt_el_WZ1jet[8]=0.609542;
-	v_Zpt_el_WZ1jet[9]=0.526724;
-
-	v_Zpt_el_WZ2jet[0]=1.63767;
-	v_Zpt_el_WZ2jet[1]=1.20519;
-	v_Zpt_el_WZ2jet[2]=0.857887;
-	v_Zpt_el_WZ2jet[3]=0.710257;
-	v_Zpt_el_WZ2jet[4]=0.840998;
-	v_Zpt_el_WZ2jet[5]=0.639715;
-	v_Zpt_el_WZ2jet[6]=0.605022;
-	v_Zpt_el_WZ2jet[7]=0.654072;
-	v_Zpt_el_WZ2jet[8]=1.0467;
-	v_Zpt_el_WZ2jet[9]=0.704575;
-
-	v_Zpt_el_WZ3morejet[0]=1.20234;
-	v_Zpt_el_WZ3morejet[1]=1.17959;
-	v_Zpt_el_WZ3morejet[2]=0.8368;
-	v_Zpt_el_WZ3morejet[3]=1.01174;
-	v_Zpt_el_WZ3morejet[4]=0.932266;
-	v_Zpt_el_WZ3morejet[5]=1.05073;
-	v_Zpt_el_WZ3morejet[6]=0.652322;
-	v_Zpt_el_WZ3morejet[7]=1.20203;
-	v_Zpt_el_WZ3morejet[8]=1.11716;
-	v_Zpt_el_WZ3morejet[9]=0.814289;
-
-
-
-	v_Zpt_mu_tZq[0]=1.67468;
-	v_Zpt_mu_tZq[1]=1.12136;
-	v_Zpt_mu_tZq[2]=0.944309;
-	v_Zpt_mu_tZq[3]=0.762743;
-	v_Zpt_mu_tZq[4]=0.74524;
-	v_Zpt_mu_tZq[5]=0.871755;
-	v_Zpt_mu_tZq[6]=0.576436;
-	v_Zpt_mu_tZq[7]=0.645049;
-	v_Zpt_mu_tZq[8]=0.450624;
-	v_Zpt_mu_tZq[9]=0.748974;
-
-	v_Zpt_mu_ttZ[0]=1.78967;
-	v_Zpt_mu_ttZ[1]=1.52187;
-	v_Zpt_mu_ttZ[2]=0.945639;
-	v_Zpt_mu_ttZ[3]=0.830342;
-	v_Zpt_mu_ttZ[4]=0.903506;
-	v_Zpt_mu_ttZ[5]=0.608179;
-	v_Zpt_mu_ttZ[6]=0.553372;
-	v_Zpt_mu_ttZ[7]=1.44008;
-	v_Zpt_mu_ttZ[8]=0.637702;
-	v_Zpt_mu_ttZ[9]=0.271906;
-
-	v_Zpt_mu_WZ1jet[0]=3.07308;
-	v_Zpt_mu_WZ1jet[1]=1.45012;
-	v_Zpt_mu_WZ1jet[2]=0.714364;
-	v_Zpt_mu_WZ1jet[3]=0.437299;
-	v_Zpt_mu_WZ1jet[4]=0.288349;
-	v_Zpt_mu_WZ1jet[5]=0.24043;
-	v_Zpt_mu_WZ1jet[6]=0.193958;
-	v_Zpt_mu_WZ1jet[7]=0.223087;
-	v_Zpt_mu_WZ1jet[8]=0.1316;
-	v_Zpt_mu_WZ1jet[9]=0.150708;
-
-	v_Zpt_mu_WZ2jet[0]=1.84157;
-	v_Zpt_mu_WZ2jet[1]=1.3925;
-	v_Zpt_mu_WZ2jet[2]=1.02222;
-	v_Zpt_mu_WZ2jet[3]=0.773407;
-	v_Zpt_mu_WZ2jet[4]=0.641132;
-	v_Zpt_mu_WZ2jet[5]=0.573534;
-	v_Zpt_mu_WZ2jet[6]=0.36697;
-	v_Zpt_mu_WZ2jet[7]=0.445029;
-	v_Zpt_mu_WZ2jet[8]=0.265312;
-	v_Zpt_mu_WZ2jet[9]=0.309481;
-
-	v_Zpt_mu_WZ3morejet[0]=1.8712;
-	v_Zpt_mu_WZ3morejet[1]=1.43556;
-	v_Zpt_mu_WZ3morejet[2]=1.02624;
-	v_Zpt_mu_WZ3morejet[3]=0.789222;
-	v_Zpt_mu_WZ3morejet[4]=0.843388;
-	v_Zpt_mu_WZ3morejet[5]=0.985938;
-	v_Zpt_mu_WZ3morejet[6]=0.530604;
-	v_Zpt_mu_WZ3morejet[7]=0.487662;
-	v_Zpt_mu_WZ3morejet[8]=0.560811;
-	v_Zpt_mu_WZ3morejet[9]=0.57125;
-
-	return;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -6762,82 +6557,563 @@ void theMVAtool::Fill_Zpt_Vectors()
 
 
 
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
 
-void theMVAtool::Fit_mTW_SR(TString channel)
+int theMVAtool::Draw_Control_Plots_ForPaper()
 {
-	if(channel!="uuu" && channel!="eee" && channel!="eeu" && channel!="uue" && channel!="allchan") {cout<<__LINE__<<" : "<<"Wrong channel name !"; return;}
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	cout<<FYEL("--- Draw Control Plots ---")<<endl;
+	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
-	TString file_name = "outputs/Control_Histograms"+this->filename_suffix_noJet+"_NJetsMin0_NBJetsEq0.root";
-	if(!Check_File_Existence(file_name)) {cout<<file_name<<" doesn't exist !"<<endl; return;}
-	TFile* f_WZ = TFile::Open(file_name);
-	file_name = "outputs/Control_Histograms"+this->filename_suffix_noJet+"_NJetsMin1Max4_NBJetsEq1.root";
-	if(!Check_File_Existence(file_name)) {cout<<file_name<<" doesn't exist !"<<endl; return;}
-	TFile* f_tZq = TFile::Open(file_name);
-	file_name = "outputs/Control_Histograms"+this->filename_suffix_noJet+"_NJetsMin1_NBJetsMin1.root";
-	if(!Check_File_Existence(file_name)) {cout<<file_name<<" doesn't exist !"<<endl; return;}
-	TFile* f_ttZ = TFile::Open(file_name);
+	//Load Canvas definition
+	Load_Canvas_Style();
 
-	TH1F *h_tZq=0, *h_ttZ=0, *h_WZ=0, *h_tmp=0;
-
-	cout<<endl<<endl<<"---------------------------"<<endl;
-
-	cout<<"Fitting (mTW_WZ + mTW_ttZ) to mTW_tZq"<<endl<<endl;
-
-	//Treat Data / Fakes / Other samples separately
-	TString histo_name;
-
-	vector<TString> samples;
-	samples.push_back("FakesElectron");
-	samples.push_back("FakesMuon");
-
-	for(int ichan=0; ichan<channel_list.size(); ichan++)
-	{
-		if(channel != "allchan" && channel_list[ichan] != channel) {continue;}
-
-		for(int isample=0; isample<samples.size(); isample++)
-		{
-			h_tmp = 0;
-
-			TString h_name = "mTW_" + channel_list[ichan] + "__" + samples[isample];
-
-			h_tmp = (TH1F*) f_WZ->Get(h_name);
-			if(h_WZ==0) {h_WZ = (TH1F*) h_tmp->Clone();}
-			else {h_WZ->Add(h_tmp);}
-
-			h_tmp = (TH1F*) f_tZq->Get(h_name);
-			if(h_tZq==0) {h_tZq = (TH1F*) h_tmp->Clone();}
-			else {h_tZq->Add(h_tmp);}
-
-			h_tmp = (TH1F*) f_ttZ->Get(h_name);
-			if(h_ttZ==0) {h_ttZ = (TH1F*) h_tmp->Clone();}
-			else {h_ttZ->Add(h_tmp);}
-		}
-	}
-
-
-	TObjArray *mc = new TObjArray(2);
-	mc->Add(h_WZ); //Param 0
-	mc->Add(h_ttZ); //Param 1
-
-	TFractionFitter* fit = new TFractionFitter(h_tZq, mc, "Q"); //'Q' for quiet
-
-	TFitResultPtr r = fit->Fit(); //Create smart ptr to TFitResult --> can access fit properties
-
-	TCanvas* c1 = new TCanvas("c1");
-
-	TH1F* result = (TH1F*) fit->GetPlot();
-	h_tZq->Draw("Ep");
-	result->Draw("same");
-
+	TH1::SetDefaultSumw2();
 	mkdir("plots",0777); //Create directory if inexistant
 
-	c1->SaveAs(("plots/ScaleMTW_"+channel+".png").Data()); //Save fit plot
+	TFile* f = 0;
 
-	cout<<endl<<endl;
+	//--------------------------
+	// GET SIG STRENGTH
+	//--------------------------
 
-	cout<<BOLD(FYEL("RESULT FIT "<<channel<<" "))<<endl;
-	cout<<"Fraction WZ : "<<r->Parameter(0)<<endl;
-	cout<<"Fraction ttZ : "<<r->Parameter(1)<<endl;
+	double sig_strength = 1;
+	//CombineHarvester doesn't rescale automatically signal to Signal strength ! Need to do it manually, extracting its value from mlfit.root !
+	TString input_file_name = "outputs/mlfit.root";
+	f = TFile::Open( input_file_name );
+	if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+	TTree* t_mu = 0;
+	t_mu = (TTree*) f->Get("tree_fit_sb"); if(!t_mu) {cout<<"No tree found!"; return 0;}
+	t_mu->GetEntry(0);
+	sig_strength = (double) t_mu->GetLeaf("mu")->GetValue(0);
+	cout<<"SIGNAL STRENGTH = "<<sig_strength<<endl;
+	delete t_mu; //Free memory
 
-	delete mc; delete fit; delete c1;
+
+	//--------------------------
+	// DIVIDE CANVAS IN 6 PADS
+	//--------------------------
+
+	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+	c1->Divide(3,2); //colums, rows
+
+	//--------------------------
+	// DEFINE 3 VARIABLES TO PLOT
+	//--------------------------
+
+	vector<TString> total_var_list(3); vector<TString> v_X_label(3);
+	total_var_list[0] = "btagDiscri"; v_X_label.push_back("test");
+	total_var_list[1] = "MEMvar_1"; v_X_label.push_back("test");
+	total_var_list[2] = "dRjj"; v_X_label.push_back("test");
+
+	//--------------------------
+	// CREATE VECTORS OF OBJECTS
+	//--------------------------
+
+	TH1F *h_tmp = 0;
+
+	vector<TH1F*> v_hdata(6);
+	vector<THStack*> v_stack(6);
+	vector<TH1F*> v_histo_total_MC(6);
+	vector<vector<TH1F*> > v_vector_MC_histo(6); //Store separately the histos for each MC sample --> stack them after loops
+	vector<TH1F*> v_histo_ratio_data(6);
+
+	vector<TGraphAsymmErrors*> v_gr_error_tmp(6);
+	vector<TGraphAsymmErrors*> v_gr_error(6);
+	vector<TGraphAsymmErrors*> v_gr_ratio_error(6);
+
+	vector<TPad*> v_tpad_ratio(6);
+
+	TLegend* qw = 0;
+
+	//--------------------------
+	// LOOP ON TPADS
+	//--------------------------
+
+	for(int iplot=0; iplot<6; iplot++)
+	{
+		//First, plot 3 tZq variables
+		if(iplot==0)
+		{
+			input_file_name = "outputs/PostfitInputVars_tZq.root";
+			f = TFile::Open( input_file_name );
+			if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+
+			qw = new TLegend(.84,.66,0.999,0.999);
+			qw->SetShadowColor(0);
+			qw->SetFillColor(0);
+			qw->SetLineColor(1);
+			// qw->Draw(); //FIXME
+		}
+		//Then, plot 3 ttZ variables
+		else if(iplot==3)
+		{
+			input_file_name = "outputs/PostfitInputVars_ttZ.root";
+			f = TFile::Open( input_file_name );
+			if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+		}
+
+
+		int ivar = iplot%3;
+		vector<TString> v_MC_sample_legend;
+
+		c1->cd(iplot+1);
+
+		if(iplot<3)	{gPad->SetTopMargin(0.1);}
+		else	{gPad->SetTopMargin(0.);}
+
+
+		gPad->SetTopMargin(0.1);
+
+		gPad->SetBottomMargin(0.25);
+
+
+
+		//---------------------------
+		//ERROR VECTORS INITIALIZATION
+		//---------------------------
+		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
+
+		//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
+		if (!f->GetDirectory((total_var_list[ivar] + "_uuu_postfit").Data()) )
+		{
+			cout<<total_var_list[ivar].Data()<<"_uuu_postfit not found !"<<endl;
+			return 0;
+		}
+
+		TString histo_name = "";
+		histo_name =  total_var_list[ivar] + "_uuu_postfit/tZqmcNLO"; //For postfit file only !
+
+		h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
+		if(!h_tmp) return 0;
+
+		int nofbins = h_tmp->GetNbinsX();
+		for(int ibin=0; ibin<nofbins; ibin++)
+		{
+			v_eyl.push_back(0); v_eyh.push_back(0);
+			v_exl.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2); v_exh.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2);
+			v_x.push_back( (h_tmp->GetXaxis()->GetBinLowEdge(nofbins+1) - h_tmp->GetXaxis()->GetBinLowEdge(1) ) * ((ibin+1 - 0.5)/nofbins) + h_tmp->GetXaxis()->GetBinLowEdge(1));
+
+			v_y.push_back(0);
+		}
+
+
+		//---------------------------
+		//RETRIEVE & SUM HISTOGRAMS, SUM ERRORS QUADRATICALLY
+		//---------------------------
+
+		int index_tZq_sample=-1;
+
+		for(int ichan=0; ichan<channel_list.size(); ichan++)
+		{
+			for(int isample = 0; isample < sample_list.size(); isample++)
+			{
+				// cout<<FGRN("----- ichan "<<ichan<<" "<<channel_list[ichan]<<", sample "<<sample_list[isample]<<" !")<<endl;
+
+				h_tmp = 0; //Temporary storage of histogram
+				bool isData = false; if(sample_list[isample] == "Data") isData = true;
+
+				if(!isData && ichan==0) v_MC_sample_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
+				if(sample_list[isample] == "FakesElectron" && channel_list[ichan] == "uuu")
+				{
+					if(ichan==0) v_vector_MC_histo.at(iplot).push_back(h_tmp);
+					continue;
+				}
+				else if(sample_list[isample] == "FakesMuon" && channel_list[ichan] == "eee")
+				{
+					if(ichan==0) v_vector_MC_histo.at(iplot).push_back(h_tmp);
+					continue;
+				}
+
+				histo_name = total_var_list[ivar] + "_" + channel_list[ichan] + "_postfit/";
+				if(!f->GetDirectory(histo_name)) {cout<<BOLD(FRED("Error : directory"<<histo_name<<" not found !"))<<endl; continue;}
+
+				if(isData)
+				{
+					if(combine_naming_convention) histo_name+= "data_obs";
+					else histo_name+= "DATA";
+				}
+				else histo_name+= sample_list[isample];
+
+				h_tmp = (TH1F*) f->Get(histo_name.Data())->Clone();
+				if(!h_tmp) continue;
+
+				if(isData) //DATA
+				{
+					if(ichan == 0) {v_hdata[iplot] = (TH1F*) h_tmp->Clone();}
+					else {v_hdata[iplot]->Add(h_tmp);}
+					continue;
+				}
+				else //MC
+				{
+					//Normally the data sample is included in first position of the list, so v_MC_histo has 'isample-1' contents
+					if(isample-1 < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address (need at least 2 samples)! Exit !"))<<endl; return 0;}
+
+					if(sample_list[isample].Contains("tZq")) {h_tmp->Scale(sig_strength);} //Need to rescale signal manually, not done by CombineHarvester !!
+
+					//Use color vector filled in main()
+					h_tmp->SetFillStyle(1001);
+					h_tmp->SetFillColor(colorVector[isample-1]);
+					h_tmp->SetLineColor(kBlack);
+					if( (isample+1) < sample_list.size())
+					{
+						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
+						else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
+					}
+
+					if(ichan == 0) {v_vector_MC_histo.at(iplot).push_back(h_tmp);}
+					else
+					{
+						if(v_vector_MC_histo.at(iplot).at(isample-1) == 0) {v_vector_MC_histo.at(iplot).at(isample-1) = (TH1F*) h_tmp->Clone();}
+						else {v_vector_MC_histo.at(iplot).at(isample-1)->Add(h_tmp);}
+					}
+
+					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
+					{
+						v_eyl[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+						v_eyh[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+						v_y[ibin]+= h_tmp->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
+					}
+				} //MC
+
+
+			} //end sample loop
+		} //end channel loop
+
+
+		for(int j=0; j<v_MC_sample_legend.size(); j++)
+		{
+			if(v_MC_sample_legend[j].Contains("tZq")) {index_tZq_sample = j;}
+		}
+
+		//---------------------------
+		//CREATE LEGEND
+		//---------------------------
+		if(iplot==0)
+		{
+			//Data on top of legend
+			if(v_hdata[iplot] != 0) {qw->AddEntry(v_hdata[iplot], "Data" , "ep");}
+			else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
+
+			qw->AddEntry(v_vector_MC_histo.at(iplot).at(index_tZq_sample), "tZq" , "f");
+
+			//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
+			for(int i=v_MC_sample_legend.size()-1; i>=0; i--)
+			{
+				if(v_MC_sample_legend[i] == "ttH") {continue;} //same entry as ttW
+				if(v_MC_sample_legend[i].Contains("FakesMuon")) {continue;} //same entry as FakesElectron
+				if(v_MC_sample_legend[i] == "ttW" ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ttH+ttW" , "f");} //Single entry for ttW+ttH
+				else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ttZ" , "f");} //Single entry for ttZ
+				else if(v_MC_sample_legend[i] == "WZL") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "WZ+light" , "f");}
+				else if(v_MC_sample_legend[i] == "WZB") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "WZ+b" , "f");}
+				else if(v_MC_sample_legend[i] == "WZC") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "WZ+c" , "f");}
+				else if(v_MC_sample_legend[i] == "ZZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ZZ" , "f");}
+				else if(v_MC_sample_legend[i].Contains("Fakes") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "Non-prompt" , "f");}
+				else if(v_MC_sample_legend[i].Contains("DY") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "Non-prompt (MC)" , "f");}
+				else if(v_MC_sample_legend[i] == "WZC") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "WZ+c" , "f");}
+				else if(v_MC_sample_legend[i].Contains("ST") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "tWZ" , "f");}
+				else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
+			}
+
+			qw->Draw();
+		}
+
+		//---------------------------
+		//CREATE STACK (MC)
+		//---------------------------
+		//Stack all the MC nominal histograms (contained in v_MC_histo)
+		//Signal on top of all MC legends
+		v_stack[iplot]= 0;
+
+		for(int i=0; i<v_vector_MC_histo.at(iplot).size(); i++)
+		{
+			if(i==index_tZq_sample) {continue;}
+
+			if(v_stack[iplot] == 0) {v_stack[iplot] = new THStack; v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i) );}
+			else {v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
+
+			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
+			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
+		}
+		if(!v_stack[iplot]) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
+
+		v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(index_tZq_sample));
+
+		//---------------------------
+		//DRAW HISTOS
+		//---------------------------
+		//Set Yaxis maximum & min
+		if(v_hdata[iplot] != 0 && v_stack[iplot] != 0)
+		{
+			if(v_hdata[iplot]->GetMaximum() > v_stack[iplot]->GetMaximum() ) {v_stack[iplot]->SetMaximum(v_hdata[iplot]->GetMaximum()+0.3*v_hdata[iplot]->GetMaximum());}
+			else v_stack[iplot]->SetMaximum(v_stack[iplot]->GetMaximum()+0.3*v_stack[iplot]->GetMaximum());
+		}
+		v_stack[iplot]->SetMinimum(0.0001);
+
+		//Draw stack
+		if(v_stack[iplot] == 0) {cout<<"Error : stack is null !"<<endl;}
+		v_stack[iplot]->Draw("HIST"); v_stack[iplot]->GetXaxis()->SetLabelSize(0.0);
+
+		//Draw data
+		if(v_hdata[iplot] != 0)
+		{
+		  v_hdata[iplot]->SetMarkerStyle(20);
+		  v_hdata[iplot]->SetMarkerSize(1.2);
+		  v_hdata[iplot]->SetLineColor(1);
+		  v_hdata[iplot]->Draw("epsame");
+		}
+
+
+		//---------------------------
+		//DRAW SYST ERRORS ON PLOT
+		//---------------------------
+		//Need to take sqrt of total errors
+		for(int ibin=0; ibin<nofbins; ibin++)
+		{
+			v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
+			v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
+		}
+
+		//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
+		double* eyl = &v_eyl[0];
+		double* eyh = &v_eyh[0];
+		double* exl = &v_exl[0];
+		double* exh = &v_exh[0];
+		double* x = &v_x[0];
+		double* y = &v_y[0];
+
+		// for(int ibin=1; ibin<nofbins+1; ibin++)
+		// {
+		// 	if(ibin > 1) {continue;} //cout only first bin
+		// 	cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl;
+		// }
+
+
+		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
+		v_gr_error[iplot] = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+		v_gr_error[iplot]->SetFillStyle(3002);
+		v_gr_error[iplot]->SetFillColor(1);
+		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack //FIXME
+
+
+
+		//--------------------------
+		//DRAW DATA/MC RATIO
+		//--------------------------
+		//Create Data/MC ratio plot (bottom of canvas)
+
+		v_tpad_ratio[iplot] = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
+		v_tpad_ratio[iplot]->SetTopMargin(0.75);
+		v_tpad_ratio[iplot]->SetFillColor(0);
+		v_tpad_ratio[iplot]->SetFillStyle(0);
+		v_tpad_ratio[iplot]->SetGridy(1);
+		v_tpad_ratio[iplot]->Draw();
+		v_tpad_ratio[iplot]->cd(0);
+
+
+		v_histo_ratio_data[iplot] = (TH1F*) v_hdata[iplot]->Clone();
+		// v_histo_ratio_data[iplot]->Divide(v_histo_total_MC[iplot]); //Ratio -- errors are recomputed
+
+		for(int ibin=1; ibin<v_histo_ratio_data[iplot]->GetNbinsX()+1; ibin++) //FIXME
+		{
+			// cout<<v_histo_total_MC[iplot]->GetBinContent(ibin)<<endl;
+
+			double bin_error = pow(pow(v_histo_total_MC[iplot]->GetBinError(ibin), 2) + pow(v_histo_ratio_data[iplot]->GetBinError(ibin), 2), 0.5); //FIXME -- verify pull def
+			// cout<<"bin error "<<bin_error<<endl;
+
+			if(!v_histo_total_MC[iplot]->GetBinError(ibin)) {v_histo_ratio_data[iplot]->SetBinContent(ibin,-99);} //Don't draw null markers
+			else{v_histo_ratio_data[iplot]->SetBinContent(ibin, (v_histo_ratio_data[iplot]->GetBinContent(ibin) - v_histo_total_MC[iplot]->GetBinContent(ibin)) / bin_error );}
+
+			// cout<<v_histo_ratio_data[iplot]->GetBinContent(ibin)<<endl;
+			// cout<<"v_histo_total_MC[iplot]->GetBinError(ibin) "<<v_histo_total_MC[iplot]->GetBinError(ibin)<<endl;
+		}
+
+		v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("Pulls");
+		v_histo_ratio_data[iplot]->GetYaxis()->SetTickLength(0.15);
+		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleOffset(1.2);
+		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleOffset(1.42);
+		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelSize(0.05);
+		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelSize(0.048);
+		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelFont(42);
+		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
+		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
+		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
+		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
+		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.045);
+		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleSize(0.05);
+
+		// v_histo_ratio_data[iplot]->SetMinimum(0.0);
+		// v_histo_ratio_data[iplot]->SetMaximum(1.999);
+
+		v_histo_ratio_data[iplot]->SetMinimum(-2.999);
+		v_histo_ratio_data[iplot]->SetMaximum(2.999);
+		// v_histo_ratio_data[iplot]->Draw("E1X0"); //Draw ratio points
+		v_histo_ratio_data[iplot]->Draw("HIST P"); //Draw ratio points
+
+
+
+		//Copy previous TGraphAsymmErrors
+		/*v_gr_error_tmp[iplot] = (TGraphAsymmErrors*) v_gr_error[iplot]->Clone(); //Need to use a tmp TGraph, so we can modify its arrays without changing original TGraph
+		double *theErrorX_h = v_gr_error_tmp[iplot]->GetEXhigh();
+		double *theErrorY_h = v_gr_error_tmp[iplot]->GetEYhigh();
+		double *theErrorX_l = v_gr_error_tmp[iplot]->GetEXlow();
+		double *theErrorY_l = v_gr_error_tmp[iplot]->GetEYlow();
+		double *theY        = v_gr_error_tmp[iplot]->GetY() ;
+		double *theX        = v_gr_error_tmp[iplot]->GetX() ;
+
+		//Divide error --> ratio
+		for(int i=0; i<v_gr_error[iplot]->GetN(); i++)
+		{
+			if(theY[i]==0) //FIXME -- modifying these arrays modify the stack errors too !!
+			{
+				theErrorY_l[i] = 0;
+				theErrorY_h[i] = 0;
+				theY[i]=1; continue;
+			}
+
+		  theErrorY_l[i] = theErrorY_l[i]/theY[i];
+		  theErrorY_h[i] = theErrorY_h[i]/theY[i];
+		  theY[i]=1; //To center the filled area around "1"
+		}
+
+		//--> Create new TGraphAsymmErrors
+		v_gr_ratio_error[iplot] = new TGraphAsymmErrors(v_gr_error[iplot]->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
+		v_gr_ratio_error[iplot]->SetFillStyle(3002);
+		v_gr_ratio_error[iplot]->SetFillColor(1);
+		v_gr_ratio_error[iplot]->Draw("e2 same");*/ //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio) //FIXME
+
+
+		//Yaxis title
+		if(v_stack[iplot]!= 0)
+		{
+			v_stack[iplot]->GetXaxis()->SetLabelFont(42);
+			v_stack[iplot]->GetYaxis()->SetLabelFont(42);
+			v_stack[iplot]->GetYaxis()->SetTitleFont(42);
+			v_stack[iplot]->GetYaxis()->SetTitleSize(0.045);
+			v_stack[iplot]->GetYaxis()->SetTickLength(0.04);
+			v_stack[iplot]->GetXaxis()->SetLabelSize(0.0);
+			v_stack[iplot]->GetYaxis()->SetLabelSize(0.048);
+		}
+
+		//-------------------
+		//CAPTIONS && LEGEND
+		//-------------------
+
+		if(iplot==0 || iplot==3)
+		{
+			TString extrainfo_data;
+			if(iplot<3) {extrainfo_data= "1bjet";}
+			else {extrainfo_data= "2bjets";}
+
+			TLatex text2 ; //= new TLatex(0, 0, info_data);
+			text2.SetNDC();
+			text2.SetTextAlign(13);
+			text2.SetTextSize(0.08);
+			text2.SetTextFont(62);
+			text2.DrawLatex(0.63,0.84,extrainfo_data);
+		}
+
+
+		if(iplot==0)
+		{
+			TString cmsText     = "CMS";
+			TLatex latex;
+			latex.SetNDC();
+			latex.SetTextAngle(0);
+			latex.SetTextColor(kBlack);
+			float l = c1->GetLeftMargin();
+			float t = c1->GetTopMargin();
+
+			latex.SetTextFont(61);
+			latex.SetTextAlign(11);
+			latex.SetTextSize(0.1);
+			latex.DrawLatex(l,1-t,cmsText);
+		}
+		else if(iplot==2)
+		{
+			float lumi = 35.9 * luminosity_rescale;
+			TString lumi_13TeV = Convert_Number_To_TString(lumi);
+			lumi_13TeV += " fb^{-1} (13 TeV)";
+			TLatex latex;
+			latex.SetNDC();
+			latex.SetTextAngle(0);
+			latex.SetTextColor(kBlack);
+			float l = c1->GetLeftMargin();
+			float t = c1->GetTopMargin();
+
+			latex.SetTextFont(42);
+			latex.SetTextAlign(31);
+			latex.SetTextSize(0.09);
+			latex.DrawLatex(0.9,1-t,lumi_13TeV);
+		}
+
+	} //iplot loop
+
+
+	// TH1F *h_line1 = new TH1F("","",this->nbin, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+	// TH1F *h_line2 = new TH1F("","",this->nbin, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+	// TH1F *h_line3 = new TH1F("","",this->nbin, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+	//
+	// for(int ibin=1; ibin<this->nbin +1; ibin++)
+	// {
+	// 	h_line1->SetBinContent(ibin, 0.5);		h_line2->SetBinContent(ibin, 1.5);		h_line3->SetBinContent(ibin, 2.5);
+	// }
+	//
+	// h_line1->SetLineStyle(3);	h_line2->SetLineStyle(3);	h_line3->SetLineStyle(3);
+	// h_line1->Draw("hist same");	h_line2->Draw("hist same");	h_line3->Draw("hist same");
+
+
+
+	//-------------------
+	//SAVE FILE
+	//-------------------
+
+	TString region_name = "";
+	if(isWZ) region_name = "WZ_CR";
+	else if(isttZ) region_name = "ttZ_CR";
+	else region_name = "tZq_SR";
+
+	mkdir("plots/inputVars",0777);
+	mkdir("plots/inputVars/paper_style",0777);
+	mkdir( ("plots/inputVars/paper_style/"+region_name).Data(), 0777);
+
+	//Iximumge name
+	TString outputname = "plots/inputVars/paper_style/"+ region_name + "/allchan";
+	outputname+= this->format;
+
+	if(c1!= 0) {c1->SaveAs(outputname.Data() );}
+
+	//-------------------
+	//DELETE ALL OBJECTS
+	//-------------------
+
+	delete qw;
+
+	for(int i=0; i<6; i++)
+	{
+		delete v_hdata[i];
+		delete v_stack[i];
+		delete v_histo_total_MC[i];
+		delete v_histo_ratio_data[i];
+
+		delete v_gr_error[i];
+		// delete v_gr_ratio_error[i];
+		// delete v_gr_error_tmp[i];
+
+		for(int j=0; j<v_vector_MC_histo.at(i).size(); j++)
+		{
+			delete v_vector_MC_histo.at(i).at(j);
+		}
+
+		delete v_tpad_ratio[i];
+	}
+
+	delete h_tmp;
+
+	delete f;
+
+	delete c1; //Must free dinamically-allocated memory
+	return 0;
 }
