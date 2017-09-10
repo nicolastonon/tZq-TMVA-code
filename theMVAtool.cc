@@ -3064,9 +3064,9 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
 		for(int i=v_MC_histo.size()-1; i>=0; i--)
 		{
-			if(MC_samples_legend[i] == "ttH") {continue;} //same entry as ttW
-			if(MC_samples_legend[i].Contains("FakesMuon")) {continue;} //same entry as FakesElectron
-			if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
+			if(MC_samples_legend[i] == "ttW") {continue;} //same entry as ttH
+			if(MC_samples_legend[i].Contains("FakesElectron")) {continue;} //same entry as FakesElectron
+			if(MC_samples_legend[i] == "ttH" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 			else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 			else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
 			else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
@@ -3788,9 +3788,9 @@ int theMVAtool::Plot_Prefit_Templates(TString channel, TString template_name, bo
 	{
 		if(!v_MC_histo[i]) {continue;} //Fakes templates can be null
 
-		if(MC_samples_legend[i] == "ttH") {continue;}
-		else if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //depends on cases
-		else if(MC_samples_legend[i] == "ttW") {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
+		if(MC_samples_legend[i] == "ttW") {continue;}
+		else if(MC_samples_legend[i].Contains("FakesElectron") && (allchannels || channel != "uuu") ) {continue;} //depends on cases
+		else if(MC_samples_legend[i] == "ttH") {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
 		else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
@@ -4371,9 +4371,9 @@ int theMVAtool::Plot_Postfit_Templates(TString channel, TString template_name, b
 	{
 		if(!v_MC_histo[i]) {continue;} //Fakes templates can be null
 
-		if(MC_samples_legend[i] == "ttH") {continue;} //same entry as ttW
-		else if(MC_samples_legend[i].Contains("FakesMuon") && (allchannels || channel != "uuu") ) {continue;} //same entry as FakesElectron
-		else if(MC_samples_legend[i] == "ttW" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
+		if(MC_samples_legend[i] == "ttW") {continue;} //same entry as ttH
+		else if(MC_samples_legend[i].Contains("FakesElectron") && (allchannels || channel != "uuu") ) {continue;} //same entry as FakesElectron
+		else if(MC_samples_legend[i] == "ttH" ) {qw->AddEntry(v_MC_histo[i], "ttH+ttW" , "f");} //Single entry for ttW+ttH
 		else if(MC_samples_legend[i] == "ttZ") {qw->AddEntry(v_MC_histo[i], "ttZ" , "f");} //Single entry for ttZ
 		else if(MC_samples_legend[i] == "WZL") {qw->AddEntry(v_MC_histo[i], "WZ+light" , "f");}
 		else if(MC_samples_legend[i] == "WZB") {qw->AddEntry(v_MC_histo[i], "WZ+b" , "f");}
@@ -6597,7 +6597,9 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
 	// c1->Divide(3, 2, 0.01, 0); //colums, rows
-	c1->Divide(3,2); //colums, rows
+	// c1->Divide(3,2); //colums, rows
+	c1->Divide(3,2, 0.01, 0.00001, 0);
+
 	//--------------------------
 	// DEFINE 3 VARIABLES TO PLOT
 	//--------------------------
@@ -6623,6 +6625,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	vector<TGraphAsymmErrors*> v_gr_error(6);
 	vector<TGraphAsymmErrors*> v_gr_ratio_error(6);
 
+	vector<TPad*> v_tpad_primitives(6);
 	vector<TPad*> v_tpad_ratio(6);
 
 	TLegend* qw = 0;
@@ -6633,6 +6636,41 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 	for(int iplot=0; iplot<6; iplot++)
 	{
+		TString primitive_name = "c1_" + Convert_Number_To_TString(iplot+1);
+
+		if(iplot==0)
+		{
+			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
+			pad->SetPad(0, 0.425, 0.33, 1); //xlow, ylow, xup, yup
+		}
+		else if(iplot==1)
+		{
+			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
+			pad->SetPad(0.33, 0.425, 0.66, 1); //xlow, ylow, xup, yup
+		}
+		else if(iplot==2)
+		{
+			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
+			pad->SetPad(0.66, 0.425, 0.99, 1); //xlow, ylow, xup, yup
+		}
+		else if(iplot==3)
+		{
+			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
+			pad->SetPad(0, 0, 0.33, 0.5); //xlow, ylow, xup, yup
+		}
+		else if(iplot==4)
+		{
+			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
+			pad->SetPad(0.33, 0., 0.66, 0.5); //xlow, ylow, xup, yup
+		}
+		else if(iplot==5)
+		{
+			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
+			pad->SetPad(0.66, 0., 0.99, 0.5); //xlow, ylow, xup, yup
+		}
+
+
+
 		//First, plot 3 tZq variables
 		if(iplot==0)
 		{
@@ -6645,7 +6683,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
 			qw->SetLineColor(1);
-			qw->Draw(); //FIXME
+			qw->Draw();
 		}
 		//Then, plot 3 ttZ variables
 		else if(iplot==3)
@@ -6663,10 +6701,12 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 		if(iplot<3)	{gPad->SetTopMargin(0.1);}
 		else	{gPad->SetTopMargin(0.);}
-		
-		gPad->SetBottomMargin(0.25);
 
-		// gPad->SetTopMargin(0.);
+		gPad->SetBottomMargin(0.25);
+		// gPad->SetBottomMargin(0);
+
+		// gPad->SetTopMargin(0);
+		// gPad->SetTopMargin(0.1);
 
 		// gPad->SetFrameBorderMode(0);
         // gPad->SetBorderMode(0);
@@ -6806,9 +6846,10 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
 			for(int i=v_MC_sample_legend.size()-1; i>=0; i--)
 			{
-				if(v_MC_sample_legend[i] == "ttH") {continue;} //same entry as ttW
-				if(v_MC_sample_legend[i].Contains("FakesMuon")) {continue;} //same entry as FakesElectron
-				if(v_MC_sample_legend[i] == "ttW" ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ttH+ttW" , "f");} //Single entry for ttW+ttH
+				if(v_MC_sample_legend[i] == "ttW") {continue;} //same entry as ttH
+				if(v_MC_sample_legend[i].Contains("FakesElectron")) {continue;} //same entry as FakesElectron
+				// if(v_MC_sample_legend[i].Contains("FakesMuon")) {continue;} //same entry as FakesElectron
+				if(v_MC_sample_legend[i] == "ttH" ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ttH+ttW" , "f");} //Single entry for ttW+ttH
 				else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "ttZ" , "f");} //Single entry for ttZ
 				else if(v_MC_sample_legend[i] == "WZL") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "WZ+light" , "f");}
 				else if(v_MC_sample_legend[i] == "WZB") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "WZ+b" , "f");}
@@ -6953,14 +6994,14 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			latex.SetTextFont(61);
 			latex.SetTextAlign(11);
 			latex.SetTextSize(0.1);
-			// latex.DrawLatex(l,1-t,cmsText);
+			latex.DrawLatex(l,1-t,cmsText);
 
 			TString extraText   = "Preliminary";
 			latex.SetTextFont(52);
 			if(draw_preliminary_label)
 			{
 				latex.SetTextSize(0.08);
-				// latex.DrawLatex(l + 0.3, 1-t, extraText);
+				latex.DrawLatex(l + 0.3, 1-t, extraText);
 			}
 		}
 		else if(iplot==2)
@@ -6978,7 +7019,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			latex.SetTextFont(42);
 			latex.SetTextAlign(31);
 			latex.SetTextSize(0.09);
-			// latex.DrawLatex(0.9,1-t,lumi_13TeV);
+			latex.DrawLatex(0.95,1-t,lumi_13TeV);
 		}
 
 
@@ -7011,6 +7052,10 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 			// cout<<v_histo_ratio_data[iplot]->GetBinContent(ibin)<<endl;
 			// cout<<"v_histo_total_MC[iplot]->GetBinError(ibin) "<<v_histo_total_MC[iplot]->GetBinError(ibin)<<endl;
+			if(iplot==0)
+			{
+				cout<<"ibin "<<ibin<<", MC err "<<v_histo_total_MC[iplot]->GetBinError(ibin)<<", data err "<<v_histo_ratio_data[iplot]->GetBinError(ibin)<<", total "<<bin_error<<endl;
+			}
 		}
 
 		if(iplot==0 || iplot==3)
@@ -7021,7 +7066,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("Pulls");
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTickLength(0.15);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleOffset(1.2);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleOffset(1.42);
+		// v_histo_ratio_data[iplot]->GetYaxis()->SetTitleOffset(1.42); //CHANGED
+		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleOffset(1.45);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelSize(0.05);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelSize(0.048);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelFont(42);
@@ -7032,6 +7078,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.045);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleSize(0.05);
 		v_histo_ratio_data[iplot]->SetMarkerSize(0.8);
+
 		if(iplot<3)
 		{
 			v_histo_ratio_data[iplot]->GetXaxis()->SetLabelSize(0);
@@ -7081,7 +7128,6 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_gr_ratio_error[iplot]->SetFillStyle(3002);
 		v_gr_ratio_error[iplot]->SetFillColor(1);
 		v_gr_ratio_error[iplot]->Draw("e2 same");*/ //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio) //FIXME
-
 
 	} //iplot loop
 
@@ -7142,6 +7188,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		}
 
 		delete v_tpad_ratio[i];
+
+		delete v_tpad_primitives[i];
 	}
 
 	delete h_tmp;
