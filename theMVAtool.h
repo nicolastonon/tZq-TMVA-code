@@ -108,6 +108,8 @@ class theMVAtool
 	void Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString, bool);
 
 	int Draw_Control_Plots_ForPaper();
+	int Draw_Control_Plots_ForPaper_WZ();
+	int Postfit_Templates_Paper();
 
 
 //Members

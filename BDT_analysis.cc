@@ -247,8 +247,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow+1);
-    thesamplelist.push_back("ttZ");             v_color.push_back(kRed+1);
-    thesamplelist.push_back("ttW");             v_color.push_back(kRed+2); //Keep ttW & ttH samples together (coloring)
+    thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //kRed+1
+    thesamplelist.push_back("ttW");             v_color.push_back(kRed+2); //Keep ttW & ttH samples together (coloring) //kRed+2
     thesamplelist.push_back("ttH");             v_color.push_back(kRed+2);
     thesamplelist.push_back("STtWll");          v_color.push_back(kOrange+1);
 
@@ -650,6 +650,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", "", cut_BDT_value, keep_high_BDT_events);
 
         MVAtool->Draw_Control_Plots_ForPaper();
+        MVAtool->Draw_Control_Plots_ForPaper_WZ();
+        MVAtool->Postfit_Templates_Paper();
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
