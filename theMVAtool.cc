@@ -2129,23 +2129,23 @@ void theMVAtool::Create_Control_Trees(bool fakes_from_data, bool cut_on_BDT, dou
 
 
 	bool create_syst_histos = false; //For now ,simply disactivate systematics for control plots (too long)
-	if(syst_list.size() != 1)
-	{
-		string answer = "";
-		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
-		cout<<"(Or you could reduce the number of plotted variables)"<<endl;
-		cin>>answer;
-
-		while(answer != "yes" && answer!= "no")
-		{
-			cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
-			cin.clear();
-			cin.ignore(1000, '\n');
-			cin>>answer;
-		}
-
-		if(answer == "yes") create_syst_histos = true;
-	}
+	// if(syst_list.size() != 1)
+	// {
+	// 	string answer = "";
+	// 	cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+	// 	cout<<"(Or you could reduce the number of plotted variables)"<<endl;
+	// 	cin>>answer;
+	//
+	// 	while(answer != "yes" && answer!= "no")
+	// 	{
+	// 		cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+	// 		cin.clear();
+	// 		cin.ignore(1000, '\n');
+	// 		cin>>answer;
+	// 	}
+	//
+	// 	if(answer == "yes") create_syst_histos = true;
+	// }
 
 	TFile* file_input;
 	TTree* tree = 0;
@@ -2446,7 +2446,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 	//Want to plot ALL variables (inside the 2 different variable vectors !)
 	vector<TString> total_var_list;
-	for(int i=0; i<v_cut_name.size(); i++)
+	/*for(int i=0; i<v_cut_name.size(); i++) //FIXME
 	{
 		total_var_list.push_back(v_cut_name[i].Data());
 	}
@@ -2457,6 +2457,19 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	for(int i=0; i<v_add_var_names.size(); i++)
 	{
 		total_var_list.push_back(v_add_var_names[i].Data());
+	}*/
+
+	if(isWZ) //FIXME
+	{
+		total_var_list.push_back("etaQ");
+		total_var_list.push_back("ptQ");
+		total_var_list.push_back("AddLepAsym");
+	}
+	else
+	{
+		total_var_list.push_back("btagDiscri");
+		total_var_list.push_back("MEMvar_1");
+		total_var_list.push_back("dRjj");
 	}
 
 	bool restart_loop = false; //Do it this way so that everytime a 'useless variable' is removed from vector, we restart the whole loop to check for other variables (because doing this changes the index of each element --> restart from scratch)
@@ -2471,22 +2484,22 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 
 	bool create_syst_histos = false; //For now ,simply disactivate systematics for control plots (too long)
-	if(syst_list.size() != 1)
-	{
-		string answer = "";
-		cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
-		cin>>answer;
-
-		while(answer != "yes" && answer!= "no")
-		{
-			cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
-			cin.clear();
-			cin.ignore(1000, '\n');
-			cin>>answer;
-		}
-
-		if(answer == "yes") create_syst_histos = true;
-	}
+	// if(syst_list.size() != 1)
+	// {
+	// 	string answer = "";
+	// 	cout<<FYEL("Do you want to create histograms for the systematics also ? This will increase")<<BOLD(FYEL(" A LOT "))<<FYEL("the processing time ! -- Type yes/no")<<endl;
+	// 	cin>>answer;
+	//
+	// 	while(answer != "yes" && answer!= "no")
+	// 	{
+	// 		cout<<"Wrong answer -- Type 'yes' (with syst.) or 'no' (without syst.) !"<<endl;
+	// 		cin.clear();
+	// 		cin.ignore(1000, '\n');
+	// 		cin>>answer;
+	// 	}
+	//
+	// 	if(answer == "yes") create_syst_histos = true;
+	// }
 
 	int nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() * syst_list.size()) + total_var_list.size();
 	if(!create_syst_histos) nof_histos_to_create = ((sample_list.size() - 1) * total_var_list.size() ) + total_var_list.size();
@@ -2541,7 +2554,10 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "ZEta")			 				{h_tmp = new TH1F( "","", control_binning, -4, 4 );}
 					else if(total_var_list[ivar] == "AddLepAsym") 					{h_tmp = new TH1F( "","", control_binning, -2.5, 2.5 );}
 					else if(total_var_list[ivar] == "mtop") 						{h_tmp = new TH1F( "","", control_binning, 60, 500 );}
-					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 20, 0.5, 1. );} //CHANGED
+
+					else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 21, 0.05, 1. );} //CHANGED
+					// else if(total_var_list[ivar] == "btagDiscri") 					{h_tmp = new TH1F( "","", 10, 0.5, 1. );} //CHANGED
+
 					else if(total_var_list[ivar] == "etaQ")							{h_tmp = new TH1F( "","", control_binning, -4.5, 4.5 );}
 					else if(total_var_list[ivar] == "NBJets")						{h_tmp = new TH1F( "","", 5, 0, 5 );}
 					else if(total_var_list[ivar] == "AddLepPT")						{h_tmp = new TH1F( "","", control_binning, 0, 200 );}
@@ -2569,7 +2585,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 					else if(total_var_list[ivar] == "MEMvar_0")						{h_tmp = new TH1F( "","", binning, 0, 50 );}
 					else if(total_var_list[ivar] == "MEMvar_6")						{h_tmp = new TH1F( "","", binning, 0, 15 );}
-					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, -60, -30 );}
+					// else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, -60, -30 );} //CHANGED
+					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, 30, 60 );}
 					else if(total_var_list[ivar] == "MEMvar_2")						{h_tmp = new TH1F( "","", binning, -80, -20 );}
 					else if(total_var_list[ivar] == "MEMvar_3")						{h_tmp = new TH1F( "","", binning, 0, 50 );}
 					else if(total_var_list[ivar] == "MEMvar_4")						{h_tmp = new TH1F( "","", binning, -60, 10 );}
@@ -2619,6 +2636,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					{
 						weight = 0; tmp = 0; i_channel = 9;
 						tree->GetEntry(ientry); //Read event
+
+						if(total_var_list[ivar] == "MEMvar_1") {tmp*= -1;} //Invert X-axis for this variable
 
 						//NB : No need to re-apply variables cuts here, as the control_tree is only filled with events that pass these cuts
 
@@ -6576,6 +6595,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	//--------------------------
 
 	double sig_strength = 1;
+	double sig_strength_err = 0;
 	//CombineHarvester doesn't rescale automatically signal to Signal strength ! Need to do it manually, extracting its value from mlfit.root !
 	TString input_file_name = "outputs/mlfit.root";
 	f = TFile::Open( input_file_name );
@@ -6584,6 +6604,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	t_mu = (TTree*) f->Get("tree_fit_sb"); if(!t_mu) {cout<<"No tree found!"; return 0;}
 	t_mu->GetEntry(0);
 	sig_strength = (double) t_mu->GetLeaf("mu")->GetValue(0);
+	sig_strength_err = (double) t_mu->GetLeaf("muErr")->GetValue(0);
 	// cout<<"SIGNAL STRENGTH = "<<sig_strength<<endl;
 	delete t_mu; //Free memory
 
@@ -6604,9 +6625,9 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	//--------------------------
 
 	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
-	total_var_list[0] = "btagDiscri"; v_X_label[0] = "CSVv2 discriminant"; v_Y_label[0] = "Events / 0.04"; //FIXME
-	total_var_list[1] = "MEMvar_1"; v_X_label[1] = "MEM log(w_{tZq})"; v_Y_label[1] = "Events / 3";
-	total_var_list[2] = "dRjj"; v_X_label[2] = "#Delta R(b,#font[12]{j'})"; v_Y_label[2] = "Events / 0.2";
+	total_var_list[0] = "btagDiscri"; v_X_label[0] = "CSVv2 discriminant"; v_Y_label[0] = "Events / 0.045"; //FIXME
+	total_var_list[1] = "MEMvar_1"; v_X_label[1] = "MEM -log(w_{tZq})"; v_Y_label[1] = "Events / 3";
+	total_var_list[2] = "dRjj"; v_X_label[2] = "#Delta R(b, #font[12]{j'})"; v_Y_label[2] = "Events / 0.2";
 
 	//--------------------------
 	// CREATE VECTORS OF OBJECTS
@@ -6626,6 +6647,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 	vector<TPad*> v_tpad_primitives(6);
 	vector<TPad*> v_tpad_ratio(6);
+
+	// vector<TH1F*> v_h_line1(6);	vector<TH1F*> v_h_line2(6);	vector<TH1F*> v_h_line3(6);
 
 	TLegend* qw = 0;
 
@@ -6678,7 +6701,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			f = TFile::Open( input_file_name );
 			if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 
-			qw = new TLegend(.07,0.23,0.18,0.47);
+			qw = new TLegend(.08,0.23,0.18,0.475);
 			// qw = new TLegend(.84,.66,0.999,0.999);
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
@@ -6897,8 +6920,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		//Set Yaxis maximum & min
 		if(v_hdata[iplot] != 0 && v_stack[iplot] != 0)
 		{
-			if(v_hdata[iplot]->GetMaximum() > v_stack[iplot]->GetMaximum() ) {v_stack[iplot]->SetMaximum(v_hdata[iplot]->GetMaximum()+0.3*v_hdata[iplot]->GetMaximum());}
-			else v_stack[iplot]->SetMaximum(v_stack[iplot]->GetMaximum()+0.3*v_stack[iplot]->GetMaximum());
+			if(v_hdata[iplot]->GetMaximum() > v_stack[iplot]->GetMaximum() ) {v_stack[iplot]->SetMaximum(v_hdata[iplot]->GetMaximum()+0.3*v_hdata[iplot]->GetMaximum() -1);}
+			else v_stack[iplot]->SetMaximum(v_stack[iplot]->GetMaximum()+0.3*v_stack[iplot]->GetMaximum() -1);
 		}
 		v_stack[iplot]->SetMinimum(0.0001);
 
@@ -6953,7 +6976,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		//-------------------
 		if(v_stack[iplot]!= 0)
 		{
-			if(iplot==0 || iplot==3) {v_stack[iplot]->GetXaxis()->SetRange(8, nofbins);}
+			if(iplot==0 || iplot==3) {v_stack[iplot]->GetXaxis()->SetRange(11, nofbins);}
 
 			v_stack[iplot]->GetXaxis()->SetLabelFont(42);
 			v_stack[iplot]->GetYaxis()->SetLabelFont(42);
@@ -6981,8 +7004,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		if(iplot==0 || iplot==3)
 		{
 			TString extrainfo_data;
-			if(iplot<3) {extrainfo_data= "1 bjet";}
-			else {extrainfo_data= "2 bjets";}
+			if(iplot<3) {extrainfo_data= "1bjet";}
+			else {extrainfo_data= "2bjets";}
 
 			TLatex text2 ; //= new TLatex(0, 0, info_data);
 			text2.SetNDC();
@@ -7053,14 +7076,26 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_tpad_ratio[iplot]->cd(0);
 
 
+		// TH1F* h = new TH1F("", "", nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+		// h->SetMinimum(-3);
+		// h->SetMaximum(3);
+		// h->Draw("hist");
+		// h->SetLineColorAlpha(0, 0);
+		// h->GetYaxis()->SetLabelSize(0.1);
+		// h->GetYaxis()->SetNdivisions(3);
+
+
 		v_histo_ratio_data[iplot] = (TH1F*) v_hdata[iplot]->Clone();
 		// v_histo_ratio_data[iplot]->Divide(v_histo_total_MC[iplot]); //Ratio -- errors are recomputed
 
 		for(int ibin=1; ibin<v_histo_ratio_data[iplot]->GetNbinsX()+1; ibin++) //FIXME
 		{
-			// cout<<v_histo_total_MC[iplot]->GetBinContent(ibin)<<endl;
+			//Add error on signal strength (since we rescale signal manually)
+			double bin_error_mu = v_vector_MC_histo.at(iplot).at(index_tZq_sample)->GetBinError(ibin) * sig_strength_err;
+			// cout<<"bin_error_mu = "<<bin_error_mu<<endl;
 
-			double bin_error = pow(pow(v_histo_total_MC[iplot]->GetBinError(ibin), 2) + pow(v_histo_ratio_data[iplot]->GetBinError(ibin), 2), 0.5); //FIXME -- verify pull def
+			double bin_error = pow(pow(v_histo_total_MC[iplot]->GetBinError(ibin), 2) + pow(v_histo_ratio_data[iplot]->GetBinError(ibin), 2) + pow(bin_error_mu, 2), 0.5); //FIXME -- pull def ok ?
+
 			// cout<<"bin error "<<bin_error<<endl;
 
 			if(!v_histo_total_MC[iplot]->GetBinError(ibin)) {v_histo_ratio_data[iplot]->SetBinContent(ibin,-99);} //Don't draw null markers
@@ -7078,7 +7113,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 		if(iplot==0 || iplot==3)
 		{
-			v_histo_ratio_data[iplot]->GetXaxis()->SetRange(8, nofbins);
+			v_histo_ratio_data[iplot]->GetXaxis()->SetRange(11, nofbins);
 		}
 
 		// v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("#lower[0.1]{Pulls}");
@@ -7096,8 +7131,6 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(3); //grid draw on primary tick marks only //FIXME
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(505);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.06);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleSize(0.06);
@@ -7114,13 +7147,34 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			v_histo_ratio_data[iplot]->GetXaxis()->SetTitle(v_X_label[ivar].Data());
 		}
 
+		//range -4.5 to 4.5, ndiv=-6
 
-		v_histo_ratio_data[iplot]->SetMinimum(-5);
-		v_histo_ratio_data[iplot]->SetMaximum(5);
+		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(-2); //grid draw on primary tick marks only //FIXME
+		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 
-		// v_histo_ratio_data[iplot]->SetMinimum(-4.99); //Ndiv 503
-		// v_histo_ratio_data[iplot]->SetMaximum(4.99);
 
+		v_histo_ratio_data[iplot]->SetMinimum(-2.99);
+		v_histo_ratio_data[iplot]->SetMaximum(2.99);
+
+		// v_histo_ratio_data[iplot]->GetYaxis()->SetLabelSize(0);
+
+
+		// v_h_line1[iplot] = new TH1F("","",nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+		// v_h_line2[iplot] = new TH1F("","",nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+		// v_h_line3[iplot] = new TH1F("","",nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
+		//
+		// for(int ibin=1; ibin<nofbins+1; ibin++)
+		// {
+		// 	v_h_line1[iplot]->SetBinContent(ibin, 0);
+		// 	v_h_line2[iplot]->SetBinContent(ibin, -3);
+		// 	v_h_line3[iplot]->SetBinContent(ibin, 3);
+		// }
+		// v_h_line1[iplot]->SetLineStyle(3);
+		// v_h_line2[iplot]->SetLineStyle(3);
+		// v_h_line3[iplot]->SetLineStyle(3);
+		// v_h_line1[iplot]->Draw("hist same");
+		// v_h_line2[iplot]->Draw("hist same");
+		// v_h_line3[iplot]->Draw("hist same");
 
 
 		//Copy previous TGraphAsymmErrors
@@ -7156,19 +7210,6 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	} //iplot loop
 
 
-	// TH1F *h_line1 = new TH1F("","",this->nbin, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
-	// TH1F *h_line2 = new TH1F("","",this->nbin, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
-	// TH1F *h_line3 = new TH1F("","",this->nbin, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
-	//
-	// for(int ibin=1; ibin<this->nbin +1; ibin++)
-	// {
-	// 	h_line1->SetBinContent(ibin, 0.5);		h_line2->SetBinContent(ibin, 1.5);		h_line3->SetBinContent(ibin, 2.5);
-	// }
-	//
-	// h_line1->SetLineStyle(3);	h_line2->SetLineStyle(3);	h_line3->SetLineStyle(3);
-	// h_line1->Draw("hist same");	h_line2->Draw("hist same");	h_line3->Draw("hist same");
-
-
 
 	//-------------------
 	//SAVE FILE
@@ -7198,6 +7239,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		delete v_stack[i];
 		delete v_histo_total_MC[i];
 		delete v_histo_ratio_data[i];
+		// delete v_h_line1[i]; delete v_h_line2[i]; delete v_h_line3[i];
 
 		delete v_gr_error[i];
 		// delete v_gr_ratio_error[i];
@@ -7262,6 +7304,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 	//--------------------------
 
 	double sig_strength = 1;
+	double sig_strength_err = 0;
 	//CombineHarvester doesn't rescale automatically signal to Signal strength ! Need to do it manually, extracting its value from mlfit.root !
 	TString input_file_name = "outputs/mlfit.root";
 	f = TFile::Open( input_file_name );
@@ -7270,6 +7313,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 	t_mu = (TTree*) f->Get("tree_fit_sb"); if(!t_mu) {cout<<"No tree found!"; return 0;}
 	t_mu->GetEntry(0);
 	sig_strength = (double) t_mu->GetLeaf("mu")->GetValue(0);
+	sig_strength_err = (double) t_mu->GetLeaf("muErr")->GetValue(0);
 	// cout<<"SIGNAL STRENGTH = "<<sig_strength<<endl;
 	delete t_mu; //Free memory
 
@@ -7291,7 +7335,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 
 	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
 	total_var_list[0] = "etaQ"; v_X_label[0] = "#eta(#font[12]{ j'})"; v_Y_label[0] = "Events / 0.44"; //FIXME
-	total_var_list[1] = "ptQ"; v_X_label[1] = "p_{T}(#font[12]{ j'}) [GeV]"; v_Y_label[1] = "Events / 11.1 GeV";
+	total_var_list[1] = "ptQ"; v_X_label[1] = "p_{T}(#font[12]{ j'}) [GeV]"; v_Y_label[1] = "Events / 8.5 GeV";
 	total_var_list[2] = "AddLepAsym"; v_X_label[2] = "q_{#font[12]{l}}|#eta(#font[12]{l})|"; v_Y_label[2] = "Events / 0.25";
 
 	//--------------------------
@@ -7336,7 +7380,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		else if(iplot==1)
 		{
 			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
-			pad->SetPad(0.33, 0., 0.66, 1); //xlow, ylow, xup, yup
+			pad->SetPad(0.33, 0., 0.655, 1); //xlow, ylow, xup, yup
 		}
 		else if(iplot==2)
 		{
@@ -7351,7 +7395,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		if(iplot==0)
 		{
 			// qw = new TLegend(.07,0.23,0.18,0.47);
-			qw = new TLegend(0.5,0.35,0.61,0.83);
+			qw = new TLegend(0.5,0.35,0.6,0.84);
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
 			qw->SetLineColor(1);
@@ -7368,6 +7412,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 
 		gPad->SetBottomMargin(0.25);
 
+		// gPad->SetRightMargin(0.01);
 
 		//---------------------------
 		//ERROR VECTORS INITIALIZATION
@@ -7630,7 +7675,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 
 		if(iplot==0 )
 		{
-			TString extrainfo_data = "0 bjet";
+			TString extrainfo_data = "0bjet";
 
 			TLatex text2 ; //= new TLatex(0, 0, info_data);
 			text2.SetNDC();
@@ -7702,10 +7747,11 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 
 		for(int ibin=1; ibin<v_histo_ratio_data[iplot]->GetNbinsX()+1; ibin++) //FIXME
 		{
-			// cout<<v_histo_total_MC[iplot]->GetBinContent(ibin)<<endl;
+			//Add error on signal strength (since we rescale signal manually)
+			double bin_error_mu = v_vector_MC_histo.at(iplot).at(index_tZq_sample)->GetBinError(ibin) * sig_strength_err;
+			// cout<<"bin_error_mu = "<<bin_error_mu<<endl;
 
-			double bin_error = pow(pow(v_histo_total_MC[iplot]->GetBinError(ibin), 2) + pow(v_histo_ratio_data[iplot]->GetBinError(ibin), 2), 0.5); //FIXME -- verify pull def
-			// cout<<"bin error "<<bin_error<<endl;
+			double bin_error = pow(pow(v_histo_total_MC[iplot]->GetBinError(ibin), 2) + pow(v_histo_ratio_data[iplot]->GetBinError(ibin), 2) + pow(bin_error_mu, 2), 0.5); //FIXME -- pull def ok ?
 
 			if(!v_histo_total_MC[iplot]->GetBinError(ibin)) {v_histo_ratio_data[iplot]->SetBinContent(ibin,-99);} //Don't draw null markers
 			else{v_histo_ratio_data[iplot]->SetBinContent(ibin, (v_histo_ratio_data[iplot]->GetBinContent(ibin) - v_histo_total_MC[iplot]->GetBinContent(ibin)) / bin_error );}
@@ -7737,7 +7783,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(3); //grid draw on primary tick marks only //FIXME
+		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only //FIXME
 		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(505);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.06);
@@ -7750,8 +7796,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 
 
 
-		v_histo_ratio_data[iplot]->SetMinimum(-5);
-		v_histo_ratio_data[iplot]->SetMaximum(5);
+		v_histo_ratio_data[iplot]->SetMinimum(-2.99);
+		v_histo_ratio_data[iplot]->SetMaximum(2.99);
 
 
 	} //iplot loop
@@ -7895,7 +7941,7 @@ int theMVAtool::Postfit_Templates_Paper()
 
 	TLegend* qw = 0;
 	// qw = new TLegend(.07,0.23,0.18,0.47);
-	qw = new TLegend(0.855,0.375,0.965,0.855);
+	qw = new TLegend(0.86,0.36,0.96,0.85);
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
 	qw->SetLineColor(1);
@@ -7923,7 +7969,7 @@ int theMVAtool::Postfit_Templates_Paper()
 		else if(iplot==2)
 		{
 			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
-			pad->SetPad(0.66, 0., 0.99, 1); //xlow, ylow, xup, yup
+			pad->SetPad(0.66, 0., 0.981, 1); //xlow, ylow, xup, yup
 		}
 
 
@@ -8233,9 +8279,9 @@ int theMVAtool::Postfit_Templates_Paper()
 		text2.SetTextSize(0.06);
 		text2.SetTextFont(62);
 		TString extrainfo_data;
-		if(iplot==0 ) {extrainfo_data = "1 bjet"; text2.DrawLatex(0.65,0.84,extrainfo_data);}
-		else if(iplot==1 ) {extrainfo_data = "2 bjets"; text2.DrawLatex(0.65,0.84,extrainfo_data);}
-		else if(iplot==2 ) {extrainfo_data = "0 bjet"; text2.DrawLatex(0.25,0.84,extrainfo_data);}
+		if(iplot==0 ) {extrainfo_data = "1bjet"; text2.DrawLatex(0.65,0.84,extrainfo_data);}
+		else if(iplot==1 ) {extrainfo_data = "2bjets"; text2.DrawLatex(0.65,0.84,extrainfo_data);}
+		else if(iplot==2 ) {extrainfo_data = "0bjet"; text2.DrawLatex(0.25,0.84,extrainfo_data);}
 
 		if(iplot==0)
 		{
@@ -8335,7 +8381,7 @@ int theMVAtool::Postfit_Templates_Paper()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(3); //grid draw on primary tick marks only //FIXME
+		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only //FIXME
 		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(505);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.06);
@@ -8351,9 +8397,11 @@ int theMVAtool::Postfit_Templates_Paper()
 
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitle(v_X_label[ivar].Data());
 
+		v_histo_ratio_data[iplot]->SetMinimum(-2.99);
+		v_histo_ratio_data[iplot]->SetMaximum(2.99);
 
-		v_histo_ratio_data[iplot]->SetMinimum(-5);
-		v_histo_ratio_data[iplot]->SetMaximum(5);
+		// v_histo_ratio_data[iplot]->SetMinimum(-5);
+		// v_histo_ratio_data[iplot]->SetMaximum(5);
 
 
 		//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
