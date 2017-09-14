@@ -110,6 +110,7 @@ class theMVAtool
 	int Draw_Control_Plots_ForPaper();
 	int Draw_Control_Plots_ForPaper_WZ();
 	int Postfit_Templates_Paper();
+	void Rescale_JES();
 
 
 //Members

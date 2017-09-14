@@ -4951,7 +4951,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	float lumiTextSize     = 0.52;
 	// float lumiTextSize     = 0.6;
 	float lumiTextOffset   = 0.2;
-	float cmsTextSize      = 0.75;
+	float cmsTextSize      = 0.6;
 	float cmsTextOffset    = 0.1;  // only used in outOfFrame version
 
 	float relPosX    = 0.045;
@@ -4977,7 +4977,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	float r = c1->GetRightMargin();
 	float b = c1->GetBottomMargin();
 
-	float extraTextSize = extraOverCmsTextSize*cmsTextSize;
+	float extraTextSize = extraOverCmsTextSize*cmsTextSize*1.1;
 
 	latex.SetTextFont(42);
 	latex.SetTextAlign(31);
@@ -4994,9 +4994,9 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	if(draw_preliminary_label)
 	{
 		latex.SetTextSize(extraTextSize*t*0.8);
-		latex.DrawLatex(l+cmsTextSize*l+0.01, 1-t+lumiTextOffset*t, extraText);
+		latex.DrawLatex(l+cmsTextSize*l+0.02, 1-t+lumiTextOffset*t, extraText);
 	}
-	else latex.DrawLatex(l+cmsTextSize*l+0.03, 1-t+lumiTextOffset*t, extraText);
+	else latex.DrawLatex(l+cmsTextSize*l+0.04, 1-t+lumiTextOffset*t, extraText);
 
 //------------------
 
@@ -6701,8 +6701,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			f = TFile::Open( input_file_name );
 			if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 
-			qw = new TLegend(.08,0.23,0.18,0.475);
-			// qw = new TLegend(.84,.66,0.999,0.999);
+			if(draw_preliminary_label) qw = new TLegend(.13,0.2,0.23,0.43); //CHANGED
+			else  qw = new TLegend(.15,0.23,0.25,0.475); //CHANGED
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
 			qw->SetLineColor(1);
@@ -7001,6 +7001,9 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		//CAPTIONS && LEGEND
 		//-------------------
 
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
+
 		if(iplot==0 || iplot==3)
 		{
 			TString extrainfo_data;
@@ -7012,36 +7015,39 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			text2.SetTextAlign(13);
 			text2.SetTextSize(0.06);
 			text2.SetTextFont(62);
-			if(iplot==0) text2.DrawLatex(0.63,0.84,extrainfo_data);
-			else text2.DrawLatex(0.63,0.92,extrainfo_data);
+			// if(iplot==0) text2.DrawLatex(0.73,0.85,extrainfo_data);
+			// else text2.DrawLatex(0.72,0.94,extrainfo_data);
+			if(iplot==0) text2.DrawLatex(l+0.05,0.8,extrainfo_data);
+			else text2.DrawLatex(l+0.05,0.875,extrainfo_data);
 		}
 
 
-		if(iplot==0)
+
+		TString cmsText     = "CMS";
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+
+		latex.SetTextFont(61);
+		latex.SetTextAlign(11);
+		// latex.SetTextSize(0.1);
+		latex.SetTextSize(0.06);
+		// latex.DrawLatex(l,1-t,cmsText);
+		if(iplot<3) latex.DrawLatex(l+0.05,1-t-0.1,cmsText); //CHANGED
+		else latex.DrawLatex(l+0.05,1-t-0.02,cmsText); //CHANGED
+
+		TString extraText   = "Preliminary";
+		latex.SetTextFont(52);
+		if(draw_preliminary_label)
 		{
-			TString cmsText     = "CMS";
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
-
-			latex.SetTextFont(61);
-			latex.SetTextAlign(11);
-			// latex.SetTextSize(0.1);
-			latex.SetTextSize(0.07); //CHANGED
-			latex.DrawLatex(l,1-t,cmsText);
-
-			TString extraText   = "Preliminary";
-			latex.SetTextFont(52);
-			if(draw_preliminary_label)
-			{
-				latex.SetTextSize(0.08);
-				latex.DrawLatex(l + 0.3, 1-t, extraText);
-			}
+			latex.SetTextSize(0.06);
+			if(iplot<3) latex.DrawLatex(l + 0.2, 1-t-0.105, extraText);
+			else latex.DrawLatex(l + 0.2, 1-t-0.02, extraText);
 		}
-		else if(iplot==2)
+
+		// else if(iplot==2)
+		if(iplot==2)
 		{
 			float lumi = 35.9 * luminosity_rescale;
 			TString lumi_13TeV = Convert_Number_To_TString(lumi);
@@ -7672,6 +7678,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		//-------------------
 		//CAPTIONS && LEGEND
 		//-------------------
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
 
 		if(iplot==0 )
 		{
@@ -7682,31 +7690,30 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 			text2.SetTextAlign(13);
 			text2.SetTextSize(0.06);
 			text2.SetTextFont(62);
-			if(iplot==0) text2.DrawLatex(0.63,0.84,extrainfo_data);
-			else text2.DrawLatex(0.63,0.92,extrainfo_data);
-
-			TString cmsText     = "CMS";
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
-
-			latex.SetTextFont(61);
-			latex.SetTextAlign(11);
-			// latex.SetTextSize(0.1);
-			latex.SetTextSize(0.07); //CHANGED
-			latex.DrawLatex(l,1-t,cmsText);
-
-			TString extraText   = "Preliminary";
-			latex.SetTextFont(52);
-			if(draw_preliminary_label)
-			{
-				latex.SetTextSize(0.08);
-				latex.DrawLatex(l + 0.3, 1-t, extraText);
-			}
+			if(iplot==0) text2.DrawLatex(l+0.05,0.79,extrainfo_data);
 		}
+
+		TString cmsText     = "CMS";
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+
+		latex.SetTextFont(61);
+		latex.SetTextAlign(11);
+		// latex.SetTextSize(0.1);
+		latex.SetTextSize(0.06); //CHANGED
+		latex.DrawLatex(l+0.05,1-t-0.1,cmsText);
+		// latex.DrawLatex(l,1-t,cmsText);
+
+		TString extraText   = "Preliminary";
+		latex.SetTextFont(52);
+		if(draw_preliminary_label)
+		{
+			latex.SetTextSize(0.07);
+			latex.DrawLatex(l + 0.2, 1-t, extraText);
+		}
+
 		else if(iplot==2)
 		{
 			float lumi = 35.9 * luminosity_rescale;
@@ -8138,8 +8145,8 @@ int theMVAtool::Postfit_Templates_Paper()
 		//Set Yaxis maximum & min
 		if(v_hdata[iplot] != 0 && v_stack[iplot] != 0)
 		{
-			if(v_hdata[iplot]->GetMaximum() > v_stack[iplot]->GetMaximum() ) {v_stack[iplot]->SetMaximum(v_hdata[iplot]->GetMaximum()+0.3*v_hdata[iplot]->GetMaximum());}
-			else v_stack[iplot]->SetMaximum(v_stack[iplot]->GetMaximum()+0.3*v_stack[iplot]->GetMaximum());
+			if(v_hdata[iplot]->GetMaximum() > v_stack[iplot]->GetMaximum() ) {v_stack[iplot]->SetMaximum(v_hdata[iplot]->GetMaximum()+0.45*v_hdata[iplot]->GetMaximum());}
+			else v_stack[iplot]->SetMaximum(v_stack[iplot]->GetMaximum()+0.45*v_stack[iplot]->GetMaximum());
 		}
 		v_stack[iplot]->SetMinimum(0.0001);
 
@@ -8273,41 +8280,43 @@ int theMVAtool::Postfit_Templates_Paper()
 		//-------------------
 		//CAPTIONS && LEGEND
 		//-------------------
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
+
 		TLatex text2 ; //= new TLatex(0, 0, info_data);
 		text2.SetNDC();
 		text2.SetTextAlign(13);
 		text2.SetTextSize(0.06);
 		text2.SetTextFont(62);
 		TString extrainfo_data;
-		if(iplot==0 ) {extrainfo_data = "1bjet"; text2.DrawLatex(0.65,0.84,extrainfo_data);}
-		else if(iplot==1 ) {extrainfo_data = "2bjets"; text2.DrawLatex(0.65,0.84,extrainfo_data);}
-		else if(iplot==2 ) {extrainfo_data = "0bjet"; text2.DrawLatex(0.25,0.84,extrainfo_data);}
+		if(iplot==0 ) {extrainfo_data = "1bjet"; text2.DrawLatex(l+0.05,0.79,extrainfo_data);}
+		else if(iplot==1 ) {extrainfo_data = "2bjets"; text2.DrawLatex(l+0.05,0.79,extrainfo_data);}
+		else if(iplot==2 ) {extrainfo_data = "0bjet"; text2.DrawLatex(l+0.05,0.79,extrainfo_data);}
 
-		if(iplot==0)
+		// if(iplot==0)
 		{
 			TString cmsText     = "CMS";
 			TLatex latex;
 			latex.SetNDC();
 			latex.SetTextAngle(0);
 			latex.SetTextColor(kBlack);
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
 
 			latex.SetTextFont(61);
 			latex.SetTextAlign(11);
 			// latex.SetTextSize(0.1);
-			latex.SetTextSize(0.07); //CHANGED
-			latex.DrawLatex(l,1-t,cmsText);
+			latex.SetTextSize(0.06); //CHANGED
+			// latex.DrawLatex(l,1-t,cmsText);
+			latex.DrawLatex(l+0.05,1-t-0.11,cmsText);
 
 			TString extraText   = "Preliminary";
 			latex.SetTextFont(52);
 			if(draw_preliminary_label)
 			{
-				latex.SetTextSize(0.08);
-				latex.DrawLatex(l + 0.3, 1-t, extraText);
+				latex.SetTextSize(0.07);
+				latex.DrawLatex(l + 0.2, 1-t, extraText);
 			}
 		}
-		else if(iplot==2)
+		if(iplot==2)
 		{
 			float lumi = 35.9 * luminosity_rescale;
 			TString lumi_13TeV = Convert_Number_To_TString(lumi);
@@ -8463,4 +8472,61 @@ int theMVAtool::Postfit_Templates_Paper()
 
 	delete c1; //Must free dinamically-allocated memory
 	return 0;
+}
+
+
+
+
+
+
+void theMVAtool::Rescale_JES()
+{
+	TString path = "./outputs/Combine_Input.root";
+
+	TFile* f = TFile::Open(path, "UPDATE");
+
+	vector<TString> template_list;
+	template_list.push_back("BDT");
+	template_list.push_back("BDTttZ");
+	template_list.push_back("mTW");
+
+	TH1F* h_tmp;
+
+	for(int itemp=0; itemp<template_list.size(); itemp++)
+	{
+		cout<<"--- "<<template_list[itemp]<<endl;
+		for(int isample=0; isample<sample_list.size(); isample++)
+		{
+			for(int ichan=0; ichan<channel_list.size(); ichan++)
+			{
+				if(sample_list[isample] == "Data" || sample_list[isample].Contains("Fakes") ) continue;
+
+				TString histo_name = template_list[itemp] + "_" + channel_list[ichan] + "__" + sample_list[isample];
+
+				if(!f ->GetListOfKeys()->Contains( histo_name.Data() ) ) {cout<<histo_name<<" not found !"<<endl;  continue;}
+				h_tmp = (TH1F*) f->Get(histo_name);
+				double norm_nominal = h_tmp->Integral();
+				delete h_tmp;
+
+				TString histo_name_tmp = histo_name + "__JESUp";
+				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
+				h_tmp = (TH1F*) f->Get(histo_name_tmp);
+				h_tmp->Scale(norm_nominal / h_tmp->Integral());
+				f->cd();
+				h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
+				delete h_tmp;
+
+				histo_name_tmp = histo_name + "__JESDown";
+				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
+				h_tmp = (TH1F*) f->Get(histo_name_tmp);
+				h_tmp->Scale(norm_nominal / h_tmp->Integral());
+				f->cd();
+				h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
+				delete h_tmp;
+			}
+		}
+	}
+
+	delete f;
+	return;
 }

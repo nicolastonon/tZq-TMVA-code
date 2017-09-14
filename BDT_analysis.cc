@@ -649,9 +649,11 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // vector<bool> v;
         // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", "", cut_BDT_value, keep_high_BDT_events);
 
-        MVAtool->Draw_Control_Plots_ForPaper();
-        MVAtool->Draw_Control_Plots_ForPaper_WZ();
-        MVAtool->Postfit_Templates_Paper();
+        // MVAtool->Draw_Control_Plots_ForPaper();
+        // MVAtool->Draw_Control_Plots_ForPaper_WZ();
+        // MVAtool->Postfit_Templates_Paper();
+
+        MVAtool->Rescale_JES();
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
