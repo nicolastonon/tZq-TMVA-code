@@ -718,7 +718,7 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_FakeEland
 	{
 		fit->Constrain(0, 0, 1); //Fakes fraction b/w 0 & 1
 		fit->Constrain(1, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.99, fracwz*1.01); //CHANGED -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
+		if(fit_WZ_separately) fit->Constrain(2, fracwz*0.99, fracwz*1.01); //CHANGED -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WZ
 	}
 	else
 	{
@@ -726,14 +726,14 @@ double theMVAtool::Compute_Fake_SF(TFile* f, TString channel, bool fit_FakeEland
 		{
 			fit->Constrain(0, 0, 1); //Fakes fraction b/w 0 & 1
 			fit->Constrain(1, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.99, fracwz*1.01); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
+			if(fit_WZ_separately) fit->Constrain(2, fracwz*0.99, fracwz*1.01); //NOTE -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WZ
 		}
 		else
 		{
 			fit->Constrain(0, 0, 1); //Fakes fraction b/w 0 & 1
 			fit->Constrain(1, 0, 1); //Fakes fraction b/w 0 & 1
 			fit->Constrain(2, fracsum*0.99, fracsum*1.01); //Constrain fraction of other backgrounds to prefit value, to ~fix it!
-			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.99, fracwz*1.01); //FIXME -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WE
+			if(fit_WZ_separately) fit->Constrain(3, fracwz*0.99, fracwz*1.01); //NOTE -- CHOOSE HERE HOW MUCH YOU WANT TO CONSTRAIN WZ
 		}
 	}
 
@@ -2446,7 +2446,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 
 	//Want to plot ALL variables (inside the 2 different variable vectors !)
 	vector<TString> total_var_list;
-	/*for(int i=0; i<v_cut_name.size(); i++) //FIXME
+	for(int i=0; i<v_cut_name.size(); i++) //FIXME
 	{
 		total_var_list.push_back(v_cut_name[i].Data());
 	}
@@ -2457,9 +2457,9 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 	for(int i=0; i<v_add_var_names.size(); i++)
 	{
 		total_var_list.push_back(v_add_var_names[i].Data());
-	}*/
+	}
 
-	if(isWZ) //FIXME
+	/*if(isWZ) //NOTE -- If want only to plot few variables (much faster)
 	{
 		total_var_list.push_back("etaQ");
 		total_var_list.push_back("ptQ");
@@ -2470,7 +2470,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 		total_var_list.push_back("btagDiscri");
 		total_var_list.push_back("MEMvar_1");
 		total_var_list.push_back("dRjj");
-	}
+	}*/
 
 	bool restart_loop = false; //Do it this way so that everytime a 'useless variable' is removed from vector, we restart the whole loop to check for other variables (because doing this changes the index of each element --> restart from scratch)
 	do
@@ -4994,6 +4994,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	if(draw_preliminary_label)
 	{
 		latex.SetTextSize(extraTextSize*t*0.8);
+		if(draw_preliminary_label) latex.SetTextSize(extraTextSize*t*0.9);
 		latex.DrawLatex(l+cmsTextSize*l+0.02, 1-t+lumiTextOffset*t, extraText);
 	}
 	else latex.DrawLatex(l+cmsTextSize*l+0.04, 1-t+lumiTextOffset*t, extraText);
@@ -6701,7 +6702,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 			f = TFile::Open( input_file_name );
 			if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
 
-			if(draw_preliminary_label) qw = new TLegend(.13,0.2,0.23,0.43); //CHANGED
+			if(draw_preliminary_label) qw = new TLegend(.14,0.22,0.23,0.44); //CHANGED
 			else  qw = new TLegend(.15,0.23,0.25,0.475); //CHANGED
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
@@ -6902,13 +6903,15 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 		for(int i=0; i<v_vector_MC_histo.at(iplot).size(); i++)
 		{
+			// if(i==index_tZq_sample) {continue;} // --- UNCOMMENT TO GET WRONG PULL PLOT (NO SIG)
+
+			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
+			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
+
 			if(i==index_tZq_sample) {continue;}
 
 			if(v_stack[iplot] == 0) {v_stack[iplot] = new THStack; v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i) );}
 			else {v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
-
-			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
-			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
 		}
 		if(!v_stack[iplot]) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
 
@@ -6968,7 +6971,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		v_gr_error[iplot] = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
 		v_gr_error[iplot]->SetFillStyle(3002);
 		v_gr_error[iplot]->SetFillColor(1);
-		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack //FIXME
+		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
 
 		//-------------------
@@ -7041,9 +7044,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		latex.SetTextFont(52);
 		if(draw_preliminary_label)
 		{
-			latex.SetTextSize(0.06);
-			if(iplot<3) latex.DrawLatex(l + 0.2, 1-t-0.105, extraText);
-			else latex.DrawLatex(l + 0.2, 1-t-0.02, extraText);
+			if(iplot<3) latex.DrawLatex(l + 0.2, 1-t-0.10, extraText);
+			else latex.DrawLatex(l + 0.2, 1-t-0.019, extraText);
 		}
 
 		// else if(iplot==2)
@@ -7155,64 +7157,11 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 
 		//range -4.5 to 4.5, ndiv=-6
 
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(-2); //grid draw on primary tick marks only //FIXME
 		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 
 
 		v_histo_ratio_data[iplot]->SetMinimum(-2.99);
 		v_histo_ratio_data[iplot]->SetMaximum(2.99);
-
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetLabelSize(0);
-
-
-		// v_h_line1[iplot] = new TH1F("","",nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
-		// v_h_line2[iplot] = new TH1F("","",nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
-		// v_h_line3[iplot] = new TH1F("","",nofbins, v_hdata[iplot]->GetXaxis()->GetXmin(), v_hdata[iplot]->GetXaxis()->GetXmax());
-		//
-		// for(int ibin=1; ibin<nofbins+1; ibin++)
-		// {
-		// 	v_h_line1[iplot]->SetBinContent(ibin, 0);
-		// 	v_h_line2[iplot]->SetBinContent(ibin, -3);
-		// 	v_h_line3[iplot]->SetBinContent(ibin, 3);
-		// }
-		// v_h_line1[iplot]->SetLineStyle(3);
-		// v_h_line2[iplot]->SetLineStyle(3);
-		// v_h_line3[iplot]->SetLineStyle(3);
-		// v_h_line1[iplot]->Draw("hist same");
-		// v_h_line2[iplot]->Draw("hist same");
-		// v_h_line3[iplot]->Draw("hist same");
-
-
-		//Copy previous TGraphAsymmErrors
-		/*v_gr_error_tmp[iplot] = (TGraphAsymmErrors*) v_gr_error[iplot]->Clone(); //Need to use a tmp TGraph, so we can modify its arrays without changing original TGraph
-		double *theErrorX_h = v_gr_error_tmp[iplot]->GetEXhigh();
-		double *theErrorY_h = v_gr_error_tmp[iplot]->GetEYhigh();
-		double *theErrorX_l = v_gr_error_tmp[iplot]->GetEXlow();
-		double *theErrorY_l = v_gr_error_tmp[iplot]->GetEYlow();
-		double *theY        = v_gr_error_tmp[iplot]->GetY() ;
-		double *theX        = v_gr_error_tmp[iplot]->GetX() ;
-
-		//Divide error --> ratio
-		for(int i=0; i<v_gr_error[iplot]->GetN(); i++)
-		{
-			if(theY[i]==0) //FIXME -- modifying these arrays modify the stack errors too !!
-			{
-				theErrorY_l[i] = 0;
-				theErrorY_h[i] = 0;
-				theY[i]=1; continue;
-			}
-
-		  theErrorY_l[i] = theErrorY_l[i]/theY[i];
-		  theErrorY_h[i] = theErrorY_h[i]/theY[i];
-		  theY[i]=1; //To center the filled area around "1"
-		}
-
-		//--> Create new TGraphAsymmErrors
-		v_gr_ratio_error[iplot] = new TGraphAsymmErrors(v_gr_error[iplot]->GetN(), theX , theY ,  theErrorX_l, theErrorX_h, theErrorY_l, theErrorY_h);
-		v_gr_ratio_error[iplot]->SetFillStyle(3002);
-		v_gr_ratio_error[iplot]->SetFillColor(1);
-		v_gr_ratio_error[iplot]->Draw("e2 same");*/ //Syst. error for Data/MC ; drawn on canvas2 (Data/MC ratio) //FIXME
-
 	} //iplot loop
 
 
@@ -7340,7 +7289,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 	//--------------------------
 
 	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
-	total_var_list[0] = "etaQ"; v_X_label[0] = "#eta(#font[12]{ j'})"; v_Y_label[0] = "Events / 0.44"; //FIXME
+	total_var_list[0] = "etaQ"; v_X_label[0] = "#eta(#font[12]{ j'})"; v_Y_label[0] = "Events / 0.44";
 	total_var_list[1] = "ptQ"; v_X_label[1] = "p_{T}(#font[12]{ j'}) [GeV]"; v_Y_label[1] = "Events / 8.5 GeV";
 	total_var_list[2] = "AddLepAsym"; v_X_label[2] = "q_{#font[12]{l}}|#eta(#font[12]{l})|"; v_Y_label[2] = "Events / 0.25";
 
@@ -7400,8 +7349,8 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		//First, plot 3 tZq variables
 		if(iplot==0)
 		{
-			// qw = new TLegend(.07,0.23,0.18,0.47);
-			qw = new TLegend(0.5,0.35,0.6,0.84);
+			if(draw_preliminary_label) qw = new TLegend(0.525,0.33,0.62,0.80);
+			else qw = new TLegend(0.5,0.35,0.6,0.84);
 			qw->SetShadowColor(0);
 			qw->SetFillColor(0);
 			qw->SetLineColor(1);
@@ -7582,13 +7531,16 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 
 		for(int i=0; i<v_vector_MC_histo.at(iplot).size(); i++)
 		{
+			// if(i==index_tZq_sample) {continue;} // --- UNCOMMENT TO GET WRONG PULL PLOT (NO SIG)
+
+
+			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
+			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
+
 			if(i==index_tZq_sample) {continue;}
 
 			if(v_stack[iplot] == 0) {v_stack[iplot] = new THStack; v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i) );}
 			else {v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
-
-			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
-			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
 		}
 		if(!v_stack[iplot]) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
 
@@ -7648,7 +7600,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		v_gr_error[iplot] = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
 		v_gr_error[iplot]->SetFillStyle(3002);
 		v_gr_error[iplot]->SetFillColor(1);
-		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack //FIXME
+		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
 
 		//-------------------
@@ -7703,18 +7655,16 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		latex.SetTextAlign(11);
 		// latex.SetTextSize(0.1);
 		latex.SetTextSize(0.06); //CHANGED
-		latex.DrawLatex(l+0.05,1-t-0.1,cmsText);
-		// latex.DrawLatex(l,1-t,cmsText);
+		latex.DrawLatex(l+0.05,1-t-0.11,cmsText);
 
 		TString extraText   = "Preliminary";
 		latex.SetTextFont(52);
 		if(draw_preliminary_label)
 		{
-			latex.SetTextSize(0.07);
-			latex.DrawLatex(l + 0.2, 1-t, extraText);
+			latex.DrawLatex(l + 0.2, 1-t-0.111, extraText);
 		}
 
-		else if(iplot==2)
+		if(iplot==2)
 		{
 			float lumi = 35.9 * luminosity_rescale;
 			TString lumi_13TeV = Convert_Number_To_TString(lumi);
@@ -7752,7 +7702,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		v_histo_ratio_data[iplot] = (TH1F*) v_hdata[iplot]->Clone();
 		// v_histo_ratio_data[iplot]->Divide(v_histo_total_MC[iplot]); //Ratio -- errors are recomputed
 
-		for(int ibin=1; ibin<v_histo_ratio_data[iplot]->GetNbinsX()+1; ibin++) //FIXME
+		for(int ibin=1; ibin<v_histo_ratio_data[iplot]->GetNbinsX()+1; ibin++)
 		{
 			//Add error on signal strength (since we rescale signal manually)
 			double bin_error_mu = v_vector_MC_histo.at(iplot).at(index_tZq_sample)->GetBinError(ibin) * sig_strength_err;
@@ -7790,7 +7740,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper_WZ()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only //FIXME
+		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only
 		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(505);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.06);
@@ -7921,7 +7871,7 @@ int theMVAtool::Postfit_Templates_Paper()
 	//--------------------------
 
 	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
-	total_var_list[0] = "BDT"; v_X_label[0] = "BDT"; v_Y_label[0] = "Events / 0.2"; //FIXME
+	total_var_list[0] = "BDT"; v_X_label[0] = "BDT"; v_Y_label[0] = "Events / 0.2";
 	total_var_list[1] = "BDTttZ"; v_X_label[1] = "BDTttZ"; v_Y_label[1] = "Events / 0.2";
 	total_var_list[2] = "mTW"; v_X_label[2] = "mTW"; v_Y_label[2] = "Events / 25 GeV";
 
@@ -7947,8 +7897,8 @@ int theMVAtool::Postfit_Templates_Paper()
 	vector<TGaxis*> v_axis(3);
 
 	TLegend* qw = 0;
-	// qw = new TLegend(.07,0.23,0.18,0.47);
-	qw = new TLegend(0.86,0.36,0.96,0.85);
+	if(draw_preliminary_label) qw = new TLegend(0.86,0.32,0.96,0.80);
+	else qw = new TLegend(0.86,0.36,0.96,0.85);
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
 	qw->SetLineColor(1);
@@ -8127,13 +8077,16 @@ int theMVAtool::Postfit_Templates_Paper()
 
 		for(int i=0; i<v_vector_MC_histo.at(iplot).size(); i++)
 		{
+			// if(i==index_tZq_sample) {continue;} // --- UNCOMMENT TO GET WRONG PULL PLOT (NO SIG)
+
+
+			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
+			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
+
 			if(i==index_tZq_sample) {continue;}
 
 			if(v_stack[iplot] == 0) {v_stack[iplot] = new THStack; v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i) );}
 			else {v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
-
-			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
-			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
 		}
 		if(!v_stack[iplot]) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
 
@@ -8250,7 +8203,7 @@ int theMVAtool::Postfit_Templates_Paper()
 		v_gr_error[iplot] = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
 		v_gr_error[iplot]->SetFillStyle(3002);
 		v_gr_error[iplot]->SetFillColor(1);
-		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack //FIXME
+		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
 
 
 		//-------------------
@@ -8312,8 +8265,7 @@ int theMVAtool::Postfit_Templates_Paper()
 			latex.SetTextFont(52);
 			if(draw_preliminary_label)
 			{
-				latex.SetTextSize(0.07);
-				latex.DrawLatex(l + 0.2, 1-t, extraText);
+				latex.DrawLatex(l + 0.2, 1-t-0.111, extraText);
 			}
 		}
 		if(iplot==2)
@@ -8390,7 +8342,7 @@ int theMVAtool::Postfit_Templates_Paper()
 		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only //FIXME
+		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only
 		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
 		v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(505);
 		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.06);
@@ -8511,15 +8463,28 @@ void theMVAtool::Rescale_JES()
 				TString histo_name_tmp = histo_name + "__JESUp";
 				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
 				h_tmp = (TH1F*) f->Get(histo_name_tmp);
-				h_tmp->Scale(norm_nominal / h_tmp->Integral());
+				// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
+
+				//RENAMING HISTOGRAM
+				if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__JES_tZqUp";
+				else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__JES_ttZUp";
+				if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__JES_WZUp";
+
 				f->cd();
 				h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
 				delete h_tmp;
 
+
 				histo_name_tmp = histo_name + "__JESDown";
 				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
 				h_tmp = (TH1F*) f->Get(histo_name_tmp);
-				h_tmp->Scale(norm_nominal / h_tmp->Integral());
+				// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
+
+				//RENAMING HISTOGRAM
+				if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__JES_tZqDown";
+				else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__JES_ttZDown";
+				if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__JES_WZDown";
+
 				f->cd();
 				h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
 				delete h_tmp;
@@ -8529,4 +8494,63 @@ void theMVAtool::Rescale_JES()
 
 	delete f;
 	return;
+}
+
+
+void theMVAtool::Count_Events()
+{
+	TString path = "./outputs/Combine_Input.root";
+	TFile* f = TFile::Open(path);
+
+	vector<TString> template_list;
+	template_list.push_back("BDT");
+	template_list.push_back("BDTttZ");
+	template_list.push_back("mTW");
+
+	TH1F* h_tmp;
+
+	for(int itemp=0; itemp<template_list.size(); itemp++)
+	{
+		cout<<"--- "<<template_list[itemp]<<endl;
+
+		double total_nominal=0, total_JESup=0, total_JESdown=0, total_fakes=0;
+
+		for(int isample=0; isample<sample_list.size(); isample++)
+		{
+			for(int ichan=0; ichan<channel_list.size(); ichan++)
+			{
+				if(sample_list[isample] == "Data" ) continue;
+
+				TString histo_name = template_list[itemp] + "_" + channel_list[ichan] + "__" + sample_list[isample];
+
+				if(!f ->GetListOfKeys()->Contains( histo_name.Data() ) ) {cout<<histo_name<<" not found !"<<endl;  continue;}
+				h_tmp = (TH1F*) f->Get(histo_name);
+				// total_nominal+= h_tmp->Integral();
+				total_nominal+= h_tmp->GetEntries();
+				if(sample_list[isample].Contains("Fakes") ) {total_fakes+=h_tmp->Integral(); delete h_tmp; continue;}
+				delete h_tmp;
+
+				TString histo_name_tmp = histo_name + "__JESUp";
+				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
+				h_tmp = (TH1F*) f->Get(histo_name_tmp);
+				// total_JESup+= h_tmp->Integral();
+				total_JESup+= h_tmp->GetEntries();
+				delete h_tmp;
+
+				histo_name_tmp = histo_name + "__JESDown";
+				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
+				h_tmp = (TH1F*) f->Get(histo_name_tmp);
+				// total_JESdown+= h_tmp->Integral();
+				total_JESdown+= h_tmp->GetEntries();
+				delete h_tmp;
+			}
+		}
+
+		total_JESup+= total_fakes; total_JESdown+= total_fakes;
+
+		cout<<FGRN("total_nominal="<<total_nominal<<", total_JESup="<<total_JESup<<", total_JESdown="<<total_JESdown<<" !")<<endl;
+	}
+
+
+	delete f;
 }

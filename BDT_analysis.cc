@@ -50,6 +50,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Luminosity
     //NOTE: this value is compared to a hard-coded value in theMVAtool.cc & a rescaling factor is computed in case they are different
     double set_luminosity = 35.862; //Moriond 2017 - 35.862fb
+    // double set_luminosity = 70; //Moriond 2017 - 35.862fb //FIXME
 
     //Fakes
     bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
@@ -59,8 +60,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool real_data_templates = true; //Else, pseudodata (obsolete)
 
     //Outputs
-    TString format = ".pdf"; //'.png' or '.pdf' only
-    bool draw_preliminary_label = false; //choose to add or not a label 'Preliminary' (needed for PAS)
+    TString format = ".png"; //'.png' or '.pdf' only
+    bool draw_preliminary_label = true; //choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -649,11 +650,12 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // vector<bool> v;
         // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", "", cut_BDT_value, keep_high_BDT_events);
 
-        // MVAtool->Draw_Control_Plots_ForPaper();
-        // MVAtool->Draw_Control_Plots_ForPaper_WZ();
-        // MVAtool->Postfit_Templates_Paper();
+        MVAtool->Draw_Control_Plots_ForPaper();
+        MVAtool->Draw_Control_Plots_ForPaper_WZ();
+        MVAtool->Postfit_Templates_Paper();
 
-        MVAtool->Rescale_JES();
+        // MVAtool->Rescale_JES();
+        // MVAtool->Count_Events();
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
