@@ -50,7 +50,6 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     //Luminosity
     //NOTE: this value is compared to a hard-coded value in theMVAtool.cc & a rescaling factor is computed in case they are different
     double set_luminosity = 35.862; //Moriond 2017 - 35.862fb
-    // double set_luminosity = 70; //Moriond 2017 - 35.862fb //FIXME
 
     //Fakes
     bool fakes_from_data = true; //Data-driven fakes (MC fakes : obsolete in most functions!!)
@@ -60,7 +59,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool real_data_templates = true; //Else, pseudodata (obsolete)
 
     //Outputs
-    TString format = ".png"; //'.png' or '.pdf' only
+    TString format = ".pdf"; //'.png' or '.pdf' only
     bool draw_preliminary_label = true; //choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
@@ -186,9 +185,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    t_name = "Tree";
+    // if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    // else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    // t_name = "Tree";
 
     //--- Other
     // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_mediumBTAG"; //Without MEM (empty vars)
@@ -198,9 +197,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // t_name = "Tree";
 
     //--- CIEMAT's Ntuples ---
-    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/ntuples_lowpT";
-    // t_name = "Default";
+    dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+    dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/JES_split";
+    t_name = "Default";
 
 
 
@@ -389,8 +388,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //NOTE : Branch can be linked to only *one* variable via SetBranchAddress ; if additional variable is already present in other variable vector, it is removed from this vector !
 
     vector<TString> v_add_var_names;
-    // if(!use_BDTfake_SR) //FIXME -- can remove this protection from now on
-    {
+
     v_add_var_names.push_back("mTW");
     v_add_var_names.push_back("METpt");
     v_add_var_names.push_back("TopPT");
@@ -399,7 +397,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     v_add_var_names.push_back("AdditionalEleIso");
 
     //--- NOT PRESENT IN CIEMAT NTUPLES
-    if(t_name == "Tree")
+    if(t_name == "Tree" || t_name == "Default")
     {
         v_add_var_names.push_back("tZ_pT");
         v_add_var_names.push_back("tZ_mass");
@@ -413,7 +411,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         v_add_var_names.push_back("LeadingJetCSV");
         v_add_var_names.push_back("SecondJetCSV");
     }
-    }
+
 
 //---------------------------------------------------------------------------
 //  ######  ##    ##  ######  ######## ######## ##     ##    ###    ######## ####  ######   ######
@@ -440,6 +438,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
     systematics_names_tmp.push_back("JES");
+    // systematics_names_tmp.push_back("JESFWD"); //FIXME
     systematics_names_tmp.push_back("Fakes");
 
 //--- Stored as separate weights
@@ -650,9 +649,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // vector<bool> v;
         // MVAtool->Vector_isEventPassingBDTfakeSRCut(v, "Data", "", cut_BDT_value, keep_high_BDT_events);
 
-        MVAtool->Draw_Control_Plots_ForPaper();
-        MVAtool->Draw_Control_Plots_ForPaper_WZ();
-        MVAtool->Postfit_Templates_Paper();
+        // MVAtool->Draw_Control_Plots_ForPaper();
+        // MVAtool->Draw_Control_Plots_ForPaper_WZ();
+        // MVAtool->Postfit_Templates_Paper();
 
         // MVAtool->Rescale_JES();
         // MVAtool->Count_Events();

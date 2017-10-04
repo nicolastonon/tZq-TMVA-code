@@ -1452,7 +1452,10 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 			tree = 0;
 
 			//For JES & JER systematics, need a different tree (modify the variables distributions' shapes)
-			if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
+
+			if(syst_list[isyst].Contains("JES2j")) tree = (TTree*) file_input->Get("JES");
+			else if(syst_list[isyst].Contains("JESFWD2j")) tree = (TTree*) file_input->Get("JESFWD"); //FIXME
+			else if(syst_list[isyst].Contains("JER") || syst_list[isyst].Contains("JES") || syst_list[isyst].Contains("Fakes") )
 			{
 				tree = (TTree*) file_input->Get(syst_list[isyst].Data());
 			}
@@ -1833,6 +1836,7 @@ int theMVAtool::Read(TString template_name, bool fakes_from_data, bool real_data
 					else syst_name+= "__minus";
 				}
 			}
+
 
 			TString sample_name = sample_list[isample];
 			// if(real_data && sample_list[isample] == "Data") {sample_name = "DATA";} //THETA CONVENTION
@@ -8430,7 +8434,8 @@ int theMVAtool::Postfit_Templates_Paper()
 
 
 
-
+//Get normalized JES histograms, to get shape-only effect in Combine
+//Alternatively, used to rename the sJES histograms (per region, etc.)
 void theMVAtool::Rescale_JES()
 {
 	TString path = "./outputs/Combine_Input.root";
@@ -8441,6 +8446,10 @@ void theMVAtool::Rescale_JES()
 	template_list.push_back("BDT");
 	template_list.push_back("BDTttZ");
 	template_list.push_back("mTW");
+
+	vector<TString> JES_list;
+	JES_list.push_back("JES");
+	JES_list.push_back("JESFWD");
 
 	TH1F* h_tmp;
 
@@ -8460,34 +8469,39 @@ void theMVAtool::Rescale_JES()
 				double norm_nominal = h_tmp->Integral();
 				delete h_tmp;
 
-				TString histo_name_tmp = histo_name + "__JESUp";
-				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
-				h_tmp = (TH1F*) f->Get(histo_name_tmp);
-				// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
+				for(int ijes=0; ijes<JES_list.size(); ijes++)
+				{
+					//--- UP VARIATION
+					TString histo_name_tmp = histo_name + "__" + JES_list[ijes] + "Up";
+					if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
+					h_tmp = (TH1F*) f->Get(histo_name_tmp);
+					// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
 
-				//RENAMING HISTOGRAM
-				if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__JES_tZqUp";
-				else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__JES_ttZUp";
-				if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__JES_WZUp";
+					//RENAMING HISTOGRAM
+					if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_tZqUp";
+					else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_ttZUp";
+					if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_WZUp";
 
-				f->cd();
-				h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
-				delete h_tmp;
+					f->cd();
+					h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
+					delete h_tmp;
 
 
-				histo_name_tmp = histo_name + "__JESDown";
-				if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
-				h_tmp = (TH1F*) f->Get(histo_name_tmp);
-				// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
+					//--- DOWN VARIATION
+					histo_name_tmp = histo_name + "__" + JES_list[ijes] + "Down";
+					if(!f ->GetListOfKeys()->Contains( histo_name_tmp.Data() ) ) {cout<<histo_name_tmp<<" not found !"<<endl;  continue;}
+					h_tmp = (TH1F*) f->Get(histo_name_tmp);
+					// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
 
-				//RENAMING HISTOGRAM
-				if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__JES_tZqDown";
-				else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__JES_ttZDown";
-				if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__JES_WZDown";
+					//RENAMING HISTOGRAM
+					if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_tZqDown";
+					else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_ttZDown";
+					if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_WZDown";
 
-				f->cd();
-				h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
-				delete h_tmp;
+					f->cd();
+					h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
+					delete h_tmp;
+				}
 			}
 		}
 	}
@@ -8497,6 +8511,7 @@ void theMVAtool::Rescale_JES()
 }
 
 
+//Count event numbers in : Default/JES__plus/JEs__minus
 void theMVAtool::Count_Events()
 {
 	TString path = "./outputs/Combine_Input.root";
