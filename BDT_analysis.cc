@@ -60,7 +60,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Outputs
     TString format = ".pdf"; //'.png' or '.pdf' only
-    bool draw_preliminary_label = true; //choose to add or not a label 'Preliminary' (needed for PAS)
+    bool draw_preliminary_label = false; //choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -124,6 +124,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     set_v_cut_name.push_back("ContainsBadJet");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
     set_v_cut_name.push_back("fourthLep10");  set_v_cut_def.push_back("==0"); set_v_cut_IsUsedForBDT.push_back(false);
 
+    // set_v_cut_name.push_back("ZMass");  set_v_cut_def.push_back(">81 && <101"); set_v_cut_IsUsedForBDT.push_back(false);
+
 
     if(!isWZ)
     {
@@ -185,9 +187,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //FIXME --- BE SURE TO CHOOSE PROPER FILEPATHS, TREE NAME !
 
     //--- IPHC : Ntuples Interfaced for MEM, divided in 2 sets (WZ region and ttZ+tZq regions)
-    // if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
-    // else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
-    // t_name = "Tree";
+    if(isWZ) 	dir_ntuples="input_ntuples/ntuples_WZ"; //Without MEM (empty vars)
+    else 		dir_ntuples="input_ntuples/ntuples_MEM"; //With MEM
+    t_name = "Tree";
 
     //--- Other
     // if(isWZ) 	dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/output_ntuples/ntuples_WZ/ntuples_lowpT_mediumBTAG"; //Without MEM (empty vars)
@@ -197,9 +199,9 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     // t_name = "Tree";
 
     //--- CIEMAT's Ntuples ---
-    dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
-    dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/JES_split";
-    t_name = "Default";
+    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples";
+    // dir_ntuples="/home/nico/Bureau/these/tZq/MEM_Interfacing/input_ntuples/JES_split";
+    // t_name = "Default";
 
 
 
@@ -352,7 +354,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     if(include_MEM_variables){
         thevarlist_ttZ.push_back("MEMvar_1"); //Kinematic Fit Score
-        thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weigt (S/S+B ?)
+        thevarlist_ttZ.push_back("MEMvar_3"); //Likelihood ratio of MEM weight (S/S+B ?)
 
         // thevarlist_ttZ.push_back("MEMvar_2"); //Kinematic Fit Score
     }
@@ -397,7 +399,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     v_add_var_names.push_back("AdditionalEleIso");
 
     //--- NOT PRESENT IN CIEMAT NTUPLES
-    if(t_name == "Tree" || t_name == "Default")
+    if(t_name == "Tree")
+    // if(t_name == "Tree" || t_name == "Default")
     {
         v_add_var_names.push_back("tZ_pT");
         v_add_var_names.push_back("tZ_mass");
@@ -438,8 +441,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 //--- Stored in separate Trees
     systematics_names_tmp.push_back("JER");
     systematics_names_tmp.push_back("JES");
-    // systematics_names_tmp.push_back("JESFWD"); //FIXME
     systematics_names_tmp.push_back("Fakes");
+    // systematics_names_tmp.push_back("JESFWD"); //FIXME
 
 //--- Stored as separate weights
     systematics_names_tmp.push_back("Q2");
@@ -630,7 +633,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
             // MVAtool->Superpose_Shapes_Fakes_Signal(template_name, thechannellist[ichan], true, true, true);
 
-            // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "BDT", "Fakes", "Fakes");
+            // MVAtool->Draw_Template_With_Systematic_Variation(thechannellist[ichan], "mTW", "WZL", "JES");
 
             // MVAtool->Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(thechannellist[ichan], false);
 

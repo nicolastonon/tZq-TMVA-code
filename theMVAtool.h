@@ -47,6 +47,7 @@
 #include "TRandom1.h"
 #include "TObjArray.h"
 #include "TF1.h"
+#include "TLegendEntry.h"
 #include "TGaxis.h"
 #include "TLeaf.h"
 #include "TFractionFitter.h"

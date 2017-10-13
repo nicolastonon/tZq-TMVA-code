@@ -2590,7 +2590,8 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 					else if(total_var_list[ivar] == "MEMvar_0")						{h_tmp = new TH1F( "","", binning, 0, 50 );}
 					else if(total_var_list[ivar] == "MEMvar_6")						{h_tmp = new TH1F( "","", binning, 0, 15 );}
 					// else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, -60, -30 );} //CHANGED
-					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, 30, 60 );}
+					else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, -60, -30 );}
+					// else if(total_var_list[ivar] == "MEMvar_1")						{h_tmp = new TH1F( "","", binning, 30, 60 );}
 					else if(total_var_list[ivar] == "MEMvar_2")						{h_tmp = new TH1F( "","", binning, -80, -20 );}
 					else if(total_var_list[ivar] == "MEMvar_3")						{h_tmp = new TH1F( "","", binning, 0, 50 );}
 					else if(total_var_list[ivar] == "MEMvar_4")						{h_tmp = new TH1F( "","", binning, -60, 10 );}
@@ -2641,7 +2642,7 @@ void theMVAtool::Create_Control_Histograms(bool fakes_from_data, bool use_pseudo
 						weight = 0; tmp = 0; i_channel = 9;
 						tree->GetEntry(ientry); //Read event
 
-						if(total_var_list[ivar] == "MEMvar_1") {tmp*= -1;} //Invert X-axis for this variable
+						// if(total_var_list[ivar] == "MEMvar_1") {tmp*= -1;} //Invert X-axis for this variable //FIXME
 
 						//NB : No need to re-apply variables cuts here, as the control_tree is only filled with events that pass these cuts
 
@@ -3301,17 +3302,17 @@ int theMVAtool::Draw_Control_Plots(TString channel, bool fakes_from_data, bool a
 		else if(total_var_list[ivar] == "LeadJetEta")           {       stringv_list[ivar] = "Leading jet #eta"; }
 		else if(total_var_list[ivar] == "dPhiZMET")             {       stringv_list[ivar] = "#Delta#Phi(Z,E_{T}^{miss})"; }
 		else if(total_var_list[ivar] == "dPhiZAddLep")  {       stringv_list[ivar] = "#Delta#Phi(Z,l_{W})"; }
-		else if(total_var_list[ivar] == "dRAddLepB")            {       stringv_list[ivar] = "#Delta R(b,l_{W})"; }
-		else if(total_var_list[ivar] == "dRZAddLep")            {       stringv_list[ivar] = "#Delta R(Z,l_{W})"; }
-		else if(total_var_list[ivar] == "dRZTop")               {       stringv_list[ivar] = "#Delta R(Z,top)"; }
+		else if(total_var_list[ivar] == "dRAddLepB")            {       stringv_list[ivar] = "#DeltaR(b,l_{W})"; }
+		else if(total_var_list[ivar] == "dRZAddLep")            {       stringv_list[ivar] = "#DeltaR(Z,l_{W})"; }
+		else if(total_var_list[ivar] == "dRZTop")               {       stringv_list[ivar] = "#DeltaR(Z,top)"; }
 		else if(total_var_list[ivar] == "TopPT")                {       stringv_list[ivar] = "top p_{T} [GeV]"; }
 		else if(total_var_list[ivar] == "NJets")                {       stringv_list[ivar] = "Jets multiplicity"; }
 		else if(total_var_list[ivar] == "ptQ")          {       stringv_list[ivar] = "p_{T}(#font[12]{j'}) [GeV]"; }
-		else if(total_var_list[ivar] == "dRjj")         {      stringv1_list[ivar] = "Events/0.20" ;     stringv_list[ivar] = "#Delta R(b,#font[12]{j'})"; }
+		else if(total_var_list[ivar] == "dRjj")         {      stringv1_list[ivar] = "Events/0.20" ;     stringv_list[ivar] = "#DeltaR(b,#font[12]{j'})"; }
 		else if(total_var_list[ivar] == "AdditionalEleIso")     {       stringv_list[ivar] = "e_{W} isolation"; }
 		else if(total_var_list[ivar] == "AdditionalMuonIso")    {       stringv_list[ivar] = "#mu_{W} isolation"; }
-		else if(total_var_list[ivar] == "dRAddLepQ")            {       stringv_list[ivar] = "#Delta R(l_{W},#font[12]{j'})"; }
-		else if(total_var_list[ivar] == "dRAddLepClosestJet")   {       stringv_list[ivar] = "#Delta R(closest jet, l_{W})"; }
+		else if(total_var_list[ivar] == "dRAddLepQ")            {       stringv_list[ivar] = "#DeltaR(l_{W},#font[12]{j'})"; }
+		else if(total_var_list[ivar] == "dRAddLepClosestJet")   {       stringv_list[ivar] = "#DeltaR(closest jet, l_{W})"; }
 		else if(total_var_list[ivar] == "tZq_pT")               {       stringv_list[ivar] = "tZq system p_{T} [GeV]"; }
 		else if(total_var_list[ivar] == "tZq_mass")             {       stringv_list[ivar] = "tZq system mass [GeV]"; }
 		else if(total_var_list[ivar] == "leadingLeptonPT")    {       stringv_list[ivar] = "Leading lepton p_{T} [GeV]"; }
@@ -4762,8 +4763,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	TH1F *h_tmp_noMEM = 0, *h_signal_noMEM  = 0, *h_sum_background_noMEM = 0;
 	TH1F *h_tmp_MEM = 0, *h_signal_MEM = 0, *h_sum_background_MEM = 0;
 
-	// TLegend* qw = new TLegend(.6,.77,0.85,.915);
-	TLegend* qw = new TLegend(.4,.65,0.7,0.85); //CHANGED //x1, y1, x2, y2
+	TLegend* qw = new TLegend(.35,.65,0.75,0.87); //CHANGED //x1, y1, x2, y2
 	qw->SetShadowColor(0);
 	qw->SetFillColor(0);
 	qw->SetLineColor(0);
@@ -4874,7 +4874,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 		h_sum_background_MEM->SetMinimum(0);
 		h_sum_background_MEM->SetMaximum(h_sum_background_MEM->GetMaximum()*1.1);
 		// h_sum_background_MEM->GetYaxis()->SetTitle("Events");
-		h_sum_background_MEM->GetYaxis()->SetTitle("Normalised event distributions"); //CHANGED
+		h_sum_background_MEM->GetYaxis()->SetTitle("Normalized event distributions"); //CHANGED
 		if(template_name.Contains("BDT") ) h_sum_background_MEM->GetXaxis()->SetTitle("BDT"); //CHANGED
 		// if(template_name=="BDT") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
 		// else if(template_name=="BDTttZ") h_sum_background_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
@@ -4899,7 +4899,7 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 		h_signal_MEM->SetMinimum(0);
 		h_signal_MEM->SetMaximum(h_signal_MEM->GetMaximum()*1.4);
 		// h_signal_MEM->GetYaxis()->SetTitle("Events");
-		h_signal_MEM->GetYaxis()->SetTitle("Normalised event distributions"); //CHANGED
+		h_signal_MEM->GetYaxis()->SetTitle("Normalized event distributions"); //CHANGED
 		if(template_name.Contains("BDT") ) h_signal_MEM->GetXaxis()->SetTitle("BDT"); //CHANGED
 		// if(template_name=="BDT") h_signal_MEM->GetXaxis()->SetTitle("BDT output (1 tag)");
 		// else if(template_name=="BDTttZ") h_signal_MEM->GetXaxis()->SetTitle("BDT output (2 tags)");
@@ -4932,9 +4932,19 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
 	h_signal_noMEM->Draw("same hist");
 
 	qw->AddEntry(h_signal_noMEM, "Signal" , "L");
-	qw->AddEntry(h_signal_MEM, "Signal (+MEM)" , "L");
+	qw->AddEntry(h_signal_MEM, "Signal (with MEM)" , "L");
 	qw->AddEntry(h_sum_background_noMEM, "Sum backgrounds" , "L");
-	qw->AddEntry(h_sum_background_MEM, "Sum backgrounds (+MEM)" , "L");
+	qw->AddEntry(h_sum_background_MEM, "Sum backgrounds (with MEM)" , "L");
+
+	double legendFoontSize = 0.04;
+	TLegendEntry *header = (TLegendEntry*) qw->GetListOfPrimitives()->At(0);
+	header->SetTextSize(legendFoontSize);
+	header = (TLegendEntry*) qw->GetListOfPrimitives()->At(1);
+	header->SetTextSize(legendFoontSize);
+	header = (TLegendEntry*) qw->GetListOfPrimitives()->At(2);
+	header->SetTextSize(legendFoontSize);
+	header = (TLegendEntry*) qw->GetListOfPrimitives()->At(3);
+	header->SetTextSize(legendFoontSize);
 
 	//-------------------
 	//CAPTIONS
@@ -5075,13 +5085,12 @@ void theMVAtool::Superpose_With_Without_MEM_Templates(TString template_name, TSt
  */
 void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TString template_name, TString sample, TString systematic)
 {
-
 	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
 	cout<<FYEL("--- Draw Template with Systematic "<<systematic<<" superimposed ---")<<endl;
 	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
 
-	TString filepath_noMEM = "./outputs/files_noMEM/Combine_Input.root";
-	TString filepath_withMEM = "./outputs/files_nominal/Combine_Input.root";
+	TString filepath_noMEM = "./outputs/noMEM/Combine_Input.root";
+	TString filepath_withMEM = "./outputs/default/Combine_Input.root";
 
 
 	if(!Check_File_Existence(filepath_noMEM) ) {cout<<filepath_noMEM.Data()<<" not found ! Abort !"<<endl; return;}
@@ -5105,7 +5114,7 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 	vector<TString> template_list;
 	template_list.push_back("BDT");
 	template_list.push_back("BDTttZ");
-	template_list.push_back("BDTWZ");
+	template_list.push_back("mTW");
 
 	//Load Canvas definition
 	Load_Canvas_Style();
@@ -5593,9 +5602,6 @@ void theMVAtool::Draw_Template_With_Systematic_Variation(TString channel, TStrin
 		//-------------------
 		//OUTPUT
 		//------------------
-
-
-		//Iximumge name
 		TString outputname = "./plots/"+template_name;
 		outputname+= "_"+channel;
 		outputname+= "_"+sample;
@@ -5865,17 +5871,17 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 		else if(varname_tmp == "LeadJetEta")           {       title_tmp = "Leading jet #eta"; }
 		else if(varname_tmp == "dPhiZMET")             {       title_tmp = "#Delta#Phi(Z,E_{T}^{miss})"; }
 		else if(varname_tmp == "dPhiZAddLep")  {       title_tmp = "#Delta#Phi(Z,l_{W})"; }
-		else if(varname_tmp == "dRAddLepB")            {       title_tmp = "#Delta R(b,l_{W})"; }
-		else if(varname_tmp == "dRZAddLep")            {       title_tmp = "#Delta R(Z,l_{W})"; }
-		else if(varname_tmp == "dRZTop")               {       title_tmp = "#Delta R(Z,top)"; }
+		else if(varname_tmp == "dRAddLepB")            {       title_tmp = "#DeltaR(b,l_{W})"; }
+		else if(varname_tmp == "dRZAddLep")            {       title_tmp = "#DeltaR(Z,l_{W})"; }
+		else if(varname_tmp == "dRZTop")               {       title_tmp = "#DeltaR(Z,top)"; }
 		else if(varname_tmp == "TopPT")                {       title_tmp = "top p_{T} [GeV]"; }
 		else if(varname_tmp == "NJets")                {       title_tmp = "Jets multiplicity"; }
 		else if(varname_tmp == "ptQ")          {       title_tmp = "p_{T}(#font[12]{j'}) [GeV]"; }
-		else if(varname_tmp == "dRjj")         {       title_tmp = "#Delta R(b,#font[12]{j'})"; }
+		else if(varname_tmp == "dRjj")         {       title_tmp = "#DeltaR(b,#font[12]{j'})"; }
 		else if(varname_tmp == "AdditionalEleIso")     {       title_tmp = "e_{W} isolation"; }
 		else if(varname_tmp == "AdditionalMuonIso")    {       title_tmp = "#mu_{W} isolation"; }
-		else if(varname_tmp == "dRAddLepQ")            {       title_tmp = "#Delta R(l_{W},#font[12]{j'})"; }
-		else if(varname_tmp == "dRAddLepClosestJet")   {       title_tmp = "#Delta R(closest jet, l_{W})"; }
+		else if(varname_tmp == "dRAddLepQ")            {       title_tmp = "#DeltaR(l_{W},#font[12]{j'})"; }
+		else if(varname_tmp == "dRAddLepClosestJet")   {       title_tmp = "#DeltaR(closest jet, l_{W})"; }
 		else if(varname_tmp == "tZq_pT")               {       title_tmp = "tZq system p_{T} [GeV]"; }
 		else if(varname_tmp == "tZq_mass")             {       title_tmp = "tZq system mass [GeV]"; }
 		else if(varname_tmp == "leadingLeptonPT")    {       title_tmp = "Leading lepton p_{T} [GeV]"; }
@@ -6630,9 +6636,10 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 	//--------------------------
 
 	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
-	total_var_list[0] = "btagDiscri"; v_X_label[0] = "CSVv2 discriminant"; v_Y_label[0] = "Events / 0.045"; //FIXME
-	total_var_list[1] = "MEMvar_1"; v_X_label[1] = "MEM -log(w_{tZq})"; v_Y_label[1] = "Events / 3";
-	total_var_list[2] = "dRjj"; v_X_label[2] = "#Delta R(b, #font[12]{j'})"; v_Y_label[2] = "Events / 0.2";
+	total_var_list[0] = "btagDiscri"; v_X_label[0] = "CSVv2 discriminant"; v_Y_label[0] = "Events / 0.045";
+	total_var_list[1] = "MEMvar_1"; v_X_label[1] = "MEM log(w_{tZq})"; v_Y_label[1] = "Events / 3";
+	// total_var_list[1] = "MEMvar_1"; v_X_label[1] = "MEM -log(w_{tZq})"; v_Y_label[1] = "Events / 3"; //FIXME
+	total_var_list[2] = "dRjj"; v_X_label[2] = "#DeltaR(b, #font[12]{j'})"; v_Y_label[2] = "Events / 0.2";
 
 	//--------------------------
 	// CREATE VECTORS OF OBJECTS
@@ -6678,7 +6685,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		else if(iplot==2)
 		{
 			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
-			pad->SetPad(0.66, 0.425, 0.99, 1); //xlow, ylow, xup, yup
+			pad->SetPad(0.67, 0.425, 0.99, 1); //xlow, ylow, xup, yup
 		}
 		else if(iplot==3)
 		{
@@ -6693,7 +6700,7 @@ int theMVAtool::Draw_Control_Plots_ForPaper()
 		else if(iplot==5)
 		{
 			TPad* pad = (TPad*) c1->GetPrimitive(primitive_name);
-			pad->SetPad(0.66, 0., 0.99, 0.5); //xlow, ylow, xup, yup
+			pad->SetPad(0.67, 0., 0.99, 0.5); //xlow, ylow, xup, yup
 		}
 
 
@@ -8494,9 +8501,9 @@ void theMVAtool::Rescale_JES()
 					// h_tmp->Scale(norm_nominal / h_tmp->Integral()); //--- RESCALING HISTOGRAM
 
 					//RENAMING HISTOGRAM
-					if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_tZqDown";
-					else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_ttZDown";
-					if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_WZDown";
+					if(template_list[itemp] == "BDT") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_tZq";
+					else if(template_list[itemp] == "BDTttZ") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_ttZUp";
+					if(template_list[itemp] == "mTW") histo_name_tmp = histo_name + "__"+JES_list[ijes]+"_WZUp";
 
 					f->cd();
 					h_tmp->Write(histo_name_tmp, TObject::kOverwrite);
