@@ -59,8 +59,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool real_data_templates = true; //Else, pseudodata (obsolete)
 
     //Outputs
-    TString format = ".pdf"; //'.png' or '.pdf' only
-    bool draw_preliminary_label = false; //choose to add or not a label 'Preliminary' (needed for PAS)
+    TString format = ".png"; //'.png' or '.pdf' only
+    bool draw_preliminary_label = true; //choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -238,7 +238,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     thesamplelist.push_back("Data");
 
     //Signal --- must be placed before backgrounds --- NB : name hard-coded in some functions !
-    thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+2);
+    thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+1);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
@@ -249,23 +249,23 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
 
     thesamplelist.push_back("ZZ");              v_color.push_back(kYellow+1);
-    thesamplelist.push_back("ttZ");             v_color.push_back(kRed); //kRed+1
-    thesamplelist.push_back("ttW");             v_color.push_back(kRed+2); //Keep ttW & ttH samples together (coloring) //kRed+2
-    thesamplelist.push_back("ttH");             v_color.push_back(kRed+2);
+    thesamplelist.push_back("ttZ");             v_color.push_back(kRed-4);
+    thesamplelist.push_back("ttW");             v_color.push_back(kRed+3);//Keep ttW & ttH samples together (coloring)
+    thesamplelist.push_back("ttH");             v_color.push_back(kRed+3);
     thesamplelist.push_back("STtWll");          v_color.push_back(kOrange+1);
 
     //FAKES
     if(fakes_from_data)
     {
-        thesamplelist.push_back("FakesElectron");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
-        thesamplelist.push_back("FakesMuon");           v_color.push_back(kAzure-2); //Data-driven (DD)  //-- Fake lepton can be any of 3l
+        thesamplelist.push_back("FakesElectron");           v_color.push_back(kAzure-1); //Data-driven (DD)  //-- Fake lepton can be any of 3l
+        thesamplelist.push_back("FakesMuon");           v_color.push_back(kAzure-1); //Data-driven (DD)  //-- Fake lepton can be any of 3l
     }
 
     //WARNING : OBSOLETE -- don't use MC fakes (or update code) -- must be last samples !
     else
     {
-        thesamplelist.push_back("DY");              v_color.push_back(kAzure-4); //MC
-        thesamplelist.push_back("TT");              v_color.push_back(kAzure-4); //MC
+        thesamplelist.push_back("DY");              v_color.push_back(kAzure-2); //MC
+        thesamplelist.push_back("TT");              v_color.push_back(kAzure-2); //MC
         // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
     }
 
