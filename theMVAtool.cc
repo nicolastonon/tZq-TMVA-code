@@ -6089,15 +6089,6 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 
 
 
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-
-
-
-
-
-
-
 
 
 
@@ -6111,475 +6102,16 @@ void theMVAtool::Superpose_Shapes_Fakes_Signal(TString template_name, TString ch
 
 
 //-----------------------------------------------------------------------------------------
-//  #######  ######## ##     ## ######## ########
-// ##     ##    ##    ##     ## ##       ##     ##
-// ##     ##    ##    ##     ## ##       ##     ##
-// ##     ##    ##    ######### ######   ########
-// ##     ##    ##    ##     ## ##       ##   ##
-// ##     ##    ##    ##     ## ##       ##    ##
-//  #######     ##    ##     ## ######## ##     ##
+// ########  ##        #######  ########  ######     ########     ###    ########  ######## ########
+// ##     ## ##       ##     ##    ##    ##    ##    ##     ##   ## ##   ##     ## ##       ##     ##
+// ##     ## ##       ##     ##    ##    ##          ##     ##  ##   ##  ##     ## ##       ##     ##
+// ########  ##       ##     ##    ##     ######     ########  ##     ## ########  ######   ########
+// ##        ##       ##     ##    ##          ##    ##        ######### ##        ##       ##   ##
+// ##        ##       ##     ##    ##    ##    ##    ##        ##     ## ##        ##       ##    ##
+// ##        ########  #######     ##     ######     ##        ##     ## ##        ######## ##     ##
 //-----------------------------------------------------------------------------------------
 
 
-
-
-
-//-----------------------------------------------------------------------------------------
-//  ######   #######  ##     ## ########  #### ##    ## ########     ######  ####  ######   ##    ## #### ########
-// ##    ## ##     ## ###   ### ##     ##  ##  ###   ## ##          ##    ##  ##  ##    ##  ###   ##  ##  ##
-// ##       ##     ## #### #### ##     ##  ##  ####  ## ##          ##        ##  ##        ####  ##  ##  ##
-// ##       ##     ## ## ### ## ########   ##  ## ## ## ######       ######   ##  ##   #### ## ## ##  ##  ######
-// ##       ##     ## ##     ## ##     ##  ##  ##  #### ##                ##  ##  ##    ##  ##  ####  ##  ##
-// ##    ## ##     ## ##     ## ##     ##  ##  ##   ### ##          ##    ##  ##  ##    ##  ##   ###  ##  ##
-//  ######   #######  ##     ## ########  #### ##    ## ########     ######  ####  ######   ##    ## #### ##
-//-----------------------------------------------------------------------------------------
-/**
- * Run Combine on template file (arg), using datacard corresponding to tZq signal
- * @param  path_templatefile path of the templatefile on which to run Combine
- * @return                   computed significance value
- */
-float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, TString channel, bool expected, bool use_syst)
-{
-	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
-
-	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_tZq";
-
-	if(channel == "uuu" || channel == "eeu" || channel == "uue" || channel == "eee")
-	{
-		datacard_path+= "_"+channel;
-	}
-	else if(channel != "") {cout<<"Wrong channel name ! Abort"<<endl; return 0;}
-
-	if(!use_syst) datacard_path+= "_noSyst";
-
-	datacard_path+=".txt";
-
-	TString f_tmp_name = "significance_expected_info_tmp.txt";
-
-	if(expected) {system( ("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Expected a-priori
-	else {system( ("combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Observed
-
-
-	ifstream file_in(f_tmp_name.Data()); //Store output from combine in text file, read it & extract value
-	string line;
-	TString ts;
-	while(!file_in.eof())
-	{
-		getline(file_in, line);
-		ts = line;
-
-		if(!ts.Contains("Significance")) {continue;}
-
-		int index = ts.First(' ');
-		ts.Remove(0, index);
-		break;
-	}
-
-	system( ("rm "+f_tmp_name).Data() ); //Remove tmp file
-
-	return Convert_TString_To_Number(ts);
-}
-
-
-
-
-
-
-//-----------------------------------------------------------------------------------------
-// ########  ######## ########  #### ##    ##    ######## ######## ##     ## ########  ##          ###    ######## ########  ######
-// ##     ## ##       ##     ##  ##  ###   ##       ##    ##       ###   ### ##     ## ##         ## ##      ##    ##       ##    ##
-// ##     ## ##       ##     ##  ##  ####  ##       ##    ##       #### #### ##     ## ##        ##   ##     ##    ##       ##
-// ########  ######   ########   ##  ## ## ##       ##    ######   ## ### ## ########  ##       ##     ##    ##    ######    ######
-// ##   ##   ##       ##     ##  ##  ##  ####       ##    ##       ##     ## ##        ##       #########    ##    ##             ##
-// ##    ##  ##       ##     ##  ##  ##   ###       ##    ##       ##     ## ##        ##       ##     ##    ##    ##       ##    ##
-// ##     ## ######## ########  #### ##    ##       ##    ######## ##     ## ##        ######## ##     ##    ##    ########  ######
-//-----------------------------------------------------------------------------------------
-
-
-
-/**
- * Takes input file, rebins all templates inside it, and store them in a separate output file
- */
-void theMVAtool::Rebin_Template_File(TString filepath, int nbins)
-{
-	if(!Check_File_Existence(filepath)) {cout<<filepath<<" not found ! Abort"<<endl; return;}
-
-	TFile* f = TFile::Open(filepath);
-
-	TString output_filename = filepath;
-	int i = output_filename.Index(".root"); //Find index of substring
-	output_filename.Remove(i); //Remove substring
-	output_filename+= "_"+Convert_Number_To_TString(nbins)+"Bins.root";
-
-	TFile* f_output = TFile::Open( output_filename, "RECREATE");
-
-	vector<TString> template_list;
-	template_list.push_back("mTW");
-	template_list.push_back("BDT");
-	template_list.push_back("BDTttZ");
-
-	TH1F* h = 0;
-	TH1F* hnew = 0; //re-binned histo
-
-
-	for(int itemp=0; itemp<template_list.size(); itemp++)
-	{
-		for(int isample = 0; isample<sample_list.size(); isample++)
-		{
-			for(int isyst=0; isyst<syst_list.size(); isyst++)
-			{
-				if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
-				if( (sample_list[isample] == "Data" && syst_list[isyst]!="")
-					|| ( sample_list[isample].Contains("Fakes") && syst_list[isyst]!="" && !syst_list[isyst].Contains("Fakes") ) ) {continue;} //Data = no syst. -- Fakes = only fake syst.
-				if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") )   {continue;} //Fake syst. only for "fakes" samples
-				if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
-
-				for(int ichan=0; ichan<channel_list.size(); ichan++)
-				{
-					h=0; hnew=0;
-
-					TString h_name = template_list[itemp]+"_"+channel_list[ichan]+"__";
-					if(sample_list[isample].Contains("Data")) h_name+= "data_obs";
-					else h_name+= sample_list[isample];
-
-					if(syst_list[isyst] != "") {h_name+= "__"+Combine_Naming_Convention(syst_list[isyst]);}
-
-					if(!f->GetListOfKeys()->Contains(h_name) ) {cout<<h_name.Data()<<" not found !"<<endl;  continue;}
-
-					h = (TH1F*) f->Get(h_name);
-
-					int current_binning = h->GetNbinsX();
-
-					double rebin_ratio = (double) current_binning / nbins;
-
-					hnew = (TH1F*) h->Clone();
-					hnew->Rebin(rebin_ratio);
-
-					for(int n = 1; n<=hnew->GetNbinsX(); n++)
-					{
-						if(hnew->GetBinContent(n) < 0) hnew->SetBinContent(n, 0);
-					}
-
-
-					f_output->cd();
-					hnew->Write(h_name, TObject::kOverwrite);
-				} //chan
-			} //syst
-		} //sample
-
-		cout<<"--- Done with "<<template_list[itemp]<<"templates !"<<endl;
-
-	} //template
-
-	f->Close(); f_output->Close();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-
-//  #######  ########   ######   #######  ##       ######## ######## ########
-// ##     ## ##     ## ##    ## ##     ## ##       ##          ##    ##
-// ##     ## ##     ## ##       ##     ## ##       ##          ##    ##
-// ##     ## ########   ######  ##     ## ##       ######      ##    ######
-// ##     ## ##     ##       ## ##     ## ##       ##          ##    ##
-// ##     ## ##     ## ##    ## ##     ## ##       ##          ##    ##
-//  #######  ########   ######   #######  ######## ########    ##    ########
-
-
-// ######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
-// ##       ##     ## ###   ## ##    ##    ##     ##  ##     ## ###   ## ##    ##
-// ##       ##     ## ####  ## ##          ##     ##  ##     ## ####  ## ##
-// ######   ##     ## ## ## ## ##          ##     ##  ##     ## ## ## ##  ######
-// ##       ##     ## ##  #### ##          ##     ##  ##     ## ##  ####       ##
-// ##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
-// ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
-
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-
-
-//Place here all the functions which are being tested or which are needed only temporarily
-
-
-
-
-//-----------------------------------------------------------------------------------------
-//  ######   #######  ##     ## ########     ###    ########  ########
-// ##    ## ##     ## ###   ### ##     ##   ## ##   ##     ## ##
-// ##       ##     ## #### #### ##     ##  ##   ##  ##     ## ##
-// ##       ##     ## ## ### ## ########  ##     ## ########  ######
-// ##       ##     ## ##     ## ##        ######### ##   ##   ##
-// ##    ## ##     ## ##     ## ##        ##     ## ##    ##  ##
-//  ######   #######  ##     ## ##        ##     ## ##     ## ########
-
-
-// ##    ## ########  ######           ##      ## ######## ####  ######   ##     ## ########
-// ###   ## ##       ##    ##          ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-// ####  ## ##       ##                ##  ##  ## ##        ##  ##        ##     ##    ##
-// ## ## ## ######   ##   ####         ##  ##  ## ######    ##  ##   #### #########    ##
-// ##  #### ##       ##    ##          ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-// ##   ### ##       ##    ##          ##  ##  ## ##        ##  ##    ##  ##     ##    ##
-// ##    ## ########  ######            ###  ###  ######## ####  ######   ##     ##    ##
-//-----------------------------------------------------------------------------------------
-
-/**
- * Compare shapes of distributions of BDT input variables in 3 cases : with all events, with only positive weights events, and with all events but absolute weights. Output = comparison plots for all vars & 3 main samples (tZq, ttZ, WZ)
- * @param  channel     [Channel name (for single channel plots)]
- * @param  allchannels [single or sum of 4 channels]
- */
-
-void theMVAtool::Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString channel, bool allchannels)
-{
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	cout<<FYEL("--- Compare Input Variables using Weight or fabs(Weight) ---")<<endl;
-	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
-
-
-	//File containing histograms of input vars, w/ ALL events
-	TString input_file_name = "outputs/files_nominal/Controlfiles_allEvents/";
-	input_file_name+= "Control_Histograms" + this->filename_suffix + ".root";
-	TFile* f_neg = 0;
-	f_neg = TFile::Open( input_file_name );
-	//File containing histograms of input vars, w/ ALL events but fabs(weight)
-	input_file_name = "outputs/files_nominal/Controlfiles_fabsEvents/";
-	input_file_name+= "Control_Histograms" + this->filename_suffix + ".root";
-	TFile* f_abs = 0;
-	f_abs = TFile::Open( input_file_name );
-
-	if(!f_neg || !f_abs) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
-
-	TH1::SetDefaultSumw2();
-	mkdir("plots/",0777); //Create directory if inexistant
-	mkdir("plots/compare_negweights/",0777); //Create directory if inexistant
-	mkdir("plots/compare_negweights/allchan",0777); //Create directory if inexistant
-
-	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
-	thechannellist.push_back("uuu");
-	thechannellist.push_back("uue");
-	thechannellist.push_back("eeu");
-	thechannellist.push_back("eee");
-
-	//3 main samples we want to check
-	vector<TString> samples;
-	samples.push_back("tZqmcNLO");
-	samples.push_back("WZL");
-	samples.push_back("WZB");
-	samples.push_back("WZC");
-	samples.push_back("ttZ");
-
-	//Load Canvas definition
-	Load_Canvas_Style();
-
-	TH1F *h_tmp_neg = 0, *h_tmp_abs = 0;
-	TH1F *h_neg = 0, *h_abs = 0;
-
-	TLegend* qw = 0;
-
-	//Want to plot ALL activated variables (BDT vars + cut vars !)
-	vector<TString> total_var_list;
-	for(int i=0; i<v_cut_name.size(); i++)
-	{
-		total_var_list.push_back(v_cut_name[i].Data());
-	}
-	for(int i=0; i<var_list.size(); i++)
-	{
-		total_var_list.push_back(var_list[i].Data());
-	}
-
-//---------------------
-//Loop on var > sample > chan
-//Retrieve histograms, plot
-	for(int ivar=0; ivar<total_var_list.size(); ivar++)
-	{
-		for(int isample = 0; isample < samples.size(); isample++)
-		{
-			TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-
-			h_neg = 0; h_abs = 0;
-
-			//TLegend* qw = new TLegend(.80,.60,.95,.90);
-			qw = new TLegend(.7,.7,0.965,.915);
-			qw->SetShadowColor(0);
-			qw->SetFillColor(0);
-			qw->SetLineColor(0);
-
-			int niter_chan = 0; //is needed to know if h_tmp must be cloned or added
-			for(int ichan=0; ichan<thechannellist.size(); ichan++)
-			{
-				if(!allchannels && channel != thechannellist[ichan]) {continue;} //If plot single channel
-
-
-				h_tmp_neg = 0;
-				h_tmp_abs = 0;
-
-				TString histo_name = total_var_list[ivar] + "_" + thechannellist[ichan] + "__" + samples[isample];
-
-				if(!f_neg->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
-				h_tmp_neg = (TH1F*) f_neg->Get(histo_name.Data())->Clone();
-
-				if(!f_abs->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
-				h_tmp_abs = (TH1F*) f_abs->Get(histo_name.Data())->Clone();
-
-
-				//Reference = distrib. with ALL events (relative weights)
-				h_tmp_neg->SetFillStyle(3345);
-				h_tmp_neg->SetFillColor(kRed);
-				h_tmp_neg->SetLineColor(kRed);
-
-				h_tmp_abs->SetLineColor(kGreen+2);
-
-				if(niter_chan == 0) {h_neg = (TH1F*) h_tmp_neg->Clone();  h_abs = (TH1F*) h_tmp_abs->Clone();}
-				else //Sum channels
-				{
-					h_neg->Add(h_tmp_neg); h_abs->Add(h_tmp_abs);
-				}
-
-			niter_chan++;
-			} //end channel loop
-
-			qw->AddEntry(h_neg, "ALL events", "F");
-			qw->AddEntry(h_abs, "All events, fabs(weight)", "L");
-
-			h_neg->Scale(1./h_neg->Integral());
-			h_abs->Scale(1./h_abs->Integral());
-
-			if(h_neg->GetMaximum() < h_abs->GetMaximum()) {h_neg->SetMaximum(h_abs->GetMaximum() * 1.2);}
-
-			c1->cd();
-
-			TString title = total_var_list[ivar] + " / " + samples[isample] ;
-			h_neg->GetXaxis()->SetTitle((title.Data()));
-
-			h_neg->Draw("hist same h");
-			h_abs->Draw("hist same h");
-			qw->Draw("same");
-
-			//Image name
-			TString outputname = "plots/compare_negweights/"+total_var_list[ivar]+"_"+samples[isample]+"_"+channel+this->format;
-			if(channel == "" || allchannels) {outputname = "plots/compare_negweights/allchan/"+total_var_list[ivar]+"_" + samples[isample]+"_all"+this->format;}
-
-			if(c1!= 0) {c1->SaveAs(outputname.Data() );}
-			//cout << __LINE__ << endl;
-
-			delete c1;
-		} //end sample loop
-
-	} //end var loop
-
-	delete h_neg; delete h_abs;
-	delete h_tmp_neg; delete h_tmp_abs;
-	delete qw;
-	delete f_neg; delete f_abs;
-
-	return;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-
-// ######## ########  ######  ######## #### ##    ##  ######
-//    ##    ##       ##    ##    ##     ##  ###   ## ##    ##
-//    ##    ##       ##          ##     ##  ####  ## ##
-//    ##    ######    ######     ##     ##  ## ## ## ##   ####
-//    ##    ##             ##    ##     ##  ##  #### ##    ##
-//    ##    ##       ##    ##    ##     ##  ##   ### ##    ##
-//    ##    ########  ######     ##    #### ##    ##  ######
-
-//    ###    ########  ########    ###
-//   ## ##   ##     ## ##         ## ##
-//  ##   ##  ##     ## ##        ##   ##
-// ##     ## ########  ######   ##     ##
-// ######### ##   ##   ##       #########
-// ##     ## ##    ##  ##       ##     ##
-// ##     ## ##     ## ######## ##     ##
-
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
-
-
-//Place here all the functions which are being tested or which are needed only temporarily
 
 
 
@@ -8439,6 +7971,514 @@ int theMVAtool::Postfit_Templates_Paper()
 
 
 
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//  #######  ######## ##     ## ######## ########
+// ##     ##    ##    ##     ## ##       ##     ##
+// ##     ##    ##    ##     ## ##       ##     ##
+// ##     ##    ##    ######### ######   ########
+// ##     ##    ##    ##     ## ##       ##   ##
+// ##     ##    ##    ##     ## ##       ##    ##
+//  #######     ##    ##     ## ######## ##     ##
+//-----------------------------------------------------------------------------------------
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//  ######   #######  ##     ## ########  #### ##    ## ########     ######  ####  ######   ##    ## #### ########
+// ##    ## ##     ## ###   ### ##     ##  ##  ###   ## ##          ##    ##  ##  ##    ##  ###   ##  ##  ##
+// ##       ##     ## #### #### ##     ##  ##  ####  ## ##          ##        ##  ##        ####  ##  ##  ##
+// ##       ##     ## ## ### ## ########   ##  ## ## ## ######       ######   ##  ##   #### ## ## ##  ##  ######
+// ##       ##     ## ##     ## ##     ##  ##  ##  #### ##                ##  ##  ##    ##  ##  ####  ##  ##
+// ##    ## ##     ## ##     ## ##     ##  ##  ##   ### ##          ##    ##  ##  ##    ##  ##   ###  ##  ##
+//  ######   #######  ##     ## ########  #### ##    ## ########     ######  ####  ######   ##    ## #### ##
+//-----------------------------------------------------------------------------------------
+/**
+ * Run Combine on template file (arg), using datacard corresponding to tZq signal
+ * @param  path_templatefile path of the templatefile on which to run Combine
+ * @return                   computed significance value
+ */
+float theMVAtool::Compute_Combine_Significance_From_TemplateFile(TString path_templatefile, TString signal, TString channel, bool expected, bool use_syst)
+{
+	CopyFile(path_templatefile, "./COMBINE/templates/Combine_Input.root"); //Copy file to templates dir.
+
+	TString datacard_path = "./COMBINE/datacards/COMBINED_datacard_TemplateFit_tZq";
+
+	if(channel == "uuu" || channel == "eeu" || channel == "uue" || channel == "eee")
+	{
+		datacard_path+= "_"+channel;
+	}
+	else if(channel != "") {cout<<"Wrong channel name ! Abort"<<endl; return 0;}
+
+	if(!use_syst) datacard_path+= "_noSyst";
+
+	datacard_path+=".txt";
+
+	TString f_tmp_name = "significance_expected_info_tmp.txt";
+
+	if(expected) {system( ("combine -M ProfileLikelihood --significance -t -1 --expectSignal=1 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Expected a-priori
+	else {system( ("combine -M ProfileLikelihood --signif --cminDefaultMinimizerType=Minuit2 "+datacard_path+" | tee "+f_tmp_name).Data() );} //Observed
+
+
+	ifstream file_in(f_tmp_name.Data()); //Store output from combine in text file, read it & extract value
+	string line;
+	TString ts;
+	while(!file_in.eof())
+	{
+		getline(file_in, line);
+		ts = line;
+
+		if(!ts.Contains("Significance")) {continue;}
+
+		int index = ts.First(' ');
+		ts.Remove(0, index);
+		break;
+	}
+
+	system( ("rm "+f_tmp_name).Data() ); //Remove tmp file
+
+	return Convert_TString_To_Number(ts);
+}
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+// ########  ######## ########  #### ##    ##    ######## ######## ##     ## ########  ##          ###    ######## ########  ######
+// ##     ## ##       ##     ##  ##  ###   ##       ##    ##       ###   ### ##     ## ##         ## ##      ##    ##       ##    ##
+// ##     ## ##       ##     ##  ##  ####  ##       ##    ##       #### #### ##     ## ##        ##   ##     ##    ##       ##
+// ########  ######   ########   ##  ## ## ##       ##    ######   ## ### ## ########  ##       ##     ##    ##    ######    ######
+// ##   ##   ##       ##     ##  ##  ##  ####       ##    ##       ##     ## ##        ##       #########    ##    ##             ##
+// ##    ##  ##       ##     ##  ##  ##   ###       ##    ##       ##     ## ##        ##       ##     ##    ##    ##       ##    ##
+// ##     ## ######## ########  #### ##    ##       ##    ######## ##     ## ##        ######## ##     ##    ##    ########  ######
+//-----------------------------------------------------------------------------------------
+
+
+
+/**
+ * Takes input file, rebins all templates inside it, and store them in a separate output file
+ */
+void theMVAtool::Rebin_Template_File(TString filepath, int nbins)
+{
+	if(!Check_File_Existence(filepath)) {cout<<filepath<<" not found ! Abort"<<endl; return;}
+
+	TFile* f = TFile::Open(filepath);
+
+	TString output_filename = filepath;
+	int i = output_filename.Index(".root"); //Find index of substring
+	output_filename.Remove(i); //Remove substring
+	output_filename+= "_"+Convert_Number_To_TString(nbins)+"Bins.root";
+
+	TFile* f_output = TFile::Open( output_filename, "RECREATE");
+
+	vector<TString> template_list;
+	template_list.push_back("mTW");
+	template_list.push_back("BDT");
+	template_list.push_back("BDTttZ");
+
+	TH1F* h = 0;
+	TH1F* hnew = 0; //re-binned histo
+
+
+	for(int itemp=0; itemp<template_list.size(); itemp++)
+	{
+		for(int isample = 0; isample<sample_list.size(); isample++)
+		{
+			for(int isyst=0; isyst<syst_list.size(); isyst++)
+			{
+				if(sample_list[isample] == "STtWll" && (syst_list[isyst].Contains("Q2") || syst_list[isyst].Contains("pdf") ) ) {continue;}
+				if( (sample_list[isample] == "Data" && syst_list[isyst]!="")
+					|| ( sample_list[isample].Contains("Fakes") && syst_list[isyst]!="" && !syst_list[isyst].Contains("Fakes") ) ) {continue;} //Data = no syst. -- Fakes = only fake syst.
+				if( syst_list[isyst].Contains("Fakes") && !sample_list[isample].Contains("Fakes") )   {continue;} //Fake syst. only for "fakes" samples
+				if( (syst_list[isyst].Contains("PSscale") || syst_list[isyst].Contains("Hadron") ) && !sample_list[isample].Contains("tZq") ) {continue;} //available for signal only
+
+				for(int ichan=0; ichan<channel_list.size(); ichan++)
+				{
+					h=0; hnew=0;
+
+					TString h_name = template_list[itemp]+"_"+channel_list[ichan]+"__";
+					if(sample_list[isample].Contains("Data")) h_name+= "data_obs";
+					else h_name+= sample_list[isample];
+
+					if(syst_list[isyst] != "") {h_name+= "__"+Combine_Naming_Convention(syst_list[isyst]);}
+
+					if(!f->GetListOfKeys()->Contains(h_name) ) {cout<<h_name.Data()<<" not found !"<<endl;  continue;}
+
+					h = (TH1F*) f->Get(h_name);
+
+					int current_binning = h->GetNbinsX();
+
+					double rebin_ratio = (double) current_binning / nbins;
+
+					hnew = (TH1F*) h->Clone();
+					hnew->Rebin(rebin_ratio);
+
+					for(int n = 1; n<=hnew->GetNbinsX(); n++)
+					{
+						if(hnew->GetBinContent(n) < 0) hnew->SetBinContent(n, 0);
+					}
+
+
+					f_output->cd();
+					hnew->Write(h_name, TObject::kOverwrite);
+				} //chan
+			} //syst
+		} //sample
+
+		cout<<"--- Done with "<<template_list[itemp]<<"templates !"<<endl;
+
+	} //template
+
+	f->Close(); f_output->Close();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+
+//  #######  ########   ######   #######  ##       ######## ######## ########
+// ##     ## ##     ## ##    ## ##     ## ##       ##          ##    ##
+// ##     ## ##     ## ##       ##     ## ##       ##          ##    ##
+// ##     ## ########   ######  ##     ## ##       ######      ##    ######
+// ##     ## ##     ##       ## ##     ## ##       ##          ##    ##
+// ##     ## ##     ## ##    ## ##     ## ##       ##          ##    ##
+//  #######  ########   ######   #######  ######## ########    ##    ########
+
+
+// ######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
+// ##       ##     ## ###   ## ##    ##    ##     ##  ##     ## ###   ## ##    ##
+// ##       ##     ## ####  ## ##          ##     ##  ##     ## ####  ## ##
+// ######   ##     ## ## ## ## ##          ##     ##  ##     ## ## ## ##  ######
+// ##       ##     ## ##  #### ##          ##     ##  ##     ## ##  ####       ##
+// ##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
+// ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
+
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+
+
+//Place here all the functions which are being tested or which are needed only temporarily
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//  ######   #######  ##     ## ########     ###    ########  ########
+// ##    ## ##     ## ###   ### ##     ##   ## ##   ##     ## ##
+// ##       ##     ## #### #### ##     ##  ##   ##  ##     ## ##
+// ##       ##     ## ## ### ## ########  ##     ## ########  ######
+// ##       ##     ## ##     ## ##        ######### ##   ##   ##
+// ##    ## ##     ## ##     ## ##        ##     ## ##    ##  ##
+//  ######   #######  ##     ## ##        ##     ## ##     ## ########
+
+
+// ##    ## ########  ######           ##      ## ######## ####  ######   ##     ## ########
+// ###   ## ##       ##    ##          ##  ##  ## ##        ##  ##    ##  ##     ##    ##
+// ####  ## ##       ##                ##  ##  ## ##        ##  ##        ##     ##    ##
+// ## ## ## ######   ##   ####         ##  ##  ## ######    ##  ##   #### #########    ##
+// ##  #### ##       ##    ##          ##  ##  ## ##        ##  ##    ##  ##     ##    ##
+// ##   ### ##       ##    ##          ##  ##  ## ##        ##  ##    ##  ##     ##    ##
+// ##    ## ########  ######            ###  ###  ######## ####  ######   ##     ##    ##
+//-----------------------------------------------------------------------------------------
+
+/**
+ * Compare shapes of distributions of BDT input variables in 3 cases : with all events, with only positive weights events, and with all events but absolute weights. Output = comparison plots for all vars & 3 main samples (tZq, ttZ, WZ)
+ * @param  channel     [Channel name (for single channel plots)]
+ * @param  allchannels [single or sum of 4 channels]
+ */
+
+void theMVAtool::Compare_Negative_Or_Absolute_Weight_Effect_On_Distributions(TString channel, bool allchannels)
+{
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	cout<<FYEL("--- Compare Input Variables using Weight or fabs(Weight) ---")<<endl;
+	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
+
+
+	//File containing histograms of input vars, w/ ALL events
+	TString input_file_name = "outputs/files_nominal/Controlfiles_allEvents/";
+	input_file_name+= "Control_Histograms" + this->filename_suffix + ".root";
+	TFile* f_neg = 0;
+	f_neg = TFile::Open( input_file_name );
+	//File containing histograms of input vars, w/ ALL events but fabs(weight)
+	input_file_name = "outputs/files_nominal/Controlfiles_fabsEvents/";
+	input_file_name+= "Control_Histograms" + this->filename_suffix + ".root";
+	TFile* f_abs = 0;
+	f_abs = TFile::Open( input_file_name );
+
+	if(!f_neg || !f_abs) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return;}
+
+	TH1::SetDefaultSumw2();
+	mkdir("plots/",0777); //Create directory if inexistant
+	mkdir("plots/compare_negweights/",0777); //Create directory if inexistant
+	mkdir("plots/compare_negweights/allchan",0777); //Create directory if inexistant
+
+	vector<TString> thechannellist; //Need 2 channel lists to be able to plot both single channels and all channels summed
+	thechannellist.push_back("uuu");
+	thechannellist.push_back("uue");
+	thechannellist.push_back("eeu");
+	thechannellist.push_back("eee");
+
+	//3 main samples we want to check
+	vector<TString> samples;
+	samples.push_back("tZqmcNLO");
+	samples.push_back("WZL");
+	samples.push_back("WZB");
+	samples.push_back("WZC");
+	samples.push_back("ttZ");
+
+	//Load Canvas definition
+	Load_Canvas_Style();
+
+	TH1F *h_tmp_neg = 0, *h_tmp_abs = 0;
+	TH1F *h_neg = 0, *h_abs = 0;
+
+	TLegend* qw = 0;
+
+	//Want to plot ALL activated variables (BDT vars + cut vars !)
+	vector<TString> total_var_list;
+	for(int i=0; i<v_cut_name.size(); i++)
+	{
+		total_var_list.push_back(v_cut_name[i].Data());
+	}
+	for(int i=0; i<var_list.size(); i++)
+	{
+		total_var_list.push_back(var_list[i].Data());
+	}
+
+//---------------------
+//Loop on var > sample > chan
+//Retrieve histograms, plot
+	for(int ivar=0; ivar<total_var_list.size(); ivar++)
+	{
+		for(int isample = 0; isample < samples.size(); isample++)
+		{
+			TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+
+			h_neg = 0; h_abs = 0;
+
+			//TLegend* qw = new TLegend(.80,.60,.95,.90);
+			qw = new TLegend(.7,.7,0.965,.915);
+			qw->SetShadowColor(0);
+			qw->SetFillColor(0);
+			qw->SetLineColor(0);
+
+			int niter_chan = 0; //is needed to know if h_tmp must be cloned or added
+			for(int ichan=0; ichan<thechannellist.size(); ichan++)
+			{
+				if(!allchannels && channel != thechannellist[ichan]) {continue;} //If plot single channel
+
+
+				h_tmp_neg = 0;
+				h_tmp_abs = 0;
+
+				TString histo_name = total_var_list[ivar] + "_" + thechannellist[ichan] + "__" + samples[isample];
+
+				if(!f_neg->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+				h_tmp_neg = (TH1F*) f_neg->Get(histo_name.Data())->Clone();
+
+				if(!f_abs->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found !"<<endl; continue;}
+				h_tmp_abs = (TH1F*) f_abs->Get(histo_name.Data())->Clone();
+
+
+				//Reference = distrib. with ALL events (relative weights)
+				h_tmp_neg->SetFillStyle(3345);
+				h_tmp_neg->SetFillColor(kRed);
+				h_tmp_neg->SetLineColor(kRed);
+
+				h_tmp_abs->SetLineColor(kGreen+2);
+
+				if(niter_chan == 0) {h_neg = (TH1F*) h_tmp_neg->Clone();  h_abs = (TH1F*) h_tmp_abs->Clone();}
+				else //Sum channels
+				{
+					h_neg->Add(h_tmp_neg); h_abs->Add(h_tmp_abs);
+				}
+
+			niter_chan++;
+			} //end channel loop
+
+			qw->AddEntry(h_neg, "ALL events", "F");
+			qw->AddEntry(h_abs, "All events, fabs(weight)", "L");
+
+			h_neg->Scale(1./h_neg->Integral());
+			h_abs->Scale(1./h_abs->Integral());
+
+			if(h_neg->GetMaximum() < h_abs->GetMaximum()) {h_neg->SetMaximum(h_abs->GetMaximum() * 1.2);}
+
+			c1->cd();
+
+			TString title = total_var_list[ivar] + " / " + samples[isample] ;
+			h_neg->GetXaxis()->SetTitle((title.Data()));
+
+			h_neg->Draw("hist same h");
+			h_abs->Draw("hist same h");
+			qw->Draw("same");
+
+			//Image name
+			TString outputname = "plots/compare_negweights/"+total_var_list[ivar]+"_"+samples[isample]+"_"+channel+this->format;
+			if(channel == "" || allchannels) {outputname = "plots/compare_negweights/allchan/"+total_var_list[ivar]+"_" + samples[isample]+"_all"+this->format;}
+
+			if(c1!= 0) {c1->SaveAs(outputname.Data() );}
+			//cout << __LINE__ << endl;
+
+			delete c1;
+		} //end sample loop
+
+	} //end var loop
+
+	delete h_neg; delete h_abs;
+	delete h_tmp_neg; delete h_tmp_abs;
+	delete qw;
+	delete f_neg; delete f_abs;
+
+	return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+
+// ######## ########  ######  ######## #### ##    ##  ######
+//    ##    ##       ##    ##    ##     ##  ###   ## ##    ##
+//    ##    ##       ##          ##     ##  ####  ## ##
+//    ##    ######    ######     ##     ##  ## ## ## ##   ####
+//    ##    ##             ##    ##     ##  ##  #### ##    ##
+//    ##    ##       ##    ##    ##     ##  ##   ### ##    ##
+//    ##    ########  ######     ##    #### ##    ##  ######
+
+//    ###    ########  ########    ###
+//   ## ##   ##     ## ##         ## ##
+//  ##   ##  ##     ## ##        ##   ##
+// ##     ## ########  ######   ##     ##
+// ######### ##   ##   ##       #########
+// ##     ## ##    ##  ##       ##     ##
+// ##     ## ##     ## ######## ##     ##
+
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+// ####### ####### ####### ####### ####### ####### ####### ####### ####### #######
+
+
+//Place here all the functions which are being tested or which are needed only temporarily
 
 
 //Get normalized JES histograms, to get shape-only effect in Combine
