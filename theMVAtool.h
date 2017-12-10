@@ -114,6 +114,9 @@ class theMVAtool
 
 	void Rescale_JES();
 	void Count_Events();
+	void Histograms_For_Denis();
+	int Postfit_Templates_Paper_SinglePlot();
+
 
 //Members
 	TMVA::Reader *reader;

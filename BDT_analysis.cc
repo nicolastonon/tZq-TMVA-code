@@ -49,6 +49,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
     //Luminosity
     //NOTE: this value is compared to a hard-coded value in theMVAtool.cc & a rescaling factor is computed in case they are different
+    //NB2 : careful to Fakes rescaling ! If interested in different lumi for prediction, you should probably comment the automatic reweighting and do it manually
     double set_luminosity = 35.862; //Moriond 2017 - 35.862fb
 
     //Fakes
@@ -59,8 +60,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     bool real_data_templates = true; //Else, pseudodata (obsolete)
 
     //Outputs
-    TString format = ".png"; //'.png' or '.pdf' only
-    bool draw_preliminary_label = true; //choose to add or not a label 'Preliminary' (needed for PAS)
+    TString format = ".pdf"; //'.png' or '.pdf' only
+    bool draw_preliminary_label = false; //choose to add or not a label 'Preliminary' (needed for PAS)
     bool combine_naming_convention = true; //To write histograms with Combine names (else, follow Theta conventions)
     //NB : if set to false, some functions might now work
 
@@ -233,12 +234,13 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
     std::vector<TString> thesamplelist;
     std::vector<int> v_color; //sample <-> color
 
+
 //-------------------
     //DATA --- THE DATA SAMPLE MUST BE UNIQUE AND IN FIRST POSITION
     thesamplelist.push_back("Data");
 
     //Signal --- must be placed before backgrounds --- NB : name hard-coded in some functions !
-    thesamplelist.push_back("tZqmcNLO");             v_color.push_back(kGreen+1);
+    thesamplelist.push_back("tZqmcNLO");        v_color.push_back(kGreen+1);
 
     //BKG
     thesamplelist.push_back("WZL");             v_color.push_back(920); //grey
@@ -269,6 +271,38 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // thesamplelist.push_back("WW");              v_color.push_back(kYellow); //MC
     }
 
+    //NEW -- CUSTOM COLORS -- FOR TESTING PURPOSE ONLY !
+    //-- Idea : take good-looking/efficient color palettes from web and apply it manually
+    bool use_custom_colors = false;
+
+    if(use_custom_colors)
+    {
+        TColor* col = new TColor(1700, 141./255., 211./255., 199./255.);
+        // col.SetRGB(141./255., 211./255., 199./255.);
+        // col->SetRGB(251./255., 128./255., 114./255.);
+        // col->SetRGB(0.1, 0.2, 0.3);
+        cout<<col->GetNumber()<<endl;
+
+        vector<TColor*> v_custom_colors(thesamplelist.size());
+        v_custom_colors[0] = new TColor(9001, 166./255., 206./255., 227./255.);
+        v_custom_colors[1] = new TColor(9002, 31./255., 120./255., 180./255.);
+        v_custom_colors[2] = new TColor(9003, 178./255., 223./255., 138./255.);
+        v_custom_colors[3] = new TColor(9004, 51./255., 160./255., 44./255.);
+        v_custom_colors[4] = new TColor(9005, 251./255., 251./255., 153./255.);
+        v_custom_colors[5] = new TColor(9006, 227./255., 26./255., 28./255.);
+
+        v_color[0] = v_custom_colors[0]->GetNumber();
+        v_color[4] = v_custom_colors[1]->GetNumber();
+        v_color[5] = v_custom_colors[2]->GetNumber();
+
+        v_color[6] = v_custom_colors[3]->GetNumber();
+        v_color[7] = v_custom_colors[3]->GetNumber();
+
+        v_color[8] = v_custom_colors[4]->GetNumber();
+
+        v_color[9] = v_custom_colors[5]->GetNumber();
+        v_color[10] = v_custom_colors[5]->GetNumber();
+    }
 
 //-------------------
 
@@ -658,6 +692,8 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
 
         // MVAtool->Rescale_JES();
         // MVAtool->Count_Events();
+        // MVAtool->Histograms_For_Denis();
+        // MVAtool->Postfit_Templates_Paper_SinglePlot();
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
