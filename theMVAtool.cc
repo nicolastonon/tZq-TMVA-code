@@ -8023,6 +8023,590 @@ int theMVAtool::Postfit_Templates_Paper()
 
 
 
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+int theMVAtool::Postfit_Templates_Paper_SinglePlot()
+{
+	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
+	cout<<FYEL("--- Draw *Single* Postfit Templates Paper ---")<<endl;
+	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
+
+	//Load Canvas definition
+	Load_Canvas_Style();
+
+	TH1::SetDefaultSumw2();
+	mkdir("plots",0777); //Create directory if inexistant
+
+	TFile* file_data = 0;
+	TString input_file_name_data = "outputs/Combine_Input.root";
+	cout<<FMAG("--- Will use file ./"<<input_file_name_data<<" to get postfit plots !")<<endl;
+	file_data = TFile::Open( input_file_name_data );
+	if(file_data == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+
+	TFile* f = 0;
+	TString input_file_name = "outputs/mlfit.root";
+	cout<<FMAG("--- Will use file ./"<<input_file_name<<" to get postfit plots !")<<endl;
+	f = TFile::Open( input_file_name );
+	if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
+
+
+	// TCanvas* c1 = new TCanvas("c1","c1", 1000, 400);
+	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
+
+	TLegend* qw = 0;
+	// if(draw_preliminary_label) qw = new TLegend(0.86,0.32,0.96,0.80);
+	// else qw = new TLegend(0.85,0.35,0.95,0.86);
+	// else qw = new TLegend(0.55,0.42,0.75,0.87);
+
+	if(!isttZ && !isWZ) qw = new TLegend(0.55,0.42,0.75,0.87);
+	else if(isttZ) qw = new TLegend(0.73,0.42,0.93,0.87);
+	else if(isWZ) qw = new TLegend(0.70,0.40,0.90,0.85);
+
+	//--------------------------
+	// DEFINE 3 VARIABLES TO PLOT
+	//--------------------------
+
+	TString total_var_list; TString v_X_label; TString v_Y_label;
+	if(!isttZ && !isWZ) {total_var_list = "BDT"; v_X_label = "BDT"; v_Y_label = "Events / 0.2";}
+	else if(isttZ) {total_var_list = "BDTttZ"; v_X_label = "BDTttZ"; v_Y_label = "Events / 0.2";}
+	else if(isWZ) {total_var_list = "mTW"; v_X_label = "mTW"; v_Y_label = "Events / 25 GeV";}
+
+	//--------------------------
+	// CREATE VECTORS OF OBJECTS
+	//--------------------------
+
+	TH1F *h_tmp = 0;
+
+	TH1F* v_hdata;
+	TH1F* v_hdata_new;
+	THStack* v_stack;
+	TH1F* v_histo_total_MC;
+	vector<TH1F*> v_vector_MC_histo; //Store separately the histos for each MC sample --> stack them after loops
+	TH1F* v_histo_ratio_data;
+
+	TGraphAsymmErrors* v_gr_error_tmp;
+	TGraphAsymmErrors* v_gr_error;
+	TGraphAsymmErrors* v_gr_ratio_error;
+
+	TPad* v_tpad_primitives;
+	TPad* v_tpad_ratio;
+	TGaxis* v_axis;
+
+
+	//--------------------------
+	// LOOP ON TPADS
+	//--------------------------
+
+	bool right_margin = false; //FIXME
+	double margin = 0.035;
+
+
+	if(right_margin) gPad->SetRightMargin(margin);
+
+	vector<TString> v_MC_sample_legend;
+
+	gPad->SetTopMargin(0.1);
+	gPad->SetBottomMargin(0.25);
+
+
+	//---------------------------
+	//ERROR VECTORS INITIALIZATION
+	//---------------------------
+	vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
+
+	TString dir_name = "shapes_fit_s/BDT_uuu";
+	TString histo_name = "tZqmcNLO";
+
+	//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
+	if(f->GetDirectory(dir_name))
+	{
+		h_tmp = (TH1F*) f->Get(dir_name + "/" + histo_name)->Clone();
+	}
+	else {cout<<__LINE__<<FRED(" : "<<dir_name<<" not found ! Can not initialize error vectors ! (This is hard-coded)")<<endl;}
+
+	if(!h_tmp) {cout<<"h_tmp is null !!"<<endl;}
+
+
+	int nofbins = h_tmp->GetNbinsX();
+	for(int ibin=0; ibin<nofbins; ibin++)
+	{
+		v_eyl.push_back(0); v_eyh.push_back(0);
+		v_exl.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2); v_exh.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2);
+		v_x.push_back( (h_tmp->GetXaxis()->GetBinLowEdge(nofbins+1) - h_tmp->GetXaxis()->GetBinLowEdge(1) ) * ((ibin+1 - 0.5)/nofbins) + h_tmp->GetXaxis()->GetBinLowEdge(1));
+
+		v_y.push_back(0);
+	}
+
+
+	//---------------------------
+	//RETRIEVE & SUM HISTOGRAMS, SUM ERRORS QUADRATICALLY
+	//---------------------------
+
+	int index_tZq_sample=-1;
+
+	for(int ichan=0; ichan<channel_list.size(); ichan++)
+	{
+		for(int isample = 0; isample < sample_list.size(); isample++)
+		{
+			// cout<<FGRN("----- ichan "<<ichan<<" "<<channel_list[ichan]<<", sample "<<sample_list[isample]<<" !")<<endl;
+
+			h_tmp = 0; //Temporary storage of histogram
+			bool isData = false; if(sample_list[isample] == "Data") isData = true;
+
+			if(!isData && ichan==0) v_MC_sample_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
+
+			if(sample_list[isample] == "FakesElectron" && channel_list[ichan] == "uuu")
+			{
+				if(ichan==0) v_vector_MC_histo.push_back(h_tmp);
+				continue;
+			}
+			else if(sample_list[isample] == "FakesMuon" && channel_list[ichan] == "eee")
+			{
+				if(ichan==0) v_vector_MC_histo.push_back(h_tmp);
+				continue;
+			}
+
+
+			//--- DATA -- different file
+			if(isData)
+			{
+				TString histo_name;
+				if(combine_naming_convention) histo_name = total_var_list + "_" + channel_list[ichan] + "__data_obs"; //Combine
+				else histo_name = total_var_list + "_" + channel_list[ichan] + "__DATA"; //Theta
+
+				if(!file_data->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
+				else
+				{
+					h_tmp = (TH1F*) file_data->Get(histo_name.Data())->Clone();
+
+					if(ichan == 0) {v_hdata = (TH1F*) h_tmp->Clone();}
+					else {v_hdata->Add(h_tmp);}
+				}
+			}
+
+			else //MC
+			{
+				dir_name = "shapes_fit_s/" + total_var_list + "_" + channel_list[ichan];
+				histo_name = sample_list[isample];
+
+				if(f->GetDirectory(dir_name))
+				{
+					h_tmp = (TH1F*) f->Get(dir_name + "/" + histo_name)->Clone();
+				}
+				else {cout<<"ERROR --- DIRECTORY "<<dir_name<<" NOT FOUND IN FILE ! SKIP"<<endl; continue;}
+				if(!h_tmp) {cout<<__LINE__<<" : h_tmp is null ! "<<endl;}
+
+
+				//Normally the data sample is included in first position of the list, so v_MC_histo has 'isample-1' contents
+				if(isample-1 < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address (need at least 2 samples)! Exit !"))<<endl; return 0;}
+
+				//Use color vector filled in main()
+				h_tmp->SetFillStyle(1001);
+				h_tmp->SetFillColor(colorVector[isample-1]);
+				h_tmp->SetLineColor(kBlack);
+				if( (isample+1) < sample_list.size())
+				{
+					if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
+					else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
+				}
+
+				if(ichan == 0) {v_vector_MC_histo.push_back(h_tmp);}
+				else
+				{
+					if(v_vector_MC_histo.at(isample-1) == 0) {v_vector_MC_histo.at(isample-1) = (TH1F*) h_tmp->Clone();}
+					else {v_vector_MC_histo.at(isample-1)->Add(h_tmp);}
+				}
+
+				for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
+				{
+					v_eyl[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+					v_eyh[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
+					v_y[ibin]+= h_tmp->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
+				}
+			} //MC
+
+
+		} //end sample loop
+	} //end channel loop
+
+
+	for(int j=0; j<v_MC_sample_legend.size(); j++)
+	{
+		if(v_MC_sample_legend[j].Contains("tZq")) {index_tZq_sample = j;}
+	}
+
+
+
+	//---------------------------
+	//CREATE STACK (MC)
+	//---------------------------
+	//Stack all the MC nominal histograms (contained in v_MC_histo)
+	//Signal on top of all MC legends
+	v_stack= 0;
+
+	for(int i=0; i<v_vector_MC_histo.size(); i++)
+	{
+		// if(i==index_tZq_sample) {continue;} // --- UNCOMMENT TO GET WRONG PULL PLOT (NO SIG)
+
+
+		if(v_histo_total_MC == 0) {v_histo_total_MC = (TH1F*) v_vector_MC_histo.at(i)->Clone();}
+		else {v_histo_total_MC->Add(v_vector_MC_histo.at(i));}
+
+		if(i==index_tZq_sample) {continue;}
+
+		if(v_stack == 0) {v_stack = new THStack; v_stack->Add(v_vector_MC_histo.at(i) );}
+		else {v_stack->Add(v_vector_MC_histo.at(i));}
+	}
+	if(!v_stack) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
+
+	v_stack->Add(v_vector_MC_histo.at(index_tZq_sample));
+
+	//---------------------------
+	//DRAW HISTOS
+	//---------------------------
+	//Set Yaxis maximum & min
+	if(v_hdata != 0 && v_stack != 0)
+	{
+		if(v_hdata->GetMaximum() > v_stack->GetMaximum() ) {v_stack->SetMaximum(v_hdata->GetMaximum()+0.45*v_hdata->GetMaximum());}
+		else v_stack->SetMaximum(v_stack->GetMaximum()+0.45*v_stack->GetMaximum());
+	}
+	v_stack->SetMinimum(0.0001);
+
+	if(isttZ) {v_stack->SetMaximum(65);} //NEW -- need space for legend
+
+	//Draw stack
+	if(v_stack == 0) {cout<<"Error : stack is null !"<<endl;}
+	v_stack->Draw("HIST"); v_stack->GetXaxis()->SetLabelSize(0.0);
+
+
+	//---------------------------
+	//CREATE X AXIS
+	//---------------------------
+
+	//--- Need to transform data histogram so that it's x-axis complies with combine's one
+	double xmax_stack = v_stack->GetXaxis()->GetXmax();
+	double xmin_stack = v_stack->GetXaxis()->GetXmin();
+	double xmax_data = v_hdata->GetXaxis()->GetXmax();
+	double xmin_data = v_hdata->GetXaxis()->GetXmin();
+
+	// cout<<"xmin_stack = "<<xmin_stack<<" / xmax_stack = "<<xmax_stack<<endl;
+	// cout<<"xmin_data = "<<xmin_data<<" / xmax_data = "<<xmax_data<<endl;
+	v_hdata_new = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
+	for(int ibin = 1; ibin<v_hdata->GetNbinsX()+1; ibin++)
+	{
+		double x =  v_hdata->GetXaxis()->GetBinCenter(ibin);
+		double y = 	v_hdata->GetBinContent(ibin);
+		double y_err =	v_hdata->GetBinError(ibin);
+		double xnew = (x-xmin_data) * xmax_stack / (xmax_data - xmin_data); //Transformation
+		v_hdata_new->Fill(xnew,y); v_hdata_new->SetBinError(ibin, y_err); //CHANGED
+
+		// cout<<"i = "<<ibin<<" x = "<<x<<" xnew = "<<xnew<<" y = "<<y<<endl;
+	}
+
+	v_hdata_new->SetMarkerStyle(20);
+	v_hdata_new->SetMarkerSize(1.7);
+	// v_hdata_new->SetMarkerSize(1.);
+	v_hdata_new->SetLineColor(1);
+	v_hdata_new->Draw("epsame");
+
+	qw->SetShadowColor(0);
+	qw->SetFillColor(0);
+	qw->SetLineColor(1);
+	qw->Draw("same");
+
+	//---------------------------
+	//CREATE LEGEND
+	//---------------------------
+	{
+		//Data on top of legend
+		if(v_hdata_new != 0) {qw->AddEntry(v_hdata_new, "  Data" , "ep");}
+		else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
+
+		qw->AddEntry(v_vector_MC_histo.at(index_tZq_sample), "  tZq" , "f");
+
+		//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
+		for(int i=v_MC_sample_legend.size()-1; i>=0; i--)
+		{
+			if(v_MC_sample_legend[i] == "ttW") {continue;} //same entry as ttH
+			if(v_MC_sample_legend[i].Contains("FakesElectron")) {continue;} //same entry as FakesElectron
+			// if(v_MC_sample_legend[i].Contains("FakesMuon")) #bar{continue;} //same entry as FakesElectron
+			if(v_MC_sample_legend[i] == "ttH" ) {qw->AddEntry(v_vector_MC_histo.at(i), "  t#bar{t}H+t#bar{t}W" , "f");} //Single entry for ttW+ttH
+			else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(i), "  t#bar{t}Z" , "f");} //Single entry for ttZ
+			else if(v_MC_sample_legend[i] == "WZL") {qw->AddEntry(v_vector_MC_histo.at(i), "  WZ+light" , "f");}
+			else if(v_MC_sample_legend[i] == "WZB") {qw->AddEntry(v_vector_MC_histo.at(i), "  WZ+b" , "f");}
+			else if(v_MC_sample_legend[i] == "WZC") {qw->AddEntry(v_vector_MC_histo.at(i), "  WZ+c" , "f");}
+			else if(v_MC_sample_legend[i] == "ZZ") {qw->AddEntry(v_vector_MC_histo.at(i), "  ZZ" , "f");}
+			else if(v_MC_sample_legend[i].Contains("Fakes") ) {qw->AddEntry(v_vector_MC_histo.at(i), "  NPL" , "f");}
+			else if(v_MC_sample_legend[i].Contains("DY") ) {qw->AddEntry(v_vector_MC_histo.at(i), "  NPL (MC)" , "f");}
+			// else if(v_MC_sample_legend[i].Contains("Fakes") ) {qw->AddEntry(v_vector_MC_histo.at(i), "  Not-prompt" , "f");}
+			// else if(v_MC_sample_legend[i].Contains("DY") ) {qw->AddEntry(v_vector_MC_histo.at(i), "  Not-prompt (MC)" , "f");}
+			else if(v_MC_sample_legend[i] == "WZC") {qw->AddEntry(v_vector_MC_histo.at(i), "  WZ+c" , "f");}
+			else if(v_MC_sample_legend[i].Contains("ST") ) {qw->AddEntry(v_vector_MC_histo.at(i), "  tWZ" , "f");}
+			else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(i), "  ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
+		}
+
+		// qw->Draw();
+	}
+
+
+	//---------------------------
+	//DRAW SYST ERRORS ON PLOT
+	//---------------------------
+	//Need to take sqrt of total errors
+	for(int ibin=0; ibin<nofbins; ibin++)
+	{
+		v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
+		v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
+	}
+
+	//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
+	double* eyl = &v_eyl[0];
+	double* eyh = &v_eyh[0];
+	double* exl = &v_exl[0];
+	double* exh = &v_exh[0];
+	double* x = &v_x[0];
+	double* y = &v_y[0];
+
+	// for(int ibin=1; ibin<nofbins+1; ibin++)
+	// {
+	// 	if(ibin > 1) {continue;} //cout only first bin
+	// 	cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl;
+	// }
+
+
+	//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
+	v_gr_error = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
+	v_gr_error->SetFillStyle(3002);
+	v_gr_error->SetFillColor(1);
+	v_gr_error->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
+
+
+	//-------------------
+	//COSMETICS
+	//-------------------
+	if(v_stack!= 0)
+	{
+		v_stack->GetXaxis()->SetLabelFont(42);
+		v_stack->GetYaxis()->SetLabelFont(42);
+		v_stack->GetYaxis()->SetTitleFont(42);
+		v_stack->GetYaxis()->SetTitleSize(0.06);
+		v_stack->GetYaxis()->SetTickLength(0.04);
+		v_stack->GetXaxis()->SetLabelSize(0.0);
+		v_stack->GetYaxis()->SetLabelSize(0.048);
+		v_stack->GetXaxis()->SetNdivisions(505);
+		v_stack->GetYaxis()->SetNdivisions(506);
+
+		// v_stack->GetYaxis()->SetTitleSize(0.045);
+		// v_stack->GetYaxis()->SetTitleOffset(1.7);
+
+		v_stack->GetYaxis()->SetTitleOffset(1.2);
+		v_stack->GetYaxis()->SetTitle(v_Y_label.Data());
+	}
+
+	//-------------------
+	//CAPTIONS && LEGEND
+	//-------------------
+	float l = c1->GetLeftMargin();
+	float t = c1->GetTopMargin();
+
+	TLatex text2 ; //= new TLatex(0, 0, info_data);
+	text2.SetNDC();
+	text2.SetTextAlign(13);
+	text2.SetTextSize(0.06);
+	text2.SetTextFont(62);
+	TString extrainfo_data;
+	if(!isttZ && !isWZ) {extrainfo_data = "1bjet"; text2.DrawLatex(l+0.05,0.82,extrainfo_data);}
+	else if(isttZ) {extrainfo_data = "2bjets"; text2.DrawLatex(l+0.05,0.82,extrainfo_data);}
+	else if(isWZ) {extrainfo_data = "0bjet"; text2.DrawLatex(l+0.05,0.82,extrainfo_data);}
+
+	{
+		TString cmsText     = "CMS";
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+
+		latex.SetTextFont(61);
+		latex.SetTextAlign(11);
+		// latex.SetTextSize(0.1);
+		latex.SetTextSize(0.06); //CHANGED
+		// latex.DrawLatex(l,1-t,cmsText);
+		latex.DrawLatex(l + 0.05, 0.92, cmsText);
+		// latex.DrawLatex(l+0.05,1-t-0.11,cmsText);
+
+		TString extraText   = "Preliminary";
+		latex.SetTextFont(52);
+		if(draw_preliminary_label)
+		{
+			latex.DrawLatex(l + 0.2, 1-t, extraText);
+		}
+	}
+	{
+		float lumi = 35.9 * luminosity_rescale;
+		TString lumi_13TeV = Convert_Number_To_TString(lumi);
+		lumi_13TeV += " fb^{-1} (13 TeV)";
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextAngle(0);
+		latex.SetTextColor(kBlack);
+		float l = c1->GetLeftMargin();
+		float t = c1->GetTopMargin();
+
+		latex.SetTextFont(42);
+		latex.SetTextAlign(31);
+		// latex.SetTextSize(0.09);
+		// latex.SetTextSize(0.06);
+		latex.SetTextSize(0.05);
+		latex.DrawLatex(0.95, 0.92,lumi_13TeV);
+	}
+
+
+	//--------------------------
+	//DRAW DATA/MC RATIO
+	//--------------------------
+	//Create Data/MC ratio plot (bottom of canvas)
+
+	v_tpad_ratio = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
+	v_tpad_ratio->SetTopMargin(0.75);
+	// else v_tpad_ratio[iplot]->SetTopMargin(0.73);
+
+	if(right_margin) v_tpad_ratio->SetRightMargin(margin);
+
+	v_tpad_ratio->SetFillColor(0);
+	v_tpad_ratio->SetFillStyle(0);
+	v_tpad_ratio->SetGridy(1);
+	// v_tpad_ratio->Draw();
+	v_tpad_ratio->Draw();
+	v_tpad_ratio->cd(0);
+
+
+	v_histo_ratio_data = (TH1F*) v_hdata_new->Clone();
+	// v_histo_ratio_data->Divide(v_histo_total_MC); //Ratio -- errors are recomputed
+
+	for(int ibin=1; ibin<v_histo_ratio_data->GetNbinsX()+1; ibin++)
+	{
+		// cout<<v_histo_total_MC->GetBinContent(ibin)<<endl;
+
+		double bin_error = pow(pow(v_histo_total_MC->GetBinError(ibin), 2) + pow(v_histo_ratio_data->GetBinError(ibin), 2), 0.5);
+		// cout<<"bin error "<<bin_error<<endl;
+
+		if(!v_histo_total_MC->GetBinError(ibin)) {v_histo_ratio_data->SetBinContent(ibin,-99);} //Don't draw null markers
+		else{v_histo_ratio_data->SetBinContent(ibin, (v_histo_ratio_data->GetBinContent(ibin) - v_histo_total_MC->GetBinContent(ibin)) / bin_error );}
+
+		// cout<<v_histo_ratio_data->GetBinContent(ibin)<<endl;
+		// cout<<"v_histo_total_MC->GetBinError(ibin) "<<v_histo_total_MC->GetBinError(ibin)<<endl;
+	}
+
+
+	v_histo_ratio_data->Draw("HIST P"); //Draw ratio points
+
+
+
+	// v_histo_ratio_data->GetYaxis()->SetTitle("#lower[0.1]{Pulls}");
+	// v_histo_ratio_data->GetYaxis()->SetTitle("#kern[0.5]{Pulls}");
+	v_histo_ratio_data->GetYaxis()->SetTitle("Pulls");
+	v_histo_ratio_data->GetYaxis()->SetTickLength(0.);
+	// v_histo_ratio_data->GetYaxis()->SetTickLength(0.15);
+	v_histo_ratio_data->GetXaxis()->SetTitleOffset(1);
+	// v_histo_ratio_data->GetYaxis()->SetTitleOffset(1.42);
+	v_histo_ratio_data->GetYaxis()->SetTitleOffset(1.2);
+	// v_histo_ratio_data->GetYaxis()->CenterTitle(1);
+	v_histo_ratio_data->GetYaxis()->SetLabelSize(0.048);
+	v_histo_ratio_data->GetXaxis()->SetLabelFont(42);
+	v_histo_ratio_data->GetYaxis()->SetLabelFont(42);
+	v_histo_ratio_data->GetXaxis()->SetTitleFont(42);
+	v_histo_ratio_data->GetYaxis()->SetTitleFont(42);
+	v_histo_ratio_data->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only
+	// v_histo_ratio_data->GetYaxis()->SetNdivisions(503);
+	v_histo_ratio_data->GetXaxis()->SetNdivisions(505);
+	v_histo_ratio_data->GetYaxis()->SetTitleSize(0.06);
+	v_histo_ratio_data->GetXaxis()->SetTitleSize(0.);
+	v_histo_ratio_data->GetXaxis()->SetTickLength(0.04);
+	v_histo_ratio_data->SetMarkerSize(1.6);
+	// v_histo_ratio_data->SetMarkerSize(0.8);
+
+	//NOTE : slightly different parameters than prefit function (need to add hand-made axis here)
+	v_histo_ratio_data->GetXaxis()->SetLabelSize(0.0); //Make this axis invisible because we are going to draw a new one (below)
+	v_histo_ratio_data->GetXaxis()->SetLabelOffset(999);
+	v_histo_ratio_data->GetXaxis()->SetTickLength(0.0);
+
+
+	v_histo_ratio_data->GetXaxis()->SetTitle(v_X_label.Data());
+
+	v_histo_ratio_data->SetMinimum(-2.99);
+	v_histo_ratio_data->SetMaximum(2.99);
+
+	// v_histo_ratio_data->SetMinimum(-5);
+	// v_histo_ratio_data->SetMaximum(5);
+
+
+	//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
+	v_axis = new TGaxis(v_histo_ratio_data->GetXaxis()->GetXmin(),v_histo_ratio_data->GetMinimum(),v_histo_ratio_data->GetXaxis()->GetXmax(),v_histo_ratio_data->GetMinimum(),xmin_data,xmax_data, 505, "+"); // + : tick marks on positive side ; = : label on same side as marks
+
+
+   	if (total_var_list == "BDT" || total_var_list == "BDTttZ") v_axis->SetTitle("BDT output") ;
+	else if ( total_var_list == "mTW")  v_axis->SetTitle("m_{T}^{W} [GeV]");
+	v_axis->SetTitleSize(0.06);
+	v_axis->SetTitleFont(42);
+	v_axis->SetLabelFont(42);
+	v_axis->SetTitleOffset(1);
+	v_axis->SetLabelSize(0.05);
+	v_axis->Draw("same");
+
+
+	//-------------------
+	//SAVE FILE
+	//-------------------
+	mkdir("plots/paper_plots",0777);
+
+	TString outputname = "plots/paper_plots/postfit_templates_";
+	if(!isttZ && !isWZ) outputname+= "tZq";
+	else if(isttZ) outputname+= "ttZ";
+	else if(isWZ) outputname+= "WZ";
+	outputname+= this->format;
+
+	if(c1!= 0) {c1->SaveAs(outputname.Data() );}
+
+	//-------------------
+	//DELETE ALL OBJECTS
+	//-------------------
+
+	delete qw;
+
+
+	delete v_hdata;
+	delete v_hdata_new;
+	delete v_stack;
+	delete v_histo_total_MC;
+	delete v_histo_ratio_data;
+
+	delete v_gr_error;
+
+	for(int j=0; j<v_vector_MC_histo.size(); j++)
+	{
+		delete v_vector_MC_histo.at(j);
+	}
+
+	delete v_tpad_ratio;
+
+	delete v_tpad_primitives;
+
+
+	delete h_tmp;
+
+	delete f;
+
+	delete c1; //Must free dinamically-allocated memory
+	return 0;
+}
+
+
+
+
+
+
+
 
 
 
@@ -8760,618 +9344,4 @@ void theMVAtool::Histograms_For_Denis()
 
 	delete h_tmp; delete h_sum_tmp; delete h_sum_fake; delete h_sum_bkg;
 	delete f; delete f_output; delete file_data;
-}
-
-
-
-
-
-
-
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-
-int theMVAtool::Postfit_Templates_Paper_SinglePlot()
-{
-	cout<<endl<<BOLD(FYEL("##################################"))<<endl;
-	cout<<FYEL("--- Draw Postfit Templates Paper ---")<<endl;
-	cout<<BOLD(FYEL("##################################"))<<endl<<endl;
-
-
-	//Load Canvas definition
-	Load_Canvas_Style();
-
-	TH1::SetDefaultSumw2();
-	mkdir("plots",0777); //Create directory if inexistant
-
-	TFile* file_data = 0;
-	TString input_file_name_data = "outputs/Combine_Input.root";
-	cout<<FMAG("--- Will use file ./"<<input_file_name_data<<" to get postfit plots !")<<endl;
-	file_data = TFile::Open( input_file_name_data );
-	if(file_data == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
-
-	TFile* f = 0;
-	TString input_file_name = "outputs/mlfit.root";
-	cout<<FMAG("--- Will use file ./"<<input_file_name<<" to get postfit plots !")<<endl;
-	f = TFile::Open( input_file_name );
-	if(f == 0) {cout<<endl<<BOLD(FRED("--- File not found ! Exit !"))<<endl<<endl; return 0;}
-
-
-	// TCanvas* c1 = new TCanvas("c1","c1", 1000, 400);
-	TCanvas* c1 = new TCanvas("c1","c1", 1000, 800);
-
-	TLegend* qw = 0;
-	if(draw_preliminary_label) qw = new TLegend(0.86,0.32,0.96,0.80);
-	// else qw = new TLegend(0.85,0.35,0.95,0.86);
-	else qw = new TLegend(0.55,0.42,0.75,0.87);
-
-
-	//--------------------------
-	// DEFINE 3 VARIABLES TO PLOT
-	//--------------------------
-
-	vector<TString> total_var_list(3); vector<TString> v_X_label(3); vector<TString> v_Y_label(3);
-	total_var_list[0] = "BDT"; v_X_label[0] = "BDT"; v_Y_label[0] = "Events / 0.2";
-	total_var_list[1] = "BDTttZ"; v_X_label[1] = "BDTttZ"; v_Y_label[1] = "Events / 0.2";
-	total_var_list[2] = "mTW"; v_X_label[2] = "mTW"; v_Y_label[2] = "Events / 25 GeV";
-
-	//--------------------------
-	// CREATE VECTORS OF OBJECTS
-	//--------------------------
-
-	TH1F *h_tmp = 0;
-
-	vector<TH1F*> v_hdata(3);
-	vector<TH1F*> v_hdata_new(3);
-	vector<THStack*> v_stack(3);
-	vector<TH1F*> v_histo_total_MC(3);
-	vector<vector<TH1F*> > v_vector_MC_histo(3); //Store separately the histos for each MC sample --> stack them after loops
-	vector<TH1F*> v_histo_ratio_data(3);
-
-	vector<TGraphAsymmErrors*> v_gr_error_tmp(3);
-	vector<TGraphAsymmErrors*> v_gr_error(3);
-	vector<TGraphAsymmErrors*> v_gr_ratio_error(3);
-
-	vector<TPad*> v_tpad_primitives(3);
-	vector<TPad*> v_tpad_ratio(3);
-	vector<TGaxis*> v_axis(3);
-
-
-	//--------------------------
-	// LOOP ON TPADS
-	//--------------------------
-
-	bool right_margin = false; //FIXME
-	double margin = 0.035;
-
-	for(int iplot=0; iplot<3; iplot++)
-	{
-		if(iplot != 0) break; //FIXME
-
-
-		if(right_margin) gPad->SetRightMargin(margin);
-
-
-		int ivar = iplot;
-		vector<TString> v_MC_sample_legend;
-
-		c1->cd(iplot+1);
-
-		gPad->SetTopMargin(0.1);
-
-		gPad->SetBottomMargin(0.25);
-
-
-		//---------------------------
-		//ERROR VECTORS INITIALIZATION
-		//---------------------------
-		vector<double> v_eyl, v_eyh, v_exl, v_exh, v_x, v_y; //Contain the systematic errors (used to create the TGraphError)
-
-		TString dir_name = "shapes_fit_s/BDT_uuu";
-		TString histo_name = "tZqmcNLO";
-
-		//Only call this 'random' histogram here in order to get the binning used for the current variable --> can initialize the error vectors !
-		if(f->GetDirectory(dir_name))
-		{
-			h_tmp = (TH1F*) f->Get(dir_name + "/" + histo_name)->Clone();
-		}
-		else {cout<<__LINE__<<FRED(" : "<<dir_name<<" not found ! Can not initialize error vectors ! (This is hard-coded)")<<endl;}
-
-		if(!h_tmp) {cout<<"h_tmp is null !!"<<endl;}
-
-
-		int nofbins = h_tmp->GetNbinsX();
-		for(int ibin=0; ibin<nofbins; ibin++)
-		{
-			v_eyl.push_back(0); v_eyh.push_back(0);
-			v_exl.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2); v_exh.push_back(h_tmp->GetXaxis()->GetBinWidth(ibin+1) / 2);
-			v_x.push_back( (h_tmp->GetXaxis()->GetBinLowEdge(nofbins+1) - h_tmp->GetXaxis()->GetBinLowEdge(1) ) * ((ibin+1 - 0.5)/nofbins) + h_tmp->GetXaxis()->GetBinLowEdge(1));
-
-			v_y.push_back(0);
-		}
-
-
-		//---------------------------
-		//RETRIEVE & SUM HISTOGRAMS, SUM ERRORS QUADRATICALLY
-		//---------------------------
-
-		int index_tZq_sample=-1;
-
-		for(int ichan=0; ichan<channel_list.size(); ichan++)
-		{
-			for(int isample = 0; isample < sample_list.size(); isample++)
-			{
-				// cout<<FGRN("----- ichan "<<ichan<<" "<<channel_list[ichan]<<", sample "<<sample_list[isample]<<" !")<<endl;
-
-				h_tmp = 0; //Temporary storage of histogram
-				bool isData = false; if(sample_list[isample] == "Data") isData = true;
-
-				if(!isData && ichan==0) v_MC_sample_legend.push_back(sample_list[isample]); //Fill vector containing existing MC samples names -- do it only once ==> because sample_list also contains data
-
-				if(sample_list[isample] == "FakesElectron" && channel_list[ichan] == "uuu")
-				{
-					if(ichan==0) v_vector_MC_histo.at(iplot).push_back(h_tmp);
-					continue;
-				}
-				else if(sample_list[isample] == "FakesMuon" && channel_list[ichan] == "eee")
-				{
-					if(ichan==0) v_vector_MC_histo.at(iplot).push_back(h_tmp);
-					continue;
-				}
-
-
-				//--- DATA -- different file
-				if(isData)
-				{
-					TString histo_name;
-					if(combine_naming_convention) histo_name = total_var_list[iplot] + "_" + channel_list[ichan] + "__data_obs"; //Combine
-					else histo_name = total_var_list[iplot] + "_" + channel_list[ichan] + "__DATA"; //Theta
-
-					if(!file_data->GetListOfKeys()->Contains(histo_name.Data())) {cout<<histo_name<<" : not found"<<endl;}
-					else
-					{
-						h_tmp = (TH1F*) file_data->Get(histo_name.Data())->Clone();
-
-						if(ichan == 0) {v_hdata[iplot] = (TH1F*) h_tmp->Clone();}
-						else {v_hdata[iplot]->Add(h_tmp);}
-					}
-				}
-
-				else //MC
-				{
-					dir_name = "shapes_fit_s/" + total_var_list[iplot] + "_" + channel_list[ichan];
-					histo_name = sample_list[isample];
-
-					if(f->GetDirectory(dir_name))
-					{
-						h_tmp = (TH1F*) f->Get(dir_name + "/" + histo_name)->Clone();
-					}
-					else {cout<<"ERROR --- DIRECTORY "<<dir_name<<" NOT FOUND IN FILE ! SKIP"<<endl; continue;}
-					if(!h_tmp) {cout<<__LINE__<<" : h_tmp is null ! "<<endl;}
-
-
-					//Normally the data sample is included in first position of the list, so v_MC_histo has 'isample-1' contents
-					if(isample-1 < 0)  {cout<<__LINE__<<BOLD(FRED(" : Try to access wrong address (need at least 2 samples)! Exit !"))<<endl; return 0;}
-
-					//Use color vector filled in main()
-					h_tmp->SetFillStyle(1001);
-					h_tmp->SetFillColor(colorVector[isample-1]);
-					h_tmp->SetLineColor(kBlack);
-					if( (isample+1) < sample_list.size())
-					{
-						if( (sample_list[isample] == "ttH" || sample_list[isample] == "ttW") && (sample_list[isample+1] == "ttH" || sample_list[isample+1] == "ttW") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
-						else if( (sample_list[isample] == "FakesMuon" || sample_list[isample] == "FakesElectron") && (sample_list[isample+1] == "FakesMuon" || sample_list[isample+1] == "FakesElectron") ) {h_tmp->SetLineColor(colorVector[isample-1]);}
-					}
-
-					if(ichan == 0) {v_vector_MC_histo.at(iplot).push_back(h_tmp);}
-					else
-					{
-						if(v_vector_MC_histo.at(iplot).at(isample-1) == 0) {v_vector_MC_histo.at(iplot).at(isample-1) = (TH1F*) h_tmp->Clone();}
-						else {v_vector_MC_histo.at(iplot).at(isample-1)->Add(h_tmp);}
-					}
-
-					for(int ibin=0; ibin<nofbins; ibin++) //Start at bin 1
-					{
-						v_eyl[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
-						v_eyh[ibin]+= pow(h_tmp->GetBinError(ibin+1), 2);
-						v_y[ibin]+= h_tmp->GetBinContent(ibin+1); //This vector is used to know where to draw the error zone on plot (= on top of stack)
-					}
-				} //MC
-
-
-			} //end sample loop
-		} //end channel loop
-
-
-		for(int j=0; j<v_MC_sample_legend.size(); j++)
-		{
-			if(v_MC_sample_legend[j].Contains("tZq")) {index_tZq_sample = j;}
-		}
-
-
-
-		//---------------------------
-		//CREATE STACK (MC)
-		//---------------------------
-		//Stack all the MC nominal histograms (contained in v_MC_histo)
-		//Signal on top of all MC legends
-		v_stack[iplot]= 0;
-
-		for(int i=0; i<v_vector_MC_histo.at(iplot).size(); i++)
-		{
-			// if(i==index_tZq_sample) {continue;} // --- UNCOMMENT TO GET WRONG PULL PLOT (NO SIG)
-
-
-			if(v_histo_total_MC[iplot] == 0) {v_histo_total_MC[iplot] = (TH1F*) v_vector_MC_histo.at(iplot).at(i)->Clone();}
-			else {v_histo_total_MC[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
-
-			if(i==index_tZq_sample) {continue;}
-
-			if(v_stack[iplot] == 0) {v_stack[iplot] = new THStack; v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i) );}
-			else {v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(i));}
-		}
-		if(!v_stack[iplot]) {cout<<__LINE__<<BOLD(FRED(" : stack is null"))<<endl;}
-
-		v_stack[iplot]->Add(v_vector_MC_histo.at(iplot).at(index_tZq_sample));
-
-		//---------------------------
-		//DRAW HISTOS
-		//---------------------------
-		//Set Yaxis maximum & min
-		if(v_hdata[iplot] != 0 && v_stack[iplot] != 0)
-		{
-			if(v_hdata[iplot]->GetMaximum() > v_stack[iplot]->GetMaximum() ) {v_stack[iplot]->SetMaximum(v_hdata[iplot]->GetMaximum()+0.45*v_hdata[iplot]->GetMaximum());}
-			else v_stack[iplot]->SetMaximum(v_stack[iplot]->GetMaximum()+0.45*v_stack[iplot]->GetMaximum());
-		}
-		v_stack[iplot]->SetMinimum(0.0001);
-
-		//Draw stack
-		if(v_stack[iplot] == 0) {cout<<"Error : stack is null !"<<endl;}
-		v_stack[iplot]->Draw("HIST"); v_stack[iplot]->GetXaxis()->SetLabelSize(0.0);
-
-		// if(iplot==2)
-		// {
-		// 	v_stack[iplot]->GetXaxis()->SetRangeUser(0,249);
-		// }
-
-
-		//---------------------------
-		//CREATE X AXIS
-		//---------------------------
-
-		//--- Need to transform data histogram so that it's x-axis complies with combine's one
-		double xmax_stack = v_stack[iplot]->GetXaxis()->GetXmax();
-		double xmin_stack = v_stack[iplot]->GetXaxis()->GetXmin();
-		double xmax_data = v_hdata[iplot]->GetXaxis()->GetXmax();
-		double xmin_data = v_hdata[iplot]->GetXaxis()->GetXmin();
-
-		// cout<<"xmin_stack = "<<xmin_stack<<" / xmax_stack = "<<xmax_stack<<endl;
-		// cout<<"xmin_data = "<<xmin_data<<" / xmax_data = "<<xmax_data<<endl;
-		v_hdata_new[iplot] = new TH1F("","",this->nbin,xmin_stack,xmax_stack);
-		for(int ibin = 1; ibin<v_hdata[iplot]->GetNbinsX()+1; ibin++)
-		{
-			double x =  v_hdata[iplot]->GetXaxis()->GetBinCenter(ibin);
-			double y = 	v_hdata[iplot]->GetBinContent(ibin);
-			double y_err =	v_hdata[iplot]->GetBinError(ibin);
-			double xnew = (x-xmin_data) * xmax_stack / (xmax_data - xmin_data); //Transformation
-			v_hdata_new[iplot]->Fill(xnew,y); v_hdata_new[iplot]->SetBinError(ibin, y_err); //CHANGED
-
-			// cout<<"i = "<<ibin<<" x = "<<x<<" xnew = "<<xnew<<" y = "<<y<<endl;
-		}
-
-		// if(iplot==2)
-		// {
-		// 	v_hdata_new[iplot]->GetXaxis()->SetRangeUser(0,249);
-		// }
-
-		v_hdata_new[iplot]->SetMarkerStyle(20);
-		v_hdata_new[iplot]->SetMarkerSize(1.7);
-		// v_hdata_new[iplot]->SetMarkerSize(1.);
-		v_hdata_new[iplot]->SetLineColor(1);
-		v_hdata_new[iplot]->Draw("epsame");
-
-		qw->SetShadowColor(0);
-		qw->SetFillColor(0);
-		qw->SetLineColor(1);
-		qw->Draw("same");
-
-		//---------------------------
-		//CREATE LEGEND
-		//---------------------------
-		if(iplot==0)
-		{
-			//Data on top of legend
-			if(v_hdata_new[iplot] != 0) {qw->AddEntry(v_hdata_new[iplot], "  Data" , "ep");}
-			else {cout<<__LINE__<<BOLD(FRED(" : h_data is null"))<<endl;}
-
-			qw->AddEntry(v_vector_MC_histo.at(iplot).at(index_tZq_sample), "  tZq" , "f");
-
-			//Add other legend entries -- iterate backwards, so that last histo stacked is on top of legend
-			for(int i=v_MC_sample_legend.size()-1; i>=0; i--)
-			{
-				if(v_MC_sample_legend[i] == "ttW") {continue;} //same entry as ttH
-				if(v_MC_sample_legend[i].Contains("FakesElectron")) {continue;} //same entry as FakesElectron
-				// if(v_MC_sample_legend[i].Contains("FakesMuon")) #bar{continue;} //same entry as FakesElectron
-				if(v_MC_sample_legend[i] == "ttH" ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  t#bar{t}H+t#bar{t}W" , "f");} //Single entry for ttW+ttH
-				else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  t#bar{t}Z" , "f");} //Single entry for ttZ
-				else if(v_MC_sample_legend[i] == "WZL") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  WZ+light" , "f");}
-				else if(v_MC_sample_legend[i] == "WZB") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  WZ+b" , "f");}
-				else if(v_MC_sample_legend[i] == "WZC") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  WZ+c" , "f");}
-				else if(v_MC_sample_legend[i] == "ZZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  ZZ" , "f");}
-				else if(v_MC_sample_legend[i].Contains("Fakes") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  NPL" , "f");}
-				else if(v_MC_sample_legend[i].Contains("DY") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  NPL (MC)" , "f");}
-				// else if(v_MC_sample_legend[i].Contains("Fakes") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  Not-prompt" , "f");}
-				// else if(v_MC_sample_legend[i].Contains("DY") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  Not-prompt (MC)" , "f");}
-				else if(v_MC_sample_legend[i] == "WZC") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  WZ+c" , "f");}
-				else if(v_MC_sample_legend[i].Contains("ST") ) {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  tWZ" , "f");}
-				else if(v_MC_sample_legend[i] == "ttZ") {qw->AddEntry(v_vector_MC_histo.at(iplot).at(i), "  ttV/H" , "f");} //Single entry for ttZ+ttW+ttH
-			}
-
-			// qw->Draw();
-		}
-
-
-		//---------------------------
-		//DRAW SYST ERRORS ON PLOT
-		//---------------------------
-		//Need to take sqrt of total errors
-		for(int ibin=0; ibin<nofbins; ibin++)
-		{
-			v_eyh[ibin] = pow(v_eyh[ibin], 0.5);
-			v_eyl[ibin] = pow(v_eyl[ibin], 0.5);
-		}
-
-		//Use pointers to vectors : need to give the adress of first element (all other elements can then be accessed iteratively)
-		double* eyl = &v_eyl[0];
-		double* eyh = &v_eyh[0];
-		double* exl = &v_exl[0];
-		double* exh = &v_exh[0];
-		double* x = &v_x[0];
-		double* y = &v_y[0];
-
-		// for(int ibin=1; ibin<nofbins+1; ibin++)
-		// {
-		// 	if(ibin > 1) {continue;} //cout only first bin
-		// 	cout<<"x = "<<v_x[ibin]<<endl;    cout<<", y = "<<v_y[ibin]<<endl;    cout<<", eyl = "<<v_eyl[ibin]<<endl;    cout<<", eyh = "<<v_eyh[ibin]<<endl;
-		// }
-
-
-		//Create TGraphAsymmErrors with the error vectors / (x,y) coordinates --> Can superimpose it on plot
-		v_gr_error[iplot] = new TGraphAsymmErrors(nofbins,x,y,exl,exh,eyl,eyh);
-		v_gr_error[iplot]->SetFillStyle(3002);
-		v_gr_error[iplot]->SetFillColor(1);
-		v_gr_error[iplot]->Draw("e2 same"); //Superimposes the systematics uncertainties on stack
-
-
-		//-------------------
-		//COSMETICS
-		//-------------------
-		if(v_stack[iplot]!= 0)
-		{
-			v_stack[iplot]->GetXaxis()->SetLabelFont(42);
-			v_stack[iplot]->GetYaxis()->SetLabelFont(42);
-			v_stack[iplot]->GetYaxis()->SetTitleFont(42);
-			v_stack[iplot]->GetYaxis()->SetTitleSize(0.06);
-			v_stack[iplot]->GetYaxis()->SetTickLength(0.04);
-			v_stack[iplot]->GetXaxis()->SetLabelSize(0.0);
-			v_stack[iplot]->GetYaxis()->SetLabelSize(0.048);
-			v_stack[iplot]->GetXaxis()->SetNdivisions(505);
-			v_stack[iplot]->GetYaxis()->SetNdivisions(506);
-
-			// v_stack[iplot]->GetYaxis()->SetTitleSize(0.045);
-			// v_stack[iplot]->GetYaxis()->SetTitleOffset(1.7);
-
-			v_stack[iplot]->GetYaxis()->SetTitleOffset(1.2);
-			v_stack[iplot]->GetYaxis()->SetTitle(v_Y_label[ivar].Data());
-		}
-
-		//-------------------
-		//CAPTIONS && LEGEND
-		//-------------------
-		float l = c1->GetLeftMargin();
-		float t = c1->GetTopMargin();
-
-		TLatex text2 ; //= new TLatex(0, 0, info_data);
-		text2.SetNDC();
-		text2.SetTextAlign(13);
-		text2.SetTextSize(0.06);
-		text2.SetTextFont(62);
-		TString extrainfo_data;
-		if(iplot==0 ) {extrainfo_data = "1bjet"; text2.DrawLatex(l+0.05,0.82,extrainfo_data);}
-		else if(iplot==1 ) {extrainfo_data = "2bjets"; text2.DrawLatex(l+0.05,0.79,extrainfo_data);}
-		else if(iplot==2 ) {extrainfo_data = "0bjet"; text2.DrawLatex(l+0.05,0.79,extrainfo_data);}
-
-		// if(iplot==0)
-		{
-			TString cmsText     = "CMS";
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-
-			latex.SetTextFont(61);
-			latex.SetTextAlign(11);
-			// latex.SetTextSize(0.1);
-			latex.SetTextSize(0.06); //CHANGED
-			// latex.DrawLatex(l,1-t,cmsText);
-			latex.DrawLatex(l + 0.05, 0.92, cmsText);
-			// latex.DrawLatex(l+0.05,1-t-0.11,cmsText);
-
-			TString extraText   = "Preliminary";
-			latex.SetTextFont(52);
-			if(draw_preliminary_label)
-			{
-				latex.DrawLatex(l + 0.2, 1-t, extraText);
-			}
-		}
-		if(iplot==0)
-		{
-			float lumi = 35.9 * luminosity_rescale;
-			TString lumi_13TeV = Convert_Number_To_TString(lumi);
-			lumi_13TeV += " fb^{-1} (13 TeV)";
-			TLatex latex;
-			latex.SetNDC();
-			latex.SetTextAngle(0);
-			latex.SetTextColor(kBlack);
-			float l = c1->GetLeftMargin();
-			float t = c1->GetTopMargin();
-
-			latex.SetTextFont(42);
-			latex.SetTextAlign(31);
-			// latex.SetTextSize(0.09);
-			// latex.SetTextSize(0.06);
-			latex.SetTextSize(0.05);
-			latex.DrawLatex(0.95, 0.92,lumi_13TeV);
-		}
-
-
-		//--------------------------
-		//DRAW DATA/MC RATIO
-		//--------------------------
-		//Create Data/MC ratio plot (bottom of canvas)
-
-		v_tpad_ratio[iplot] = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 1.0);
-		if(iplot<3) v_tpad_ratio[iplot]->SetTopMargin(0.75);
-		else v_tpad_ratio[iplot]->SetTopMargin(0.73);
-
-		//FIXME
-		// if(iplot==2) v_tpad_ratio[iplot]->SetRightMargin(margin);
-		if(right_margin) v_tpad_ratio[iplot]->SetRightMargin(margin);
-
-		v_tpad_ratio[iplot]->SetFillColor(0);
-		v_tpad_ratio[iplot]->SetFillStyle(0);
-		v_tpad_ratio[iplot]->SetGridy(1);
-		// v_tpad_ratio[iplot]->Draw();
-		if(iplot == 0) {v_tpad_ratio[iplot]->Draw();} //FIXME
-		v_tpad_ratio[iplot]->cd(0);
-
-
-		v_histo_ratio_data[iplot] = (TH1F*) v_hdata_new[iplot]->Clone();
-		// v_histo_ratio_data[iplot]->Divide(v_histo_total_MC[iplot]); //Ratio -- errors are recomputed
-
-		for(int ibin=1; ibin<v_histo_ratio_data[iplot]->GetNbinsX()+1; ibin++)
-		{
-			// cout<<v_histo_total_MC[iplot]->GetBinContent(ibin)<<endl;
-
-			double bin_error = pow(pow(v_histo_total_MC[iplot]->GetBinError(ibin), 2) + pow(v_histo_ratio_data[iplot]->GetBinError(ibin), 2), 0.5);
-			// cout<<"bin error "<<bin_error<<endl;
-
-			if(!v_histo_total_MC[iplot]->GetBinError(ibin)) {v_histo_ratio_data[iplot]->SetBinContent(ibin,-99);} //Don't draw null markers
-			else{v_histo_ratio_data[iplot]->SetBinContent(ibin, (v_histo_ratio_data[iplot]->GetBinContent(ibin) - v_histo_total_MC[iplot]->GetBinContent(ibin)) / bin_error );}
-
-			// cout<<v_histo_ratio_data[iplot]->GetBinContent(ibin)<<endl;
-			// cout<<"v_histo_total_MC[iplot]->GetBinError(ibin) "<<v_histo_total_MC[iplot]->GetBinError(ibin)<<endl;
-			if(iplot==0)
-			{
-				// cout<<"ibin "<<ibin<<", MC err "<<v_histo_total_MC[iplot]->GetBinError(ibin)<<", data err "<<v_histo_ratio_data[iplot]->GetBinError(ibin)<<", total "<<bin_error<<endl;
-			}
-		}
-
-		// if(iplot==2)
-		// {
-		// 	v_histo_ratio_data[iplot]->GetXaxis()->SetRangeUser(0,249);
-		// }
-
-
-		v_histo_ratio_data[iplot]->Draw("HIST P"); //Draw ratio points
-
-
-
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("#lower[0.1]{Pulls}");
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("#kern[0.5]{Pulls}");
-		v_histo_ratio_data[iplot]->GetYaxis()->SetTitle("Pulls");
-		v_histo_ratio_data[iplot]->GetYaxis()->SetTickLength(0.);
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetTickLength(0.15);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleOffset(1);
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetTitleOffset(1.42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleOffset(1.2);
-		// v_histo_ratio_data[iplot]->GetYaxis()->CenterTitle(1);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelSize(0.048);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetLabelFont(42);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleFont(42);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503); //grid draw on primary tick marks only
-		// v_histo_ratio_data[iplot]->GetYaxis()->SetNdivisions(503);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetNdivisions(505);
-		v_histo_ratio_data[iplot]->GetYaxis()->SetTitleSize(0.06);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetTitleSize(0.);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetTickLength(0.04);
-		v_histo_ratio_data[iplot]->SetMarkerSize(1.6);
-		// v_histo_ratio_data[iplot]->SetMarkerSize(0.8);
-
-		//NOTE : slightly different parameters than prefit function (need to add hand-made axis here)
-		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelSize(0.0); //Make this axis invisible because we are going to draw a new one (below)
-		v_histo_ratio_data[iplot]->GetXaxis()->SetLabelOffset(999);
-		v_histo_ratio_data[iplot]->GetXaxis()->SetTickLength(0.0);
-
-
-		v_histo_ratio_data[iplot]->GetXaxis()->SetTitle(v_X_label[ivar].Data());
-
-		v_histo_ratio_data[iplot]->SetMinimum(-2.99);
-		v_histo_ratio_data[iplot]->SetMaximum(2.99);
-
-		// v_histo_ratio_data[iplot]->SetMinimum(-5);
-		// v_histo_ratio_data[iplot]->SetMaximum(5);
-
-
-		//SINCE WE MODIFIED THE ORIGINAL AXIS OF THE HISTOS, NEED TO DRAW AN INDEPENDANT AXIS REPRESENTING THE ORIGINAL x VALUES
-		v_axis[iplot] = new TGaxis(v_histo_ratio_data[iplot]->GetXaxis()->GetXmin(),v_histo_ratio_data[iplot]->GetMinimum(),v_histo_ratio_data[iplot]->GetXaxis()->GetXmax(),v_histo_ratio_data[iplot]->GetMinimum(),xmin_data,xmax_data, 505, "+"); // + : tick marks on positive side ; = : label on same side as marks
-
-
-	   	if (total_var_list[iplot] == "BDT" || total_var_list[iplot] == "BDTttZ") v_axis[iplot]->SetTitle("BDT output") ;
-		else if ( total_var_list[iplot] == "mTW")  v_axis[iplot]->SetTitle("m_{T}^{W} [GeV]");
-		v_axis[iplot]->SetTitleSize(0.06);
-		v_axis[iplot]->SetTitleFont(42);
-		v_axis[iplot]->SetLabelFont(42);
-		v_axis[iplot]->SetTitleOffset(1);
-		v_axis[iplot]->SetLabelSize(0.05);
-		v_axis[iplot]->Draw("same");
-	} //iplot loop
-
-
-	//-------------------
-	//SAVE FILE
-	//-------------------
-	mkdir("plots/paper_plots",0777);
-
-	TString outputname = "plots/paper_plots/postfit_templates_all";
-	outputname+= this->format;
-
-	if(c1!= 0) {c1->SaveAs(outputname.Data() );}
-
-	//-------------------
-	//DELETE ALL OBJECTS
-	//-------------------
-
-	delete qw;
-
-	for(int i=0; i<3; i++)
-	{
-		delete v_hdata[i];
-		delete v_hdata_new[i];
-		delete v_stack[i];
-		delete v_histo_total_MC[i];
-		delete v_histo_ratio_data[i];
-
-		delete v_gr_error[i];
-		// delete v_gr_ratio_error[i];
-		// delete v_gr_error_tmp[i];
-
-		for(int j=0; j<v_vector_MC_histo.at(i).size(); j++)
-		{
-			delete v_vector_MC_histo.at(i).at(j);
-		}
-
-		delete v_tpad_ratio[i];
-
-		delete v_tpad_primitives[i];
-	}
-
-	delete h_tmp;
-
-	delete f;
-
-	delete c1; //Must free dinamically-allocated memory
-	return 0;
 }

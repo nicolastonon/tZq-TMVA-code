@@ -693,7 +693,7 @@ int main(int argc, char **argv) //Can choose region (tZq/WZ/ttZ) at execution
         // MVAtool->Rescale_JES();
         // MVAtool->Count_Events();
         // MVAtool->Histograms_For_Denis();
-        // MVAtool->Postfit_Templates_Paper_SinglePlot();
+        MVAtool->Postfit_Templates_Paper_SinglePlot();
 
         //-----------------
         MVAtool->~theMVAtool(); //Delete object
